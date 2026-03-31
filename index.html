@@ -3,66 +3,59 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Phát thuốc thông minh - Wrapper</title>
+    <title>Phát thuốc thông minh - Fix</title>
     <style>
-        /* Tối ưu hóa không gian hiển thị */
         body, html {
             margin: 0;
             padding: 0;
-            height: 100%;
             width: 100%;
-            overflow: hidden; /* Ngăn chặn thanh cuộn kép giữa Google Sites và Iframe */
+            height: 100%;
+            overflow: hidden;
             background-color: #ffffff;
         }
 
-        .wrapper-container {
-            position: relative;
+        /* Ép Iframe chiếm trọn khung hình và không cho phép sai lệch tọa độ */
+        #gasApp {
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            right: 0;
             width: 100%;
             height: 100%;
-            display: flex;
-            flex-direction: column;
-        }
-
-        /* Iframe chứa ứng dụng GAS của bạn */
-        iframe {
             border: none;
-            width: 100%;
-            /* Tăng chiều cao ảo để bù đắp phần bị che bởi thanh công cụ trình duyệt di động */
-            height: calc(100% + 80px); 
-            padding-bottom: 80px; /* Tạo vùng đệm an toàn để Footer luôn hiển thị */
-            box-sizing: border-box;
+            /* Khử bỏ khoảng trắng 5px mặc định của Iframe */
+            display: block; 
         }
     </style>
 </head>
 <body>
 
-    <div class="wrapper-container">
-        <iframe 
-            src="https://script.google.com/macros/s/AKfycby9SCF56KU50574xFryrP4hSJ5x8uzNKWBv8ER8ii6Yzyb2W7SDOsUOplzIOORT94Ly/exec" 
-            id="gasApp"
-            allowfullscreen>
-        </iframe>
-    </div>
+    <iframe 
+        src="https://script.google.com/macros/s/AKfycby9SCF56KU50574xFryrP4hSJ5x8uzNKWBv8ER8ii6Yzyb2W7SDOsUOplzIOORT94Ly/exec" 
+        id="gasApp">
+    </iframe>
 
     <script>
-        // Kỹ thuật ép trình duyệt hiển thị từ đỉnh trang (Header)
-        function scrollToTop() {
+        const iframe = document.getElementById('gasApp');
+
+        function forceReset() {
+            // Ép trang web về đỉnh (0,0) - Trị lỗi mất Header
             window.scrollTo(0, 0);
-            const iframe = document.getElementById('gasApp');
-            if (iframe) {
-                iframe.contentWindow.postMessage('scroll-to-top', '*');
-            }
+            document.body.scrollTop = 0;
         }
 
-        // Thực hiện cuộn lên đầu ngay khi load và sau một khoảng nghỉ ngắn
-        window.onload = function() {
-            scrollToTop();
-            setTimeout(scrollToTop, 500); 
+        // Khi load trang lần đầu (Lúc này có thể bị lỗi sau khi Login)
+        iframe.onload = function() {
+            setTimeout(forceReset, 500); // Chờ ứng dụng load xong giao diện rồi mới ép cuộn
         };
 
-        // Đảm bảo khi xoay màn hình điện thoại vẫn không bị lệch Header
-        window.addEventListener('orientationchange', function() {
-            setTimeout(scrollToTop, 200);
+        // Quan trọng: Fix lỗi khi xoay màn hình hoặc thay đổi kích thước trình duyệt
+        window.addEventListener('resize', forceReset);
+
+        // Xử lý lỗi khi quay lại trang (Back)
+        window.addEventListener('pageshow', function(e) {
+            forceReset();
         });
     </script>
 </body>
