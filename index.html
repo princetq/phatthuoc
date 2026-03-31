@@ -3,60 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Phát thuốc thông minh - Fix</title>
+    <title>Phát Thuốc Thông Minh</title>
+    <link rel="icon" href="https://drive.google.com/thumbnail?id=1ZyertvO-WsXU5FYCcuqUHizfRUCSnRIb&sz=w64-h64" type="image/x-icon">
     <style>
         body, html {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            background-color: #ffffff;
+            margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #f4f9f5;
         }
-
-        /* Ép Iframe chiếm trọn khung hình và không cho phép sai lệch tọa độ */
-        #gasApp {
-            position: fixed;
-            top: 0;
-            left: 0;
-            bottom: 0;
-            right: 0;
-            width: 100%;
-            height: 100%;
-            border: none;
-            /* Khử bỏ khoảng trắng 5px mặc định của Iframe */
-            display: block; 
+        iframe {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none;
         }
     </style>
 </head>
 <body>
 
-    <iframe 
-        src="https://script.google.com/macros/s/AKfycby9SCF56KU50574xFryrP4hSJ5x8uzNKWBv8ER8ii6Yzyb2W7SDOsUOplzIOORT94Ly/exec" 
-        id="gasApp">
-    </iframe>
+    <iframe src="https://script.google.com/macros/s/AKfycby9SCF56KU50574xFryrP4hSJ5x8uzNKWBv8ER8ii6Yzyb2W7SDOsUOplzIOORT94Ly/exec"></iframe>
 
-    <script>
-        const iframe = document.getElementById('gasApp');
-
-        function forceReset() {
-            // Ép trang web về đỉnh (0,0) - Trị lỗi mất Header
-            window.scrollTo(0, 0);
-            document.body.scrollTop = 0;
-        }
-
-        // Khi load trang lần đầu (Lúc này có thể bị lỗi sau khi Login)
-        iframe.onload = function() {
-            setTimeout(forceReset, 500); // Chờ ứng dụng load xong giao diện rồi mới ép cuộn
-        };
-
-        // Quan trọng: Fix lỗi khi xoay màn hình hoặc thay đổi kích thước trình duyệt
-        window.addEventListener('resize', forceReset);
-
-        // Xử lý lỗi khi quay lại trang (Back)
-        window.addEventListener('pageshow', function(e) {
-            forceReset();
-        });
-    </script>
 </body>
 </html>
