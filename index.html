@@ -1559,6 +1559,131 @@
       .pushVouchersServer(JSON.stringify(payload));
   }
 
+  function formatDateDDMMYYYY(value) {
+    if (
+      value === null ||
+      value === undefined ||
+      value === ''
+    ) {
+      return '';
+    }
+
+    if (
+      value instanceof Date &&
+      !Number.isNaN(value.getTime())
+    ) {
+      return (
+        String(value.getDate()).padStart(2, '0') +
+        '/' +
+        String(value.getMonth() + 1).padStart(2, '0') +
+        '/' +
+        value.getFullYear()
+      );
+    }
+
+    const text = String(value).trim();
+    if (!text) return '';
+
+    const vi = text.match(
+      /^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/
+    );
+
+    if (vi) {
+      let year = Number(vi[3]);
+      if (year < 100) year += 2000;
+
+      return (
+        String(Number(vi[1])).padStart(2, '0') +
+        '/' +
+        String(Number(vi[2])).padStart(2, '0') +
+        '/' +
+        year
+      );
+    }
+
+    const iso = text.match(
+      /^(\d{4})-(\d{1,2})-(\d{1,2})(?:T|\s|$)/
+    );
+
+    if (iso) {
+      return (
+        String(Number(iso[3])).padStart(2, '0') +
+        '/' +
+        String(Number(iso[2])).padStart(2, '0') +
+        '/' +
+        iso[1]
+      );
+    }
+
+    const jsDate = text.match(
+      /^(?:Sun|Mon|Tue|Wed|Thu|Fri|Sat)\s+([A-Za-z]{3})\s+(\d{1,2})\s+(\d{4})/
+    );
+
+    if (jsDate) {
+      const months = {
+        Jan: 1,
+        Feb: 2,
+        Mar: 3,
+        Apr: 4,
+        May: 5,
+        Jun: 6,
+        Jul: 7,
+        Aug: 8,
+        Sep: 9,
+        Oct: 10,
+        Nov: 11,
+        Dec: 12
+      };
+
+      const month = months[jsDate[1]];
+
+      if (month) {
+        return (
+          String(Number(jsDate[2])).padStart(2, '0') +
+          '/' +
+          String(month).padStart(2, '0') +
+          '/' +
+          jsDate[3]
+        );
+      }
+    }
+
+    const cleaned = text.replace(
+      /\s*\([^)]*\)\s*$/,
+      ''
+    );
+
+    const parsed = new Date(cleaned);
+
+    if (!Number.isNaN(parsed.getTime())) {
+      return (
+        String(parsed.getDate()).padStart(2, '0') +
+        '/' +
+        String(parsed.getMonth() + 1).padStart(2, '0') +
+        '/' +
+        parsed.getFullYear()
+      );
+    }
+
+    return text;
+  }
+
+  function normalizeDateList(values) {
+    const output = [];
+    const seen = new Set();
+
+    Array.from(values || []).forEach(value => {
+      const formatted = formatDateDDMMYYYY(value);
+
+      if (!formatted || seen.has(formatted)) return;
+
+      seen.add(formatted);
+      output.push(formatted);
+    });
+
+    return output;
+  }
+
   function buildCardHTML(id, v) {
     let bClass = v.state==='done' ? 'status-done' : (v.state==='progress' ? 'status-progress' : 'status-waiting');
     let bText = v.state==='done' ? 'Đã phát' : (v.state==='progress' ? 'Đang phát' : 'Chưa phát');
@@ -1571,7 +1696,10 @@
       .split(',')
       .map(s => s.trim())
       .filter(Boolean)
-      .forEach(d => allDates.add(d));
+      .forEach(d => {
+        const formatted = formatDateDDMMYYYY(d);
+        if (formatted) allDates.add(formatted);
+      });
 
     String(v.warehouseKeys || '')
       .split(',')
@@ -1633,7 +1761,10 @@
         }
 
         if (hasData) {
-          vc.dates.forEach(d => allDates.add(d));
+          vc.dates.forEach(d => {
+            const formatted = formatDateDDMMYYYY(d);
+            if (formatted) allDates.add(formatted);
+          });
           vc.TQ.forEach(
             x => allVouchers.add(x.split('|')[0])
           );
@@ -1653,7 +1784,11 @@
     
     let khoStr = Array.from(khoNames).join(", ");
     
-    let d = new Date(v.time);
+    
+    let dateStr = normalizeDateList(allDates).join(", ");
+    if (!dateStr) dateStr = "Không có ngày";
+
+let d = new Date(v.time);
     let timeStr = ("0"+d.getHours()).slice(-2) + ":" + ("0"+d.getMinutes()).slice(-2) + " " + ("0"+d.getDate()).slice(-2) + "/" + ("0"+(d.getMonth()+1)).slice(-2) + "/" + d.getFullYear();
     
     let timeHtml = `<span style="font-size:16px; color:#555; font-style:italic;">(Nạp: ${timeStr})</span>`;
@@ -1672,7 +1807,7 @@
         </div>
         <div style="margin-top:2px;">${timeHtml}</div>
         <div style="font-size:16px; color:var(--purple); margin-top:4px; font-weight:bold;">🏢 Kho: ${khoStr || "Tất cả kho"}</div>
-        <div style="font-size:18px; margin-top:0px;"><b>📅 Ngày:</b> <span style="color:var(--danger);">${Array.from(allDates).join(", ")}</span></div>
+        <div style="font-size:18px; margin-top:0px;"><b>📅 Ngày:</b> <span style="color:var(--danger);">${dateStr}</span></div>
         <div style="font-size:18px; margin-top:10px; line-height:1.4;"><b>🧾 Phiếu:</b> <span style="color:#333; font-weight:bold;">${phieuStr}</span></div>
         <div class="tracking-card-status"><span class="status-badge ${bClass}">${bText}</span></div>
       </div>`;
