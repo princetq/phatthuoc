@@ -336,9 +336,45 @@
     .user-badge { background: rgba(255,255,255,0.25); padding: 8px 16px; border-radius: 20px; font-weight: 700; font-size: 18px; margin-right: 10px; }
     .dist-header button { font-size: 20px; padding: 10px 20px; }
     
-    .tab-header { display: flex; gap: 5px; border-bottom: 2px solid #ccc; overflow-x: auto; background: #eee; padding-top: 10px; padding-left: 10px; }
-    .tab-btn { padding: 12px 20px; background: #e6e6e6; border: 1px solid #bdbdbd; border-bottom: none; cursor: pointer; border-radius: 8px 8px 0 0; font-weight: 900; font-size: 18px; color: #111; opacity: 1; white-space: nowrap; }
-    .tab-btn.active { background: #fff; color: var(--green); border-top: 4px solid var(--green); border-color:#ccc; border-bottom: 1px solid #fff; margin-bottom: -2px; }
+    /* Nhãn tên kho thấp gọn, chỉ cuộn ngang khi có nhiều kho */
+    .tab-header {
+      display: flex;
+      align-items: flex-end;
+      gap: 5px;
+      border-bottom: 2px solid #ccc;
+      overflow-x: auto;
+      overflow-y: hidden;
+      background: #eee;
+      padding: 4px 8px 0;
+      line-height: 1;
+      min-height: 0;
+      scrollbar-width: thin;
+    }
+    .tab-btn {
+      flex: 0 0 auto;
+      min-height: 38px;
+      margin: 0;
+      padding: 8px 14px;
+      background: #e6e6e6;
+      border: 1px solid #bdbdbd;
+      border-bottom: none;
+      cursor: pointer;
+      border-radius: 8px 8px 0 0;
+      font-weight: 900;
+      font-size: 17px;
+      line-height: 1.15;
+      color: #111;
+      opacity: 1;
+      white-space: nowrap;
+    }
+    .tab-btn.active {
+      background: #fff;
+      color: var(--green);
+      border-top: 3px solid var(--green);
+      border-color: #ccc;
+      border-bottom: 1px solid #fff;
+      margin-bottom: -2px;
+    }
     
     .tab-content { border: 1px solid #ccc; border-top: none; background: #fff; display: none; border-radius: 0 0 8px 8px; padding: 15px; }
     .tab-content.active { display: block; }
@@ -399,6 +435,16 @@
       .user-badge { font-size: 12px; padding: 4px 10px; flex-grow: 1; text-align: center; }
       .dist-header button { font-size: 14px; padding: 6px 12px; }
       .dist-header button[onclick="window.print()"] { display: none !important; }
+
+      .tab-header {
+        padding: 2px 6px 0;
+        gap: 4px;
+      }
+      .tab-btn {
+        min-height: 34px;
+        padding: 7px 10px;
+        font-size: 15px;
+      }
       
       /* Loại bỏ hoàn toàn nút Nạp Phiếu trên Mobile */
       #btnUpload { display: none !important; }
@@ -955,6 +1001,8 @@
   let syncInterval = null;
   let currentVoucherVersion = 0;
   let syncInFlight = false;
+  let mutationInFlight = false;
+  let detailSyncIntervalMs = 700;
 
   let isFolderAutoLoad = false;
 
@@ -1047,6 +1095,12 @@
     if (frame && frame.src !== GAS_BRIDGE_URL) frame.src = GAS_BRIDGE_URL;
     let saved = sessionStorage.getItem('logged_user');
     let token = sessionStorage.getItem('session_token');
+    detailSyncIntervalMs = Math.max(
+      500,
+      Number(
+        sessionStorage.getItem('detail_sync_interval_ms') || 700
+      )
+    );
     if (saved && token) {
       try { currentUser = JSON.parse(saved); initUI(); }
       catch (e) { sessionStorage.clear(); }
@@ -1075,7 +1129,26 @@
     showLoading(true, "Đang đăng nhập...");
     google.script.run.withSuccessHandler(res => {
       showLoading(false);
-      if(res.success) { currentUser = res.user; sessionStorage.setItem('logged_user', JSON.stringify(currentUser)); sessionStorage.setItem('session_token', res.token || ''); initUI(); } 
+      if(res.success) {
+        currentUser = res.user;
+        detailSyncIntervalMs = Math.max(
+          500,
+          Number(res.syncIntervalMs || 700)
+        );
+        sessionStorage.setItem(
+          'detail_sync_interval_ms',
+          String(detailSyncIntervalMs)
+        );
+        sessionStorage.setItem(
+          'logged_user',
+          JSON.stringify(currentUser)
+        );
+        sessionStorage.setItem(
+          'session_token',
+          res.token || ''
+        );
+        initUI();
+      }
       else { document.getElementById('loginError').innerText = res.msg; document.getElementById('loginError').style.display = 'block'; }
     }).loginServer(u, p);
   }
@@ -1085,6 +1158,7 @@
     syncInterval = null;
     currentVoucherVersion = 0;
     syncInFlight = false;
+    mutationInFlight = false;
     sessionStorage.removeItem('logged_user');
     sessionStorage.removeItem('session_token');
     currentUser = null;
@@ -1488,29 +1562,91 @@
   function buildCardHTML(id, v) {
     let bClass = v.state==='done' ? 'status-done' : (v.state==='progress' ? 'status-progress' : 'status-waiting');
     let bText = v.state==='done' ? 'Đã phát' : (v.state==='progress' ? 'Đang phát' : 'Chưa phát');
-    let allDates = new Set(), allVouchers = new Set(), khoNames = new Set();
-    
-    if (v.vouchers) {
-       let keys = Object.keys(v.vouchers);
-       let isLikelyOldFormat = keys.length === 4 && keys.includes("Tiem_Vien") && keys.includes("Dich_Truyen") && keys.includes("Vat_Tu") && keys.includes("Khac");
-       
-       for(let kKey in v.vouchers) {
-           let vc = v.vouchers[kKey];
-           let hasData = vc.TQ.length > 0 || vc.BT.length > 0 || vc.HT.length > 0 || vc.dates.length > 0;
-           
-           if (hasData || !isLikelyOldFormat) {
-               if(KHO_CONFIG[kKey]) khoNames.add(KHO_CONFIG[kKey]);
-           }
-           
-           if (hasData) {
-               vc.dates.forEach(d => allDates.add(d));
-               vc.TQ.forEach(x => allVouchers.add(x.split('|')[0]));
-               vc.BT.forEach(x => allVouchers.add(x.split('|')[0]));
-               vc.HT.forEach(x => allVouchers.add(x.split('|')[0]));
-           }
-       }
+    let allDates = new Set();
+    let allVouchers = new Set();
+    let khoNames = new Set();
+
+    // Dữ liệu danh sách nhẹ V7.
+    String(v.dateSummary || '')
+      .split(',')
+      .map(s => s.trim())
+      .filter(Boolean)
+      .forEach(d => allDates.add(d));
+
+    String(v.warehouseKeys || '')
+      .split(',')
+      .map(s => s.trim())
+      .filter(Boolean)
+      .forEach(k => {
+        if (KHO_CONFIG[k]) {
+          khoNames.add(KHO_CONFIG[k]);
+        }
+      });
+
+    String(v.voucherSummary || '')
+      .split(';')
+      .map(s => s.trim())
+      .filter(Boolean)
+      .forEach(entry => {
+        const withoutType = entry.replace(
+          /^(TQ|BT|HT):/i,
+          ''
+        );
+
+        const voucherText = withoutType
+          .split('|')[0]
+          .trim();
+
+        if (voucherText) {
+          allVouchers.add(voucherText);
+        }
+      });
+
+    // Tương thích dữ liệu đầy đủ cũ.
+    if (
+      v.vouchers &&
+      allDates.size === 0 &&
+      allVouchers.size === 0
+    ) {
+      let keys = Object.keys(v.vouchers);
+
+      let isLikelyOldFormat =
+        keys.length === 4 &&
+        keys.includes("Tiem_Vien") &&
+        keys.includes("Dich_Truyen") &&
+        keys.includes("Vat_Tu") &&
+        keys.includes("Khac");
+
+      for (let kKey in v.vouchers) {
+        let vc = v.vouchers[kKey];
+
+        let hasData =
+          vc.TQ.length > 0 ||
+          vc.BT.length > 0 ||
+          vc.HT.length > 0 ||
+          vc.dates.length > 0;
+
+        if (hasData || !isLikelyOldFormat) {
+          if (KHO_CONFIG[kKey]) {
+            khoNames.add(KHO_CONFIG[kKey]);
+          }
+        }
+
+        if (hasData) {
+          vc.dates.forEach(d => allDates.add(d));
+          vc.TQ.forEach(
+            x => allVouchers.add(x.split('|')[0])
+          );
+          vc.BT.forEach(
+            x => allVouchers.add(x.split('|')[0])
+          );
+          vc.HT.forEach(
+            x => allVouchers.add(x.split('|')[0])
+          );
+        }
+      }
     }
-    
+
     let phieuArr = Array.from(allVouchers);
     let phieuStr = formatVoucherColors(phieuArr.slice(0, 3)) + (phieuArr.length > 3 ? ` <i style="color:#777;">...và thêm ${phieuArr.length - 3} phiếu khác</i>` : "");
     if (!phieuStr) phieuStr = "Không có phiếu";
@@ -1648,9 +1784,108 @@
     renderTrackingList();
   }
 
+  function voucherCardsCacheKey() {
+    const username =
+      currentUser && currentUser.username
+        ? currentUser.username
+        : 'guest';
+
+    return 'voucher_cards_v7_' + username;
+  }
+
+  function readVoucherCardsLocalCache() {
+    try {
+      const raw = sessionStorage.getItem(
+        voucherCardsCacheKey()
+      );
+
+      if (!raw) return null;
+
+      const parsed = JSON.parse(raw);
+
+      return parsed && typeof parsed === 'object'
+        ? parsed
+        : null;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  function saveVoucherCardsLocalCache(data) {
+    try {
+      sessionStorage.setItem(
+        voucherCardsCacheKey(),
+        JSON.stringify(data || {})
+      );
+    } catch (error) {
+      // Không chặn ứng dụng nếu trình duyệt hết dung lượng.
+    }
+  }
+
+  function unpackVoucherCardsResponse(response) {
+    if (
+      response &&
+      response.success !== false &&
+      response.vouchers &&
+      typeof response.vouchers === 'object'
+    ) {
+      console.log('Voucher cards loaded:', {
+        cacheHit: Boolean(response.cacheHit),
+        serverMs: Number(response.serverMs || 0),
+        count: Object.keys(response.vouchers).length
+      });
+
+      return response.vouchers;
+    }
+
+    return {};
+  }
+
   function loadWaitList() {
-    showLoading(true, "Đang tải...");
-    google.script.run.withSuccessHandler(data => { showLoading(false); cloudWaitList = data || {}; renderTrackingList(); }).getVouchersServer();
+    const localCached = readVoucherCardsLocalCache();
+
+    const hasCurrentData =
+      cloudWaitList &&
+      Object.keys(cloudWaitList).length > 0;
+
+    if (!hasCurrentData && localCached) {
+      cloudWaitList = localCached;
+      renderTrackingList();
+    }
+
+    if (!hasCurrentData && !localCached) {
+      showLoading(true, "Đang tải danh sách phiếu...");
+    }
+
+    const startedAt = performance.now();
+
+    google.script.run
+      .withSuccessHandler(response => {
+        showLoading(false);
+
+        cloudWaitList =
+          unpackVoucherCardsResponse(response);
+
+        saveVoucherCardsLocalCache(cloudWaitList);
+        renderTrackingList();
+
+        console.log(
+          'Voucher list totalMs:',
+          Math.round(performance.now() - startedAt)
+        );
+      })
+      .withFailureHandler(error => {
+        showLoading(false);
+
+        if (!hasCurrentData && !localCached) {
+          showMsg(
+            error.message || String(error),
+            'Không tải được danh sách',
+            'danger'
+          );
+        }
+      })
+      .getVoucherCardsServer();
   }
 
   function renderTrackingList() {
@@ -1658,11 +1893,36 @@
     if (bulkBtn) bulkBtn.style.display = (currentUser && currentUser.role === 'admin') ? 'inline-block' : 'none';
     let c = document.getElementById('trackingListContainer'); c.innerHTML = "";
     let arr = Object.values(cloudWaitList);
-    if (currentUser.role !== 'admin' && currentUser.kho !== 'Tất cả') {
-      let myKhos = currentUser.kho.split(',').map(s => mapKhoToKey(s.trim()));
+    if (
+      currentUser.role !== 'admin' &&
+      currentUser.kho !== 'Tất cả'
+    ) {
+      let myKhos = currentUser.kho
+        .split(',')
+        .map(s => mapKhoToKey(s.trim()));
+
       arr = arr.filter(v => {
-        if(!v.vouchers) return false;
-        return myKhos.some(k => v.vouchers[k] && (v.vouchers[k].TQ.length > 0 || v.vouchers[k].BT.length > 0 || v.vouchers[k].HT.length > 0));
+        const keys = String(v.warehouseKeys || '')
+          .split(',')
+          .map(s => s.trim())
+          .filter(Boolean);
+
+        if (keys.length) {
+          return myKhos.some(k => keys.includes(k));
+        }
+
+        // Dữ liệu cũ vẫn được hỗ trợ.
+        if (!v.vouchers) return true;
+
+        return myKhos.some(
+          k =>
+            v.vouchers[k] &&
+            (
+              v.vouchers[k].TQ.length > 0 ||
+              v.vouchers[k].BT.length > 0 ||
+              v.vouchers[k].HT.length > 0
+            )
+        );
       });
     }
 
@@ -1805,10 +2065,39 @@
   }
 
   function loadHistoryList() {
-    google.script.run.withSuccessHandler(data => {
-      cloudHistoryData = Object.values(data || {}).filter(v => v.state === 'done');
+    const localCached = readVoucherCardsLocalCache();
+
+    if (localCached) {
+      cloudHistoryData = Object
+        .values(localCached)
+        .filter(v => v.state === 'done');
+
       renderHistoryList();
-    }).getVouchersServer();
+    }
+
+    google.script.run
+      .withSuccessHandler(response => {
+        const data =
+          unpackVoucherCardsResponse(response);
+
+        saveVoucherCardsLocalCache(data);
+
+        cloudHistoryData = Object
+          .values(data)
+          .filter(v => v.state === 'done');
+
+        renderHistoryList();
+      })
+      .withFailureHandler(error => {
+        if (!localCached) {
+          showMsg(
+            error.message || String(error),
+            'Không tải được lịch sử',
+            'danger'
+          );
+        }
+      })
+      .getVoucherCardsServer();
   }
 
   function renderHistoryList() {
@@ -1870,7 +2159,10 @@
       currentVoucherVersion = Number(v.version || 0);
       syncInFlight = false;
       renderTabs(v, !isViewer);
-      syncInterval = setInterval(() => syncDetail(id, isViewer), 1000); 
+      syncInterval = setInterval(
+        () => syncDetail(id, isViewer),
+        detailSyncIntervalMs
+      );
     }).getSingleVoucherServer(id);
   }
 
@@ -2008,57 +2300,153 @@
 
   function toggleItem(idx) {
     const trElem = document.getElementById('tr_' + idx);
-    if (!trElem || trElem.classList.contains('status-updating')) return;
+    if (
+      !trElem ||
+      trElem.classList.contains('status-updating') ||
+      mutationInFlight
+    ) return;
+
     const it = cloudWaitList[activeVoucherId].items[idx];
-    if (currentUser.role === 'phat' && it.status !== 'Chưa phát' && it.status !== currentUser.fullName) return showMsg('Không có quyền!');
+
+    if (
+      currentUser.role === 'phat' &&
+      it.status !== 'Chưa phát' &&
+      it.status !== currentUser.fullName
+    ) {
+      return showMsg('Không có quyền!');
+    }
+
+    mutationInFlight = true;
+    const clientStartedAt = performance.now();
 
     trElem.classList.add('status-updating');
-    if (window.innerWidth <= 768 && window.innerHeight > window.innerWidth) document.getElementById('stt_' + idx).innerHTML = '⏳';
-    document.getElementById('st_' + idx).innerHTML = '⏳...';
+
+    if (
+      window.innerWidth <= 768 &&
+      window.innerHeight > window.innerWidth
+    ) {
+      document.getElementById('stt_' + idx).innerHTML = '⏳';
+    }
+
+    document.getElementById('st_' + idx).innerHTML =
+      '<span class="phat-badge">⏳ Đang lưu...</span>';
 
     google.script.run
       .withSuccessHandler((res) => {
+        mutationInFlight = false;
+
         if (!res || res.success === false) {
           renderServerItemState(idx, it);
-          showMsg((res && res.msg) || 'Không thể cập nhật trạng thái.', 'Không thể cập nhật', 'warning');
+          showMsg(
+            (res && res.msg) ||
+              'Không thể cập nhật trạng thái.',
+            'Không thể cập nhật',
+            'warning'
+          );
           return;
         }
-        applyServerItemUpdate(res.index, res.item, res.version, res.state);
+
+        applyServerItemUpdate(
+          res.index,
+          res.item,
+          res.version,
+          res.state
+        );
+
+        console.log(
+          'Toggle confirmed:',
+          {
+            totalMs: Math.round(
+              performance.now() - clientStartedAt
+            ),
+            serverMs: Number(res.serverMs || 0)
+          }
+        );
       })
       .withFailureHandler((error) => {
+        mutationInFlight = false;
         renderServerItemState(idx, it);
-        showMsg(error.message || String(error), 'Lỗi cập nhật', 'danger');
+        showMsg(
+          error.message || String(error),
+          'Lỗi cập nhật',
+          'danger'
+        );
       })
       .toggleItemServer(activeVoucherId, idx);
   }
 
   function toggleCheckItem(idx) {
     const trElem = document.getElementById('tr_' + idx);
-    if (!trElem || trElem.classList.contains('status-updating')) return;
+    if (
+      !trElem ||
+      trElem.classList.contains('status-updating') ||
+      mutationInFlight
+    ) return;
+
     const it = cloudWaitList[activeVoucherId].items[idx];
-    if (it.status === 'Chưa phát') return showMsg('Thuốc chưa được phát, không thể đối chiếu!');
+
+    if (it.status === 'Chưa phát') {
+      return showMsg(
+        'Thuốc chưa được phát, không thể đối chiếu!'
+      );
+    }
+
+    mutationInFlight = true;
+    const clientStartedAt = performance.now();
 
     trElem.classList.add('status-updating');
-    document.getElementById('st_' + idx).innerHTML = '⏳...';
+    document.getElementById('st_' + idx).innerHTML =
+      '<span class="phat-badge">⏳ Đang lưu...</span>';
 
     google.script.run
       .withSuccessHandler((res) => {
+        mutationInFlight = false;
+
         if (!res || res.success === false) {
           renderServerItemState(idx, it);
-          showMsg((res && res.msg) || 'Không thể đối chiếu.', 'Không thể cập nhật', 'warning');
+          showMsg(
+            (res && res.msg) || 'Không thể đối chiếu.',
+            'Không thể cập nhật',
+            'warning'
+          );
           return;
         }
-        applyServerItemUpdate(res.index, res.item, res.version, res.state);
+
+        applyServerItemUpdate(
+          res.index,
+          res.item,
+          res.version,
+          res.state
+        );
+
+        console.log(
+          'Check confirmed:',
+          {
+            totalMs: Math.round(
+              performance.now() - clientStartedAt
+            ),
+            serverMs: Number(res.serverMs || 0)
+          }
+        );
       })
       .withFailureHandler((error) => {
+        mutationInFlight = false;
         renderServerItemState(idx, it);
-        showMsg(error.message || String(error), 'Lỗi đối chiếu', 'danger');
+        showMsg(
+          error.message || String(error),
+          'Lỗi đối chiếu',
+          'danger'
+        );
       })
       .toggleCheckItemServer(activeVoucherId, idx);
   }
 
   function syncDetail(id, isViewer) {
-    if (syncInFlight || id !== activeVoucherId) return;
+    if (
+      syncInFlight ||
+      mutationInFlight ||
+      id !== activeVoucherId
+    ) return;
     syncInFlight = true;
     google.script.run
       .withSuccessHandler((delta) => {
