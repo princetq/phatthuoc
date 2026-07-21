@@ -716,9 +716,11 @@
   style="position:fixed;width:1px;height:1px;opacity:0;pointer-events:none;border:0;left:-9999px;top:-9999px;"></iframe>
 
 <script>
-  /* ===== GITHUB PAGES ↔ APPS SCRIPT BRIDGE ===== */
+  /* ===== GITHUB PAGES ↔ APPS SCRIPT BRIDGE V2 ===== */
   const GAS_BRIDGE_URL = 'https://script.google.com/macros/s/AKfycbyg8_8XETjSQkVdSsYfjEN_iYuP1y_B9CoVO06QI18od7qLVKHC2MMnoqDU3jvkPCFudQ/exec';
   let gasBridgeReady = false;
+  let gasBridgeWindow = null;
+  let gasBridgeOrigin = '';
   let gasRequestCounter = 0;
   const gasPendingRequests = new Map();
 
@@ -726,35 +728,63 @@
     return document.getElementById('gasBridgeFrame');
   }
 
-  function waitForGasBridge(timeoutMs = 15000) {
-    if (gasBridgeReady) return Promise.resolve();
+  function isTrustedAppsScriptBridgeOrigin(origin) {
+    try {
+      const url = new URL(origin);
+      const host = url.hostname.toLowerCase();
+      return host === 'script.google.com'
+        || host === 'script.googleusercontent.com'
+        || host.endsWith('.script.googleusercontent.com')
+        || host.endsWith('.googleusercontent.com');
+    } catch (error) {
+      return false;
+    }
+  }
+
+  function waitForGasBridge(timeoutMs = 20000) {
+    if (gasBridgeReady && gasBridgeWindow) return Promise.resolve();
+
     return new Promise((resolve, reject) => {
       const started = Date.now();
       const timer = setInterval(() => {
-        if (gasBridgeReady) {
+        if (gasBridgeReady && gasBridgeWindow) {
           clearInterval(timer);
           resolve();
         } else if (Date.now() - started > timeoutMs) {
           clearInterval(timer);
-          reject(new Error('Không kết nối được Apps Script. Kiểm tra URL Web App và quyền triển khai.'));
+          reject(new Error(
+            'Không kết nối được Apps Script. Hãy mở trực tiếp URL /exec để kiểm tra quyền triển khai và chắc chắn deployment đã dùng phiên bản mới có Bridge.html.'
+          ));
         }
       }, 100);
     });
   }
 
   window.addEventListener('message', (event) => {
-    const frame = getGasBridgeFrame();
-    if (!frame || event.source !== frame.contentWindow) return;
     const message = event.data || {};
+
     if (message.type === 'GAS_BRIDGE_READY') {
+      if (!isTrustedAppsScriptBridgeOrigin(event.origin)) {
+        console.warn('Bỏ qua Bridge từ origin không tin cậy:', event.origin);
+        return;
+      }
+
+      gasBridgeWindow = event.source;
+      gasBridgeOrigin = event.origin;
       gasBridgeReady = true;
       return;
     }
+
     if (message.type !== 'GAS_RESPONSE' || !message.id) return;
+    if (!gasBridgeWindow || event.source !== gasBridgeWindow) return;
+    if (gasBridgeOrigin && event.origin !== gasBridgeOrigin) return;
+
     const pending = gasPendingRequests.get(message.id);
     if (!pending) return;
+
     gasPendingRequests.delete(message.id);
     clearTimeout(pending.timeout);
+
     const response = message.response || {};
     if (response.ok) pending.resolve(response.data);
     else pending.reject(new Error(response.error || 'Apps Script trả về lỗi.'));
@@ -762,45 +792,73 @@
 
   async function gasCall(action, args = []) {
     if (!GAS_BRIDGE_URL || GAS_BRIDGE_URL.includes('PASTE_YOUR_')) {
-      throw new Error('Bạn chưa dán URL Apps Script Web App vào biến GAS_BRIDGE_URL và thuộc tính src của iframe.');
+      throw new Error(
+        'Bạn chưa dán URL Apps Script Web App vào biến GAS_BRIDGE_URL và thuộc tính src của iframe.'
+      );
     }
+
     await waitForGasBridge();
-    const frame = getGasBridgeFrame();
+
     const id = 'REQ_' + Date.now() + '_' + (++gasRequestCounter);
     const token = sessionStorage.getItem('session_token') || '';
+
     return new Promise((resolve, reject) => {
       const timeout = setTimeout(() => {
         gasPendingRequests.delete(id);
         reject(new Error('Yêu cầu máy chủ quá thời gian chờ.'));
       }, 30000);
+
       gasPendingRequests.set(id, { resolve, reject, timeout });
-      frame.contentWindow.postMessage({
-        type: 'GAS_REQUEST', id, action, args, token
-      }, '*');
+
+      gasBridgeWindow.postMessage({
+        type: 'GAS_REQUEST',
+        id,
+        action,
+        args,
+        token
+      }, gasBridgeOrigin);
     });
   }
 
   function createGoogleScriptRunProxy(successHandler = null, failureHandler = null) {
     const chain = {
-      withSuccessHandler(fn) { return createGoogleScriptRunProxy(fn, failureHandler); },
-      withFailureHandler(fn) { return createGoogleScriptRunProxy(successHandler, fn); }
+      withSuccessHandler(fn) {
+        return createGoogleScriptRunProxy(fn, failureHandler);
+      },
+      withFailureHandler(fn) {
+        return createGoogleScriptRunProxy(successHandler, fn);
+      }
     };
+
     return new Proxy(chain, {
       get(target, prop) {
         if (prop in target) return target[prop].bind(target);
         if (typeof prop !== 'string') return undefined;
+
         return (...args) => {
-          gasCall(prop, args).then(data => {
-            if (successHandler) successHandler(data);
-          }).catch(error => {
-            if (failureHandler) {
-              failureHandler(error);
-              return;
-            }
-            console.error(error);
-            if (typeof showMsg === 'function') showMsg(error.message || String(error), 'Lỗi kết nối', 'danger');
-            if (/Phiên đăng nhập|hết hạn/i.test(error.message || '')) handleLogout();
-          });
+          gasCall(prop, args)
+            .then(data => {
+              if (successHandler) successHandler(data);
+            })
+            .catch(error => {
+              if (failureHandler) {
+                failureHandler(error);
+                return;
+              }
+
+              console.error(error);
+              if (typeof showMsg === 'function') {
+                showMsg(
+                  error.message || String(error),
+                  'Lỗi kết nối',
+                  'danger'
+                );
+              }
+
+              if (/Phiên đăng nhập|hết hạn/i.test(error.message || '')) {
+                handleLogout();
+              }
+            });
         };
       }
     });
@@ -808,11 +866,14 @@
 
   window.google = window.google || {};
   window.google.script = window.google.script || {};
+
   Object.defineProperty(window.google.script, 'run', {
     configurable: false,
-    get() { return createGoogleScriptRunProxy(); }
+    get() {
+      return createGoogleScriptRunProxy();
+    }
   });
-  /* ===== END BRIDGE ===== */
+  /* ===== END BRIDGE V2 ===== */
 
   const KHO_CONFIG = { "Dich_Truyen": "Kho Dịch Truyền", "Tiem_Vien": "Kho Tiêm/Viên Nội Trú", "Vat_Tu": "Kho Vật tư - Hóa chất", "Khac": "Khác" };
   const V_COLORS = ['#dc3545', '#007bff', '#28a745', '#fd7e14', '#6f42c1', '#e83e8c'];
