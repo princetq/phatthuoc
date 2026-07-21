@@ -1041,6 +1041,7 @@
   let detailSyncIntervalMs = 700;
   let skipNextListReload = false;
   let detailRefreshing = false;
+  let adminFinalizedEditConfirmed = false;
   const detailPrefetchPromises = new Map();
   let detailPrefetchTimer = null;
 
@@ -1330,6 +1331,7 @@
     syncInFlight = false;
     mutationInFlight = false;
     detailRefreshing = false;
+    adminFinalizedEditConfirmed = false;
     skipNextListReload = false;
     detailPrefetchPromises.clear();
     if (detailPrefetchTimer) {
@@ -2730,6 +2732,62 @@ let d = new Date(v.time);
     }
   }
 
+  function refreshDetailAccessUi(
+    voucher,
+    refreshing = false
+  ) {
+    if (!voucher || !currentUser) return;
+
+    const modeText =
+      document.getElementById('detailModeText');
+
+    const finishButton =
+      document.getElementById('btnFinishVoucher');
+
+    const finishCheckButton =
+      document.getElementById('btnFinishCheck');
+
+    if (refreshing) {
+      modeText.innerText =
+        '⏳ Đang đồng bộ dữ liệu mới...';
+    } else if (
+      currentUser.role === 'admin' &&
+      voucher.state === 'done'
+    ) {
+      modeText.innerText =
+        '🔓 Phiếu đã chốt – Admin được phép sửa';
+    } else if (
+      currentUser.role === 'phat' &&
+      voucher.state === 'done'
+    ) {
+      modeText.innerText =
+        '🔒 Phiếu đã chốt – Chỉ Admin được sửa';
+    } else if (currentUser.role === 'xem') {
+      modeText.innerText =
+        '👀 Chỉ Xem / Đối Chiếu';
+    } else {
+      modeText.innerText =
+        '💊 Dược sĩ: ' + currentUser.fullName;
+    }
+
+    const canFinishDistribution =
+      (
+        currentUser.role === 'phat' ||
+        currentUser.role === 'admin'
+      ) &&
+      voucher.state !== 'done';
+
+    finishButton.style.display =
+      canFinishDistribution
+        ? 'inline-block'
+        : 'none';
+
+    finishCheckButton.style.display =
+      currentUser.role === 'xem'
+        ? 'inline-block'
+        : 'none';
+  }
+
   function startDetailSync(id, isViewer) {
     if (syncInterval) {
       clearInterval(syncInterval);
@@ -2757,19 +2815,10 @@ let d = new Date(v.time);
       .getElementById('detailKhoa')
       .innerText = 'Khoa: ' + voucher.khoa;
 
-    document
-      .getElementById('detailModeText')
-      .innerText = isViewer
-        ? (
-            options.refreshing
-              ? '⏳ Đang đồng bộ dữ liệu mới...'
-              : '👀 Chỉ Xem / Đối Chiếu'
-          )
-        : (
-            options.refreshing
-              ? '⏳ Đang đồng bộ dữ liệu mới...'
-              : '💊 Dược sĩ: ' + currentUser.fullName
-          );
+    refreshDetailAccessUi(
+      voucher,
+      Boolean(options.refreshing)
+    );
 
     currentVoucherVersion = Number(
       voucher.version || 0
@@ -2795,11 +2844,12 @@ let d = new Date(v.time);
   function markDetailFresh(isViewer) {
     detailRefreshing = false;
 
-    document
-      .getElementById('detailModeText')
-      .innerText = isViewer
-        ? '👀 Chỉ Xem / Đối Chiếu'
-        : '💊 Dược sĩ: ' + currentUser.fullName;
+    const voucher =
+      cloudWaitList[activeVoucherId];
+
+    if (voucher) {
+      refreshDetailAccessUi(voucher, false);
+    }
   }
 
   function refreshCachedVoucherDetail(
@@ -2885,7 +2935,8 @@ let d = new Date(v.time);
             delta.index,
             delta.item,
             delta.version,
-            delta.state
+            delta.state,
+            delta.finishTime
           );
 
           markDetailFresh(isViewer);
@@ -2925,6 +2976,8 @@ let d = new Date(v.time);
     id = String(id || '');
 
     if (!id) return;
+
+    adminFinalizedEditConfirmed = false;
 
     const openedAt = performance.now();
     const isViewer =
@@ -3008,8 +3061,10 @@ let d = new Date(v.time);
     let first = true;
     let myKhos = (currentUser.role === 'admin' || currentUser.kho === 'Tất cả') ? null : currentUser.kho.split(',').map(s => mapKhoToKey(s.trim()));
     
-    document.getElementById('btnFinishVoucher').style.display = (currentUser.role === 'phat' || currentUser.role === 'admin') ? "inline-block" : "none";
-    document.getElementById('btnFinishCheck').style.display = (currentUser.role === 'xem') ? "inline-block" : "none";
+    refreshDetailAccessUi(
+      voucherData,
+      detailRefreshing
+    );
     
     for(let k in KHO_CONFIG) {
       if(myKhos && !myKhos.includes(k)) continue; 
@@ -3078,8 +3133,22 @@ let d = new Date(v.time);
                }
                
                let clickAction = "showMsg('Chỉ xem!')";
-               if (currentUser.role === 'phat' || currentUser.role === 'admin') clickAction = `toggleItem(${it.index})`;
-               else if (currentUser.role === 'xem') clickAction = `toggleCheckItem(${it.index})`;
+
+               if (currentUser.role === 'admin') {
+                   clickAction = `toggleItem(${it.index})`;
+               } else if (
+                   currentUser.role === 'phat' &&
+                   voucherData.state !== 'done'
+               ) {
+                   clickAction = `toggleItem(${it.index})`;
+               } else if (
+                   currentUser.role === 'phat' &&
+                   voucherData.state === 'done'
+               ) {
+                   clickAction = `showMsg('Phiếu đã chốt. Chỉ Admin mới được sửa trạng thái phát thuốc.', 'Không đủ quyền', 'warning')`;
+               } else if (currentUser.role === 'xem') {
+                   clickAction = `toggleCheckItem(${it.index})`;
+               }
 
                let tenParts = it.ten.split('//');
                let tenThuocDisplay = tenParts.length > 1 ? `<span class="ten-thuoc-main">${tenParts[0]}</span>//${tenParts.slice(1).join('//')}` : `<span class="ten-thuoc-main">${it.ten}</span>`;
@@ -3133,27 +3202,93 @@ let d = new Date(v.time);
     }
   }
 
-  function applyServerItemUpdate(idx, item, version, state) {
-    const voucher = cloudWaitList[activeVoucherId];
-    if (!voucher || !voucher.items || !voucher.items[idx]) return;
-    voucher.items[idx] = { ...voucher.items[idx], ...item };
-    if (state) voucher.state = state;
-    voucher.version = Number(version || voucher.version || 0);
+  function applyServerItemUpdate(
+    idx,
+    item,
+    version,
+    state,
+    finishTime
+  ) {
+    const voucher =
+      cloudWaitList[activeVoucherId];
+
+    if (
+      !voucher ||
+      !voucher.items ||
+      !voucher.items[idx]
+    ) {
+      return;
+    }
+
+    voucher.items[idx] = {
+      ...voucher.items[idx],
+      ...item
+    };
+
+    if (state) {
+      voucher.state = state;
+    }
+
+    if (finishTime !== undefined) {
+      voucher.finishTime = finishTime || '';
+    }
+
+    voucher.version = Number(
+      version || voucher.version || 0
+    );
+
     currentVoucherVersion = voucher.version;
-    renderServerItemState(idx, voucher.items[idx]);
+
+    renderServerItemState(
+      idx,
+      voucher.items[idx]
+    );
+
+    refreshDetailAccessUi(
+      voucher,
+      false
+    );
+
     saveVoucherDetailCache(voucher);
   }
 
-  function toggleItem(idx) {
-    const trElem = document.getElementById('tr_' + idx);
+  async function toggleItem(idx) {
+    const trElem =
+      document.getElementById('tr_' + idx);
+
     if (
       !trElem ||
       trElem.classList.contains('status-updating') ||
       mutationInFlight ||
       detailRefreshing
-    ) return;
+    ) {
+      return;
+    }
 
-    const it = cloudWaitList[activeVoucherId].items[idx];
+    const voucher =
+      cloudWaitList[activeVoucherId];
+
+    const it = voucher.items[idx];
+
+    if (
+      currentUser.role === 'admin' &&
+      voucher.state === 'done' &&
+      !adminFinalizedEditConfirmed
+    ) {
+      const confirmed = await showConfirm(
+        'Phiếu này đã được chốt.\n\nKhi sửa, hệ thống sẽ chuyển phiếu về trạng thái Đang phát và xóa thời điểm chốt cũ. Sau khi sửa xong, Admin cần chốt lại phiếu.\n\nBạn có tiếp tục không?',
+        'Sửa phiếu đã chốt',
+        {
+          type: 'warning',
+          confirmText: 'Mở lại để sửa',
+          cancelText: 'Hủy'
+        }
+      );
+
+      if (!confirmed) return;
+
+      adminFinalizedEditConfirmed = true;
+    }
 
     if (
       currentUser.role === 'phat' &&
@@ -3197,8 +3332,19 @@ let d = new Date(v.time);
           res.index,
           res.item,
           res.version,
-          res.state
+          res.state,
+          res.finishTime
         );
+
+        if (res.reopened) {
+          adminFinalizedEditConfirmed = true;
+
+          showMsg(
+            'Phiếu đã được mở lại thành trạng thái Đang phát. Sau khi sửa xong, hãy bấm Chốt Phát.',
+            'Đã mở lại phiếu',
+            'success'
+          );
+        }
 
         console.log(
           'Toggle confirmed:',
@@ -3325,7 +3471,13 @@ let d = new Date(v.time);
           return;
         }
         if (delta.item && Number.isInteger(delta.index)) {
-          applyServerItemUpdate(delta.index, delta.item, delta.version, delta.state);
+          applyServerItemUpdate(
+            delta.index,
+            delta.item,
+            delta.version,
+            delta.state,
+            delta.finishTime
+          );
         }
       })
       .withFailureHandler((error) => {
