@@ -1042,6 +1042,7 @@
   let skipNextListReload = false;
   let detailRefreshing = false;
   let adminFinalizedEditConfirmed = false;
+  let activeVoucherFinalizedHint = false;
   const detailPrefetchPromises = new Map();
   let detailPrefetchTimer = null;
 
@@ -1332,6 +1333,7 @@
     mutationInFlight = false;
     detailRefreshing = false;
     adminFinalizedEditConfirmed = false;
+    activeVoucherFinalizedHint = false;
     skipNextListReload = false;
     detailPrefetchPromises.clear();
     if (detailPrefetchTimer) {
@@ -2752,13 +2754,19 @@ let d = new Date(v.time);
         '⏳ Đang đồng bộ dữ liệu mới...';
     } else if (
       currentUser.role === 'admin' &&
-      voucher.state === 'done'
+      (
+        voucher.state === 'done' ||
+        activeVoucherFinalizedHint
+      )
     ) {
       modeText.innerText =
         '🔓 Phiếu đã chốt – Admin được phép sửa';
     } else if (
       currentUser.role === 'phat' &&
-      voucher.state === 'done'
+      (
+        voucher.state === 'done' ||
+        activeVoucherFinalizedHint
+      )
     ) {
       modeText.innerText =
         '🔒 Phiếu đã chốt – Chỉ Admin được sửa';
@@ -2775,7 +2783,8 @@ let d = new Date(v.time);
         currentUser.role === 'phat' ||
         currentUser.role === 'admin'
       ) &&
-      voucher.state !== 'done';
+      voucher.state !== 'done' &&
+      !activeVoucherFinalizedHint;
 
     finishButton.style.display =
       canFinishDistribution
@@ -2829,6 +2838,13 @@ let d = new Date(v.time);
       options.refreshing
     );
 
+    // Khi dữ liệu không còn ở trạng thái cache đang đồng bộ,
+    // trạng thái trong voucher là trạng thái server hiện tại.
+    if (!detailRefreshing) {
+      activeVoucherFinalizedHint =
+        voucher.state === 'done';
+    }
+
     renderTabs(voucher, !isViewer);
 
     saveVoucherDetailCache(voucher);
@@ -2848,6 +2864,9 @@ let d = new Date(v.time);
       cloudWaitList[activeVoucherId];
 
     if (voucher) {
+      activeVoucherFinalizedHint =
+        voucher.state === 'done';
+
       refreshDetailAccessUi(voucher, false);
     }
   }
@@ -2978,6 +2997,8 @@ let d = new Date(v.time);
     if (!id) return;
 
     adminFinalizedEditConfirmed = false;
+    activeVoucherFinalizedHint =
+      String(state || '') === 'done';
 
     const openedAt = performance.now();
     const isViewer =
@@ -3138,12 +3159,16 @@ let d = new Date(v.time);
                    clickAction = `toggleItem(${it.index})`;
                } else if (
                    currentUser.role === 'phat' &&
-                   voucherData.state !== 'done'
+                   voucherData.state !== 'done' &&
+                   !activeVoucherFinalizedHint
                ) {
                    clickAction = `toggleItem(${it.index})`;
                } else if (
                    currentUser.role === 'phat' &&
-                   voucherData.state === 'done'
+                   (
+                     voucherData.state === 'done' ||
+                     activeVoucherFinalizedHint
+                   )
                ) {
                    clickAction = `showMsg('Phiếu đã chốt. Chỉ Admin mới được sửa trạng thái phát thuốc.', 'Không đủ quyền', 'warning')`;
                } else if (currentUser.role === 'xem') {
@@ -3227,6 +3252,8 @@ let d = new Date(v.time);
 
     if (state) {
       voucher.state = state;
+      activeVoucherFinalizedHint =
+        state === 'done';
     }
 
     if (finishTime !== undefined) {
@@ -3252,27 +3279,74 @@ let d = new Date(v.time);
     saveVoucherDetailCache(voucher);
   }
 
+  function waitForDetailFresh(timeoutMs = 5000) {
+    if (!detailRefreshing) {
+      return Promise.resolve(true);
+    }
+
+    return new Promise(resolve => {
+      const startedAt = Date.now();
+
+      const timer = setInterval(() => {
+        if (!detailRefreshing) {
+          clearInterval(timer);
+          resolve(true);
+          return;
+        }
+
+        if (Date.now() - startedAt >= timeoutMs) {
+          clearInterval(timer);
+          resolve(false);
+        }
+      }, 50);
+    });
+  }
+
+  function isAdminEditingFinalizedVoucher(voucher) {
+    return Boolean(
+      currentUser &&
+      currentUser.role === 'admin' &&
+      voucher &&
+      (
+        voucher.state === 'done' ||
+        activeVoucherFinalizedHint
+      )
+    );
+  }
+
   async function toggleItem(idx) {
-    const trElem =
+    let trElem =
       document.getElementById('tr_' + idx);
 
     if (
       !trElem ||
       trElem.classList.contains('status-updating') ||
-      mutationInFlight ||
-      detailRefreshing
+      mutationInFlight
     ) {
       return;
     }
 
-    const voucher =
+    let voucher =
       cloudWaitList[activeVoucherId];
 
-    const it = voucher.items[idx];
-
     if (
-      currentUser.role === 'admin' &&
-      voucher.state === 'done' &&
+      !voucher ||
+      !voucher.items ||
+      !voucher.items[idx]
+    ) {
+      return showMsg(
+        'Không lấy được dữ liệu khoản thuốc. Vui lòng mở lại phiếu.',
+        'Dữ liệu chưa sẵn sàng',
+        'warning'
+      );
+    }
+
+    /*
+     * Hộp xác nhận phải xuất hiện ngay ở lần chạm đầu tiên,
+     * kể cả khi dữ liệu chi tiết vẫn đang đồng bộ nền.
+     */
+    if (
+      isAdminEditingFinalizedVoucher(voucher) &&
       !adminFinalizedEditConfirmed
     ) {
       const confirmed = await showConfirm(
@@ -3289,6 +3363,61 @@ let d = new Date(v.time);
 
       adminFinalizedEditConfirmed = true;
     }
+
+    /*
+     * Không bỏ qua thao tác khi cache đang kiểm tra phiên bản.
+     * Sau khi người dùng xác nhận, chờ dữ liệu mới tối đa 5 giây.
+     */
+    if (detailRefreshing) {
+      const statusCell =
+        document.getElementById('st_' + idx);
+
+      const previousStatusHtml =
+        statusCell ? statusCell.innerHTML : '';
+
+      if (statusCell) {
+        statusCell.innerHTML =
+          '<span class="phat-badge">⏳ Đang đồng bộ...</span>';
+      }
+
+      const ready = await waitForDetailFresh(5000);
+
+      if (statusCell) {
+        statusCell.innerHTML = previousStatusHtml;
+      }
+
+      if (!ready) {
+        adminFinalizedEditConfirmed = false;
+
+        return showMsg(
+          'Dữ liệu phiếu chưa đồng bộ xong. Vui lòng bấm lại sau ít giây.',
+          'Đang đồng bộ',
+          'warning'
+        );
+      }
+    }
+
+    /*
+     * Lấy lại dữ liệu sau khi đồng bộ vì item/status có thể đã thay đổi.
+     */
+    trElem =
+      document.getElementById('tr_' + idx);
+
+    voucher =
+      cloudWaitList[activeVoucherId];
+
+    if (
+      !trElem ||
+      !voucher ||
+      !voucher.items ||
+      !voucher.items[idx] ||
+      trElem.classList.contains('status-updating') ||
+      mutationInFlight
+    ) {
+      return;
+    }
+
+    const it = voucher.items[idx];
 
     if (
       currentUser.role === 'phat' &&
@@ -3319,12 +3448,24 @@ let d = new Date(v.time);
 
         if (!res || res.success === false) {
           renderServerItemState(idx, it);
+
+          /*
+           * Nếu server không sửa thành công, lần sau phải hỏi lại.
+           */
+          if (
+            voucher.state === 'done' ||
+            activeVoucherFinalizedHint
+          ) {
+            adminFinalizedEditConfirmed = false;
+          }
+
           showMsg(
             (res && res.msg) ||
               'Không thể cập nhật trạng thái.',
             'Không thể cập nhật',
             'warning'
           );
+
           return;
         }
 
@@ -3338,6 +3479,7 @@ let d = new Date(v.time);
 
         if (res.reopened) {
           adminFinalizedEditConfirmed = true;
+          activeVoucherFinalizedHint = false;
 
           showMsg(
             'Phiếu đã được mở lại thành trạng thái Đang phát. Sau khi sửa xong, hãy bấm Chốt Phát.',
@@ -3359,6 +3501,14 @@ let d = new Date(v.time);
       .withFailureHandler((error) => {
         mutationInFlight = false;
         renderServerItemState(idx, it);
+
+        if (
+          voucher.state === 'done' ||
+          activeVoucherFinalizedHint
+        ) {
+          adminFinalizedEditConfirmed = false;
+        }
+
         showMsg(
           error.message || String(error),
           'Lỗi cập nhật',
