@@ -1040,6 +1040,9 @@
   let mutationInFlight = false;
   let detailSyncIntervalMs = 700;
   let skipNextListReload = false;
+  let detailRefreshing = false;
+  const detailPrefetchPromises = new Map();
+  let detailPrefetchTimer = null;
 
   let isFolderAutoLoad = false;
 
@@ -1326,7 +1329,13 @@
     currentVoucherVersion = 0;
     syncInFlight = false;
     mutationInFlight = false;
+    detailRefreshing = false;
     skipNextListReload = false;
+    detailPrefetchPromises.clear();
+    if (detailPrefetchTimer) {
+      clearTimeout(detailPrefetchTimer);
+      detailPrefetchTimer = null;
+    }
     sessionStorage.removeItem('logged_user');
     sessionStorage.removeItem('session_token');
     currentUser = null;
@@ -1861,6 +1870,253 @@
     return output;
   }
 
+  function detailCacheUsername() {
+    return (
+      currentUser &&
+      currentUser.username
+        ? currentUser.username
+        : 'guest'
+    );
+  }
+
+  function detailCacheKey(id) {
+    return (
+      'voucher_detail_v10_' +
+      detailCacheUsername() +
+      '_' +
+      String(id || '')
+    );
+  }
+
+  function detailCacheIndexKey() {
+    return (
+      'voucher_detail_index_v10_' +
+      detailCacheUsername()
+    );
+  }
+
+  function readVoucherDetailCache(id) {
+    try {
+      const raw = sessionStorage.getItem(
+        detailCacheKey(id)
+      );
+
+      if (!raw) return null;
+
+      const voucher = JSON.parse(raw);
+
+      if (
+        !voucher ||
+        String(voucher.id || '') !== String(id) ||
+        !Array.isArray(voucher.items)
+      ) {
+        return null;
+      }
+
+      return voucher;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  function saveVoucherDetailCache(voucher) {
+    if (
+      !voucher ||
+      !voucher.id ||
+      !Array.isArray(voucher.items)
+    ) {
+      return;
+    }
+
+    const id = String(voucher.id);
+    const key = detailCacheKey(id);
+
+    try {
+      let index = [];
+
+      try {
+        index = JSON.parse(
+          sessionStorage.getItem(
+            detailCacheIndexKey()
+          ) || '[]'
+        );
+      } catch (error) {
+        index = [];
+      }
+
+      index = index
+        .map(String)
+        .filter(itemId => itemId !== id);
+
+      index.unshift(id);
+
+      // Chỉ giữ tối đa 3 phiếu gần nhất để tránh đầy sessionStorage.
+      while (index.length > 3) {
+        const removedId = index.pop();
+
+        sessionStorage.removeItem(
+          detailCacheKey(removedId)
+        );
+      }
+
+      sessionStorage.setItem(
+        key,
+        JSON.stringify(voucher)
+      );
+
+      sessionStorage.setItem(
+        detailCacheIndexKey(),
+        JSON.stringify(index)
+      );
+    } catch (error) {
+      // Nếu dung lượng trình duyệt không đủ, xóa cache cũ rồi thử lại một lần.
+      try {
+        const index = JSON.parse(
+          sessionStorage.getItem(
+            detailCacheIndexKey()
+          ) || '[]'
+        );
+
+        index.slice(1).forEach(oldId => {
+          sessionStorage.removeItem(
+            detailCacheKey(oldId)
+          );
+        });
+
+        sessionStorage.setItem(
+          detailCacheIndexKey(),
+          JSON.stringify([id])
+        );
+
+        sessionStorage.setItem(
+          key,
+          JSON.stringify(voucher)
+        );
+      } catch (ignored) {
+        // Không ảnh hưởng chức năng chính.
+      }
+    }
+  }
+
+  function removeVoucherDetailCache(id) {
+    try {
+      sessionStorage.removeItem(
+        detailCacheKey(id)
+      );
+
+      let index = JSON.parse(
+        sessionStorage.getItem(
+          detailCacheIndexKey()
+        ) || '[]'
+      );
+
+      index = index
+        .map(String)
+        .filter(itemId => itemId !== String(id));
+
+      sessionStorage.setItem(
+        detailCacheIndexKey(),
+        JSON.stringify(index)
+      );
+    } catch (error) {
+      // Không ảnh hưởng chức năng chính.
+    }
+  }
+
+  function unpackSingleVoucherResponse(response) {
+    if (
+      response &&
+      response.success !== false &&
+      response.voucher
+    ) {
+      console.log('Voucher detail loaded:', {
+        cacheHit: Boolean(response.cacheHit),
+        serverMs: Number(response.serverMs || 0),
+        version: Number(response.version || 0),
+        itemCount: Array.isArray(
+          response.voucher.items
+        )
+          ? response.voucher.items.length
+          : 0
+      });
+
+      return response.voucher;
+    }
+
+    return null;
+  }
+
+  function prefetchVoucherDetail(id) {
+    id = String(id || '');
+    if (!id || !currentUser) {
+      return Promise.resolve(null);
+    }
+
+    const localCached =
+      readVoucherDetailCache(id);
+
+    if (localCached) {
+      return Promise.resolve(localCached);
+    }
+
+    if (detailPrefetchPromises.has(id)) {
+      return detailPrefetchPromises.get(id);
+    }
+
+    const promise = gasCall(
+      'getSingleVoucherServer',
+      [id]
+    )
+      .then(response => {
+        const voucher =
+          unpackSingleVoucherResponse(response);
+
+        if (voucher) {
+          saveVoucherDetailCache(voucher);
+        }
+
+        return voucher;
+      })
+      .catch(error => {
+        console.warn(
+          'Không prefetch được phiếu ' + id + ':',
+          error.message || String(error)
+        );
+
+        return null;
+      })
+      .finally(() => {
+        detailPrefetchPromises.delete(id);
+      });
+
+    detailPrefetchPromises.set(id, promise);
+    return promise;
+  }
+
+  function scheduleVoucherDetailPrefetch() {
+    if (detailPrefetchTimer) {
+      clearTimeout(detailPrefetchTimer);
+    }
+
+    detailPrefetchTimer = setTimeout(() => {
+      detailPrefetchTimer = null;
+
+      const cards = Array.from(
+        document.querySelectorAll(
+          '.tracking-card[data-voucher-id]'
+        )
+      ).slice(0, 2);
+
+      cards.forEach((card, index) => {
+        setTimeout(() => {
+          prefetchVoucherDetail(
+            card.dataset.voucherId
+          );
+        }, index * 250);
+      });
+    }, 300);
+  }
+
   function buildCardHTML(id, v) {
     let bClass = v.state==='done' ? 'status-done' : (v.state==='progress' ? 'status-progress' : 'status-waiting');
     let bText = v.state==='done' ? 'Đã phát' : (v.state==='progress' ? 'Đang phát' : 'Chưa phát');
@@ -1976,7 +2232,12 @@ let d = new Date(v.time);
     }
 
     return `
-      <div class="tracking-card" onclick="openDetail('${id}', '${v.state}')">
+      <div
+        class="tracking-card"
+        data-voucher-id="${id}"
+        onmouseenter="prefetchVoucherDetail('${id}')"
+        onpointerdown="prefetchVoucherDetail('${id}')"
+        onclick="openDetail('${id}', '${v.state}')">
         <div class="tracking-card-title-row">
           ${currentUser.role === 'admin' ? `<input type="checkbox" class="bulk-voucher-chk" value="${id}" onclick="event.stopPropagation()">` : ''}
           <div class="tracking-card-title-text">${v.khoa}</div>
@@ -2318,6 +2579,7 @@ let d = new Date(v.time);
       c.innerHTML += `<div class="group-title ${g.cls}">${g.title} (${g.items.length})</div>`;
       g.items.forEach(v => { c.innerHTML += buildCardHTML(v.id, v); });
     });
+    scheduleVoucherDetailPrefetch();
   }
 
   async function deleteVoucher(id) {
@@ -2326,7 +2588,14 @@ let d = new Date(v.time);
       return showMsg("Tài khoản phát thuốc chỉ được xóa phiếu Chưa phát hoặc Đang phát.", "Không đủ quyền", "warning");
     }
     const ok = await showConfirm("Bạn có chắc chắn muốn xóa phiếu này không?", "Xóa phiếu", { type: 'danger', confirmText: 'Xóa', confirmClass: 'btn-danger' });
-    if(ok) google.script.run.withSuccessHandler(() => loadWaitList()).deleteVoucherServer(id);
+    if(ok) {
+      google.script.run
+        .withSuccessHandler(() => {
+          removeVoucherDetailCache(id);
+          loadWaitList();
+        })
+        .deleteVoucherServer(id);
+    }
   }
 
 
@@ -2461,26 +2730,282 @@ let d = new Date(v.time);
     }
   }
 
+  function startDetailSync(id, isViewer) {
+    if (syncInterval) {
+      clearInterval(syncInterval);
+    }
+
+    syncInterval = setInterval(
+      () => syncDetail(id, isViewer),
+      detailSyncIntervalMs
+    );
+  }
+
+  function displayVoucherDetail(
+    voucher,
+    isViewer,
+    options = {}
+  ) {
+    const renderStartedAt = performance.now();
+
+    cloudWaitList[voucher.id] = voucher;
+    activeVoucherId = voucher.id;
+
+    switchView('detail');
+
+    document
+      .getElementById('detailKhoa')
+      .innerText = 'Khoa: ' + voucher.khoa;
+
+    document
+      .getElementById('detailModeText')
+      .innerText = isViewer
+        ? (
+            options.refreshing
+              ? '⏳ Đang đồng bộ dữ liệu mới...'
+              : '👀 Chỉ Xem / Đối Chiếu'
+          )
+        : (
+            options.refreshing
+              ? '⏳ Đang đồng bộ dữ liệu mới...'
+              : '💊 Dược sĩ: ' + currentUser.fullName
+          );
+
+    currentVoucherVersion = Number(
+      voucher.version || 0
+    );
+
+    syncInFlight = false;
+    detailRefreshing = Boolean(
+      options.refreshing
+    );
+
+    renderTabs(voucher, !isViewer);
+
+    saveVoucherDetailCache(voucher);
+
+    console.log(
+      'Voucher renderMs:',
+      Math.round(
+        performance.now() - renderStartedAt
+      )
+    );
+  }
+
+  function markDetailFresh(isViewer) {
+    detailRefreshing = false;
+
+    document
+      .getElementById('detailModeText')
+      .innerText = isViewer
+        ? '👀 Chỉ Xem / Đối Chiếu'
+        : '💊 Dược sĩ: ' + currentUser.fullName;
+  }
+
+  function refreshCachedVoucherDetail(
+    id,
+    cachedVoucher,
+    isViewer,
+    openedAt
+  ) {
+    gasCall(
+      'getVoucherDeltaServer',
+      [
+        id,
+        Number(cachedVoucher.version || 0)
+      ]
+    )
+      .then(delta => {
+        if (
+          id !== activeVoucherId
+        ) {
+          return;
+        }
+
+        if (!delta) {
+          markDetailFresh(isViewer);
+          startDetailSync(id, isViewer);
+          return;
+        }
+
+        if (delta.deleted) {
+          removeVoucherDetailCache(id);
+
+          showMsg(
+            'Phiếu đã bị xóa hoặc hết thời gian lưu.',
+            'Phiếu không còn tồn tại',
+            'warning'
+          );
+
+          switchView('list');
+          return;
+        }
+
+        if (!delta.changed) {
+          currentVoucherVersion = Number(
+            delta.version ||
+            currentVoucherVersion
+          );
+
+          const current =
+            cloudWaitList[id];
+
+          if (current) {
+            current.version =
+              currentVoucherVersion;
+
+            saveVoucherDetailCache(current);
+          }
+
+          markDetailFresh(isViewer);
+          startDetailSync(id, isViewer);
+
+          console.log('Open voucher timing:', {
+            source: 'browser-cache',
+            totalMs: Math.round(
+              performance.now() - openedAt
+            ),
+            changed: false
+          });
+
+          return;
+        }
+
+        if (delta.full && delta.voucher) {
+          displayVoucherDetail(
+            delta.voucher,
+            isViewer,
+            { refreshing: false }
+          );
+        } else if (
+          delta.item &&
+          Number.isInteger(delta.index)
+        ) {
+          applyServerItemUpdate(
+            delta.index,
+            delta.item,
+            delta.version,
+            delta.state
+          );
+
+          markDetailFresh(isViewer);
+        }
+
+        const current =
+          cloudWaitList[id];
+
+        if (current) {
+          saveVoucherDetailCache(current);
+        }
+
+        startDetailSync(id, isViewer);
+
+        console.log('Open voucher timing:', {
+          source: 'browser-cache',
+          totalMs: Math.round(
+            performance.now() - openedAt
+          ),
+          changed: true
+        });
+      })
+      .catch(error => {
+        if (id !== activeVoucherId) return;
+
+        markDetailFresh(isViewer);
+        startDetailSync(id, isViewer);
+
+        console.error(
+          'Lỗi kiểm tra phiên bản phiếu:',
+          error
+        );
+      });
+  }
+
   function openDetail(id, state) {
-    activeVoucherId = id; showLoading(true, "Đang tải...");
-    google.script.run.withSuccessHandler(v => {
-      showLoading(false); cloudWaitList[id] = v;
-      switchView('detail'); document.getElementById('detailKhoa').innerText = "Khoa: " + v.khoa;
-      let isViewer = (currentUser.role === 'xem'); 
-      document.getElementById('detailModeText').innerText = isViewer ? "👀 Chỉ Xem / Đối Chiếu" : "💊 Dược sĩ: " + currentUser.fullName;
-      currentVoucherVersion = Number(v.version || 0);
-      syncInFlight = false;
-      renderTabs(v, !isViewer);
-      syncInterval = setInterval(
-        () => syncDetail(id, isViewer),
-        detailSyncIntervalMs
+    id = String(id || '');
+
+    if (!id) return;
+
+    const openedAt = performance.now();
+    const isViewer =
+      currentUser.role === 'xem';
+
+    activeVoucherId = id;
+
+    const cachedVoucher =
+      readVoucherDetailCache(id);
+
+    if (cachedVoucher) {
+      showLoading(false);
+
+      displayVoucherDetail(
+        cachedVoucher,
+        isViewer,
+        { refreshing: true }
       );
-    }).getSingleVoucherServer(id);
+
+      refreshCachedVoucherDetail(
+        id,
+        cachedVoucher,
+        isViewer,
+        openedAt
+      );
+
+      return;
+    }
+
+    showLoading(true, 'Đang mở phiếu...');
+
+    prefetchVoucherDetail(id)
+      .then(voucher => {
+        if (id !== activeVoucherId) {
+          return;
+        }
+
+        showLoading(false);
+
+        if (!voucher) {
+          throw new Error(
+            'Phiếu không còn tồn tại hoặc không tải được.'
+          );
+        }
+
+        displayVoucherDetail(
+          voucher,
+          isViewer,
+          { refreshing: false }
+        );
+
+        startDetailSync(id, isViewer);
+
+        console.log('Open voucher timing:', {
+          source: 'server-or-prefetch',
+          totalMs: Math.round(
+            performance.now() - openedAt
+          )
+        });
+      })
+      .catch(error => {
+        if (id !== activeVoucherId) {
+          return;
+        }
+
+        showLoading(false);
+
+        showMsg(
+          error.message || String(error),
+          'Không mở được phiếu',
+          'danger'
+        );
+      });
   }
 
   function renderTabs(voucherData, isEditable) {
-    const h = document.getElementById('distTabsHeader'); const b = document.getElementById('distTabsBody');
-    h.innerHTML = ""; b.innerHTML = ""; let first = true;
+    const h = document.getElementById('distTabsHeader');
+    const b = document.getElementById('distTabsBody');
+    const headerParts = [];
+    const bodyParts = [];
+    let first = true;
     let myKhos = (currentUser.role === 'admin' || currentUser.kho === 'Tất cả') ? null : currentUser.kho.split(',').map(s => mapKhoToKey(s.trim()));
     
     document.getElementById('btnFinishVoucher').style.display = (currentUser.role === 'phat' || currentUser.role === 'admin') ? "inline-block" : "none";
@@ -2493,7 +3018,9 @@ let d = new Date(v.time);
       
       itemsInKho.sort((a, b) => a.ten.localeCompare(b.ten, 'vi'));
       
-      h.innerHTML += `<button class="tab-btn ${first?'active':''}" onclick="switchTab(event,'${k}')">${KHO_CONFIG[k]}</button>`;
+      headerParts.push(
+        `<button class="tab-btn ${first?'active':''}" onclick="switchTab(event,'${k}')">${KHO_CONFIG[k]}</button>`
+      );
       let categories = [
           { title: "THUỐC GÂY NGHIỆN", items: itemsInKho.filter(it => it.loaiThuoc.toLowerCase().includes("gây nghiện")), color: "#dc3545" },
           { title: "THUỐC HƯỚNG THẦN", items: itemsInKho.filter(it => it.loaiThuoc.toLowerCase().includes("hướng thần")), color: "#fd7e14" },
@@ -2566,9 +3093,15 @@ let d = new Date(v.time);
                <td class="col-ghichu"></td>
                <td class="text-center" id="st_${it.index}">${badgeHtml}</td></tr>`}).join("") + `</tbody></table></div>`;
       });
-      b.innerHTML += `<div id="content-${k}" class="tab-content ${first?'active':''}">${contentHtml}</div>`;
+      bodyParts.push(
+        `<div id="content-${k}" class="tab-content ${first?'active':''}">${contentHtml}</div>`
+      );
+
       first = false;
     }
+
+    h.innerHTML = headerParts.join('');
+    b.innerHTML = bodyParts.join('');
   }
 
   function switchTab(e, k) {
@@ -2608,6 +3141,7 @@ let d = new Date(v.time);
     voucher.version = Number(version || voucher.version || 0);
     currentVoucherVersion = voucher.version;
     renderServerItemState(idx, voucher.items[idx]);
+    saveVoucherDetailCache(voucher);
   }
 
   function toggleItem(idx) {
@@ -2615,7 +3149,8 @@ let d = new Date(v.time);
     if (
       !trElem ||
       trElem.classList.contains('status-updating') ||
-      mutationInFlight
+      mutationInFlight ||
+      detailRefreshing
     ) return;
 
     const it = cloudWaitList[activeVoucherId].items[idx];
@@ -2692,7 +3227,8 @@ let d = new Date(v.time);
     if (
       !trElem ||
       trElem.classList.contains('status-updating') ||
-      mutationInFlight
+      mutationInFlight ||
+      detailRefreshing
     ) return;
 
     const it = cloudWaitList[activeVoucherId].items[idx];
@@ -2765,18 +3301,27 @@ let d = new Date(v.time);
         syncInFlight = false;
         if (!delta) return;
         if (delta.deleted) {
+          removeVoucherDetailCache(id);
           showMsg('Phiếu đã bị xóa hoặc hết thời gian lưu.', 'Phiếu không còn tồn tại', 'warning');
           switchView('list');
           return;
         }
         if (!delta.changed) {
           currentVoucherVersion = Number(delta.version || currentVoucherVersion);
+
+          const current = cloudWaitList[id];
+          if (current) {
+            current.version = currentVoucherVersion;
+            saveVoucherDetailCache(current);
+          }
+
           return;
         }
         if (delta.full && delta.voucher) {
           cloudWaitList[id] = delta.voucher;
           currentVoucherVersion = Number(delta.version || delta.voucher.version || 0);
           renderTabs(delta.voucher, !isViewer);
+          saveVoucherDetailCache(delta.voucher);
           return;
         }
         if (delta.item && Number.isInteger(delta.index)) {
