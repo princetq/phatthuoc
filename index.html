@@ -2,6 +2,10 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
+  <link rel="preconnect" href="https://script.google.com">
+  <link rel="preconnect" href="https://script.googleusercontent.com" crossorigin>
+  <link rel="dns-prefetch" href="//script.google.com">
+  <link rel="dns-prefetch" href="//script.googleusercontent.com">
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
   <title>Hệ Thống Quản Lý Phát Thuốc</title>
   <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
@@ -825,6 +829,7 @@
 
 <iframe id="gasBridgeFrame"
   src="https://script.google.com/macros/s/AKfycbyg8_8XETjSQkVdSsYfjEN_iYuP1y_B9CoVO06QI18od7qLVKHC2MMnoqDU3jvkPCFudQ/exec"
+  loading="eager"
   title="Apps Script Bridge"
   aria-hidden="true"
   tabindex="-1"
@@ -838,6 +843,34 @@
   let gasBridgeOrigin = '';
   let gasRequestCounter = 0;
   const gasPendingRequests = new Map();
+  let backendWarmPromise = null;
+
+  function prewarmBackend() {
+    if (backendWarmPromise) {
+      return backendWarmPromise;
+    }
+
+    backendWarmPromise = gasCall(
+      'warmupServer',
+      []
+    )
+      .then(result => {
+        console.log('Backend warmed:', result);
+        return result;
+      })
+      .catch(error => {
+        console.warn(
+          'Không prewarm được backend:',
+          error.message || String(error)
+        );
+
+        // Cho phép thử lại khi người dùng focus ô đăng nhập.
+        backendWarmPromise = null;
+        return null;
+      });
+
+    return backendWarmPromise;
+  }
 
   function getGasBridgeFrame() {
     return document.getElementById('gasBridgeFrame');
@@ -887,6 +920,9 @@
       gasBridgeWindow = event.source;
       gasBridgeOrigin = event.origin;
       gasBridgeReady = true;
+
+      // Đánh thức Apps Script và nạp cache trước khi người dùng bấm đăng nhập.
+      setTimeout(prewarmBackend, 0);
       return;
     }
 
@@ -1003,6 +1039,7 @@
   let syncInFlight = false;
   let mutationInFlight = false;
   let detailSyncIntervalMs = 700;
+  let skipNextListReload = false;
 
   let isFolderAutoLoad = false;
 
@@ -1092,18 +1129,73 @@
 
   window.onload = function() {
     const frame = getGasBridgeFrame();
-    if (frame && frame.src !== GAS_BRIDGE_URL) frame.src = GAS_BRIDGE_URL;
-    let saved = sessionStorage.getItem('logged_user');
-    let token = sessionStorage.getItem('session_token');
+
+    if (frame && frame.src !== GAS_BRIDGE_URL) {
+      frame.src = GAS_BRIDGE_URL;
+    }
+
+    const usernameInput =
+      document.getElementById('loginUsername');
+
+    const passwordInput =
+      document.getElementById('loginPassword');
+
+    if (usernameInput) {
+      usernameInput.addEventListener(
+        'focus',
+        prewarmBackend,
+        { once: true }
+      );
+    }
+
+    if (passwordInput) {
+      passwordInput.addEventListener(
+        'focus',
+        prewarmBackend,
+        { once: true }
+      );
+
+      passwordInput.addEventListener(
+        'keydown',
+        event => {
+          if (event.key === 'Enter') {
+            handleLogin();
+          }
+        }
+      );
+    }
+
+    let saved =
+      sessionStorage.getItem('logged_user');
+
+    let token =
+      sessionStorage.getItem('session_token');
+
     detailSyncIntervalMs = Math.max(
       500,
       Number(
-        sessionStorage.getItem('detail_sync_interval_ms') || 700
+        sessionStorage.getItem(
+          'detail_sync_interval_ms'
+        ) || 700
       )
     );
+
     if (saved && token) {
-      try { currentUser = JSON.parse(saved); initUI(); }
-      catch (e) { sessionStorage.clear(); }
+      try {
+        currentUser = JSON.parse(saved);
+
+        const localCards =
+          readVoucherCardsLocalCache();
+
+        if (localCards) {
+          cloudWaitList = localCards;
+          skipNextListReload = true;
+        }
+
+        initUI();
+      } catch (e) {
+        sessionStorage.clear();
+      }
     }
   }
 
@@ -1123,34 +1215,109 @@
   });
 
   function handleLogin() {
-    let u = document.getElementById('loginUsername').value.trim();
-    let p = document.getElementById('loginPassword').value.trim();
-    if(!u || !p) return document.getElementById('loginError').innerText = "Nhập đủ thông tin!";
-    showLoading(true, "Đang đăng nhập...");
-    google.script.run.withSuccessHandler(res => {
-      showLoading(false);
-      if(res.success) {
+    const u =
+      document
+        .getElementById('loginUsername')
+        .value
+        .trim();
+
+    const p =
+      document
+        .getElementById('loginPassword')
+        .value;
+
+    const errorEl =
+      document.getElementById('loginError');
+
+    if (!u || !p) {
+      errorEl.innerText = 'Nhập đủ thông tin!';
+      errorEl.style.display = 'block';
+      return;
+    }
+
+    errorEl.style.display = 'none';
+    showLoading(true, 'Đang đăng nhập...');
+
+    const startedAt = performance.now();
+
+    google.script.run
+      .withSuccessHandler(res => {
+        showLoading(false);
+
+        console.log('Login timing:', {
+          totalMs: Math.round(
+            performance.now() - startedAt
+          ),
+          serverMs: Number(
+            res && res.serverMs || 0
+          ),
+          voucherServerMs: Number(
+            res && res.voucherServerMs || 0
+          ),
+          voucherCacheHit: Boolean(
+            res && res.voucherCacheHit
+          )
+        });
+
+        if (!res || !res.success) {
+          errorEl.innerText =
+            res && res.msg
+              ? res.msg
+              : 'Không đăng nhập được.';
+
+          errorEl.style.display = 'block';
+          return;
+        }
+
         currentUser = res.user;
+
         detailSyncIntervalMs = Math.max(
           500,
           Number(res.syncIntervalMs || 700)
         );
+
         sessionStorage.setItem(
           'detail_sync_interval_ms',
           String(detailSyncIntervalMs)
         );
+
         sessionStorage.setItem(
           'logged_user',
           JSON.stringify(currentUser)
         );
+
         sessionStorage.setItem(
           'session_token',
           res.token || ''
         );
+
+        if (
+          res.vouchers &&
+          typeof res.vouchers === 'object'
+        ) {
+          cloudWaitList = res.vouchers;
+          saveVoucherCardsLocalCache(
+            cloudWaitList
+          );
+          skipNextListReload = true;
+        }
+
+        // Không giữ mật khẩu trên giao diện.
+        document
+          .getElementById('loginPassword')
+          .value = '';
+
         initUI();
-      }
-      else { document.getElementById('loginError').innerText = res.msg; document.getElementById('loginError').style.display = 'block'; }
-    }).loginServer(u, p);
+      })
+      .withFailureHandler(error => {
+        showLoading(false);
+
+        errorEl.innerText =
+          error.message || String(error);
+
+        errorEl.style.display = 'block';
+      })
+      .loginServer(u, p);
   }
 
   function handleLogout() {
@@ -1159,6 +1326,7 @@
     currentVoucherVersion = 0;
     syncInFlight = false;
     mutationInFlight = false;
+    skipNextListReload = false;
     sessionStorage.removeItem('logged_user');
     sessionStorage.removeItem('session_token');
     currentUser = null;
@@ -1226,7 +1394,16 @@
     }
 
     if(viewName === 'admin') loadAdminUsers();
-    if(viewName === 'list') loadWaitList();
+
+    if(viewName === 'list') {
+      if (skipNextListReload) {
+        skipNextListReload = false;
+        renderTrackingList();
+      } else {
+        loadWaitList();
+      }
+    }
+
     if(viewName === 'history') loadHistoryList();
   }
 
