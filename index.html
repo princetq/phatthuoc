@@ -456,7 +456,27 @@
     tr.status-updating { background-color: #fff9c4 !important; transition: 0.2s; pointer-events: none; }
     tr.status-updating td { color: #856404 !important; border-color: #ffeeba !important; }
 
-    .phat-badge { background: #fff; color: #333; padding: 4px 8px; border-radius: 12px; font-size: 14px; font-weight: bold; }
+    
+    /*
+     * Đối chiếu được tô màu ngay trên máy.
+     * Trong lúc chờ server chỉ khóa đúng dòng đó, không đổi lại màu vàng.
+     */
+    tr.check-saving {
+      pointer-events: none;
+    }
+
+    tr.check-saving td {
+      transition:
+        background-color 0.12s ease,
+        color 0.12s ease;
+    }
+
+    tr.check-saving .phat-badge {
+      box-shadow:
+        0 0 0 2px rgba(0, 123, 255, 0.28);
+    }
+
+.phat-badge { background: #fff; color: #333; padding: 4px 8px; border-radius: 12px; font-size: 14px; font-weight: bold; }
 
     @media print {
       body * { visibility: hidden !important; }
@@ -1107,6 +1127,15 @@
   let detailActionInFlight = false;
   let detailPromptInFlight = false;
   let loadingWatchdogTimer = null;
+
+  /*
+   * Người lĩnh có thể chạm liên tiếp nhiều thuốc.
+   * Màu được cập nhật ngay, còn thao tác server được lưu tuần tự.
+   */
+  const checkActionQueue = [];
+  const pendingCheckKeys = new Set();
+  let checkQueueRunning = false;
+
   const detailPrefetchPromises = new Map();
   let detailPrefetchTimer = null;
 
@@ -1448,6 +1477,9 @@
     openingVoucherId = null;
     detailActionInFlight = false;
     detailPromptInFlight = false;
+    checkActionQueue.length = 0;
+    pendingCheckKeys.clear();
+    checkQueueRunning = false;
     forceHideLoading();
     skipNextListReload = false;
     detailPrefetchPromises.clear();
@@ -3742,71 +3774,355 @@ let d = new Date(v.time);
       .toggleItemServer(activeVoucherId, idx);
   }
 
-  function toggleCheckItem(idx) {
-    const trElem = document.getElementById('tr_' + idx);
+  function checkActionKey(voucherId, idx) {
+    return (
+      String(voucherId || '') +
+      ':' +
+      Number(idx)
+    );
+  }
+
+  function renderOptimisticCheckState(
+    voucherId,
+    idx,
+    intendedChecked
+  ) {
+    if (voucherId !== activeVoucherId) return;
+
+    const voucher =
+      cloudWaitList[voucherId];
+
+    const item =
+      voucher &&
+      voucher.items &&
+      voucher.items[idx];
+
+    if (!item) return;
+
+    const optimisticItem = {
+      ...item,
+      checker: intendedChecked
+        ? currentUser.fullName
+        : ''
+    };
+
+    renderServerItemState(
+      idx,
+      optimisticItem
+    );
+
+    const row =
+      document.getElementById('tr_' + idx);
+
+    if (row) {
+      row.classList.add('check-saving');
+      row.setAttribute('aria-busy', 'true');
+    }
+  }
+
+  function clearCheckSavingState(
+    voucherId,
+    idx
+  ) {
+    if (voucherId !== activeVoucherId) return;
+
+    const row =
+      document.getElementById('tr_' + idx);
+
+    if (row) {
+      row.classList.remove('check-saving');
+      row.removeAttribute('aria-busy');
+    }
+  }
+
+  function restoreCurrentCheckState(
+    voucherId,
+    idx
+  ) {
+    if (voucherId !== activeVoucherId) return;
+
+    const voucher =
+      cloudWaitList[voucherId];
+
+    const item =
+      voucher &&
+      voucher.items &&
+      voucher.items[idx];
+
+    if (item) {
+      renderServerItemState(idx, item);
+    }
+
+    clearCheckSavingState(voucherId, idx);
+  }
+
+  function applyCheckResultOutsideActiveDetail(
+    voucherId,
+    result
+  ) {
+    const voucher =
+      cloudWaitList[voucherId];
+
     if (
-      !trElem ||
-      trElem.classList.contains('status-updating') ||
-      mutationInFlight ||
-      detailRefreshing
-    ) return;
+      !voucher ||
+      !voucher.items ||
+      !voucher.items[result.index]
+    ) {
+      return;
+    }
 
-    const it = cloudWaitList[activeVoucherId].items[idx];
+    voucher.items[result.index] = {
+      ...voucher.items[result.index],
+      ...result.item
+    };
 
-    if (it.status === 'Chưa phát') {
+    if (result.state) {
+      voucher.state = result.state;
+    }
+
+    voucher.version = Number(
+      result.version ||
+      voucher.version ||
+      0
+    );
+
+    saveVoucherDetailCache(voucher);
+  }
+
+  async function processCheckActionQueue() {
+    if (checkQueueRunning) return;
+
+    checkQueueRunning = true;
+    mutationInFlight = true;
+
+    try {
+      while (checkActionQueue.length > 0) {
+        const action =
+          checkActionQueue.shift();
+
+        const key =
+          checkActionKey(
+            action.voucherId,
+            action.idx
+          );
+
+        try {
+          /*
+           * Không bỏ qua lần chạm đầu khi phiếu
+           * đang kiểm tra phiên bản trong nền.
+           */
+          if (
+            action.voucherId === activeVoucherId &&
+            detailRefreshing
+          ) {
+            const ready =
+              await waitForDetailFresh(5000);
+
+            if (!ready) {
+              throw new Error(
+                'Dữ liệu phiếu chưa đồng bộ xong. Vui lòng bấm lại.'
+              );
+            }
+          }
+
+          const voucher =
+            cloudWaitList[action.voucherId];
+
+          const freshItem =
+            voucher &&
+            voucher.items &&
+            voucher.items[action.idx];
+
+          if (!freshItem) {
+            throw new Error(
+              'Không lấy được dữ liệu khoản thuốc.'
+            );
+          }
+
+          if (
+            freshItem.status === 'Chưa phát'
+          ) {
+            throw new Error(
+              'Thuốc chưa được phát, không thể đối chiếu!'
+            );
+          }
+
+          const freshChecked =
+            Boolean(freshItem.checker);
+
+          /*
+           * Dữ liệu mới đã trùng ý định của lần chạm:
+           * không gửi thêm thao tác đảo trạng thái.
+           */
+          if (
+            freshChecked ===
+            action.intendedChecked
+          ) {
+            restoreCurrentCheckState(
+              action.voucherId,
+              action.idx
+            );
+
+            continue;
+          }
+
+          /*
+           * Sau khi đồng bộ xong, giữ màu phản hồi ngay
+           * trong thời gian chờ Apps Script lưu.
+           */
+          renderOptimisticCheckState(
+            action.voucherId,
+            action.idx,
+            action.intendedChecked
+          );
+
+          const clientStartedAt =
+            performance.now();
+
+          const result = await gasCall(
+            'toggleCheckItemServer',
+            [
+              action.voucherId,
+              action.idx
+            ]
+          );
+
+          if (
+            !result ||
+            result.success === false
+          ) {
+            throw new Error(
+              (
+                result &&
+                result.msg
+              ) ||
+              'Không thể đối chiếu.'
+            );
+          }
+
+          if (
+            action.voucherId ===
+            activeVoucherId
+          ) {
+            applyServerItemUpdate(
+              result.index,
+              result.item,
+              result.version,
+              result.state
+            );
+
+            clearCheckSavingState(
+              action.voucherId,
+              action.idx
+            );
+          } else {
+            applyCheckResultOutsideActiveDetail(
+              action.voucherId,
+              result
+            );
+          }
+
+          console.log(
+            'Check confirmed:',
+            {
+              totalMs: Math.round(
+                performance.now() -
+                clientStartedAt
+              ),
+              serverMs: Number(
+                result.serverMs || 0
+              ),
+              queued: true
+            }
+          );
+        } catch (error) {
+          restoreCurrentCheckState(
+            action.voucherId,
+            action.idx
+          );
+
+          await showMsg(
+            error.message || String(error),
+            'Không thể đối chiếu',
+            'warning'
+          );
+        } finally {
+          pendingCheckKeys.delete(key);
+
+          clearCheckSavingState(
+            action.voucherId,
+            action.idx
+          );
+        }
+      }
+    } finally {
+      checkQueueRunning = false;
+      mutationInFlight = false;
+    }
+  }
+
+  function toggleCheckItem(idx) {
+    const voucherId =
+      String(activeVoucherId || '');
+
+    const voucher =
+      cloudWaitList[voucherId];
+
+    const item =
+      voucher &&
+      voucher.items &&
+      voucher.items[idx];
+
+    const row =
+      document.getElementById('tr_' + idx);
+
+    if (!row || !item) {
+      return showMsg(
+        'Dữ liệu khoản thuốc chưa sẵn sàng.',
+        'Chưa thể đối chiếu',
+        'warning'
+      );
+    }
+
+    if (item.status === 'Chưa phát') {
       return showMsg(
         'Thuốc chưa được phát, không thể đối chiếu!'
       );
     }
 
-    mutationInFlight = true;
-    const clientStartedAt = performance.now();
+    const key =
+      checkActionKey(voucherId, idx);
 
-    trElem.classList.add('status-updating');
-    document.getElementById('st_' + idx).innerHTML =
-      '<span class="phat-badge">⏳ Đang lưu...</span>';
+    /*
+     * Không gửi trùng cùng một khoản thuốc.
+     * Dòng đã có màu và viền báo đang lưu.
+     */
+    if (pendingCheckKeys.has(key)) {
+      return;
+    }
 
-    google.script.run
-      .withSuccessHandler((res) => {
-        mutationInFlight = false;
+    const intendedChecked =
+      !Boolean(item.checker);
 
-        if (!res || res.success === false) {
-          renderServerItemState(idx, it);
-          showMsg(
-            (res && res.msg) || 'Không thể đối chiếu.',
-            'Không thể cập nhật',
-            'warning'
-          );
-          return;
-        }
+    pendingCheckKeys.add(key);
 
-        applyServerItemUpdate(
-          res.index,
-          res.item,
-          res.version,
-          res.state
-        );
+    /*
+     * Bôi màu ngay ở lần chạm đầu tiên.
+     * Server vẫn là nguồn dữ liệu quyết định.
+     */
+    renderOptimisticCheckState(
+      voucherId,
+      idx,
+      intendedChecked
+    );
 
-        console.log(
-          'Check confirmed:',
-          {
-            totalMs: Math.round(
-              performance.now() - clientStartedAt
-            ),
-            serverMs: Number(res.serverMs || 0)
-          }
-        );
-      })
-      .withFailureHandler((error) => {
-        mutationInFlight = false;
-        renderServerItemState(idx, it);
-        showMsg(
-          error.message || String(error),
-          'Lỗi đối chiếu',
-          'danger'
-        );
-      })
-      .toggleCheckItemServer(activeVoucherId, idx);
+    checkActionQueue.push({
+      voucherId: voucherId,
+      idx: Number(idx),
+      intendedChecked: intendedChecked
+    });
+
+    processCheckActionQueue();
   }
 
   function syncDetail(id, isViewer) {
