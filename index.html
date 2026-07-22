@@ -217,6 +217,29 @@
     }
     .tracking-card:hover { border-color: var(--green); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
 
+    .tracking-card.opening {
+      pointer-events: none;
+      opacity: 0.78;
+    }
+    .tracking-card.opening::after {
+      content: "⏳ Đang mở phiếu...";
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 10px;
+      background: rgba(255,255,255,0.9);
+      color: var(--green);
+      font-weight: 900;
+      font-size: 18px;
+      z-index: 8;
+    }
+    .detail-action-busy {
+      opacity: 0.65 !important;
+      cursor: wait !important;
+    }
+
     /* Ô chọn, tên khoa và nút Xóa luôn cùng một hàng, căn giữa theo chiều dọc */
     .tracking-card-title-row {
       display: flex;
@@ -740,7 +763,7 @@
       <button class="btn-primary" onclick="window.print()">🖨️ In</button>
       <button id="btnFinishVoucher" class="btn-indigo" style="display:none;" onclick="finishDistribution()">✅ Chốt Phát</button>
       <button id="btnFinishCheck" class="btn-primary" style="display:none; background: #007bff;" onclick="finishCheck()">✅ Chốt Đối Chiếu</button>
-      <button class="btn-warning" onclick="closeDetail()">⬅ Thoát</button>
+      <button id="btnCloseDetail" class="btn-warning" onclick="closeDetail()">⬅ Thoát</button>
     </div>
   </div>
   <div id="distTabsHeader" class="tab-header"></div>
@@ -1043,14 +1066,65 @@
   let detailRefreshing = false;
   let adminFinalizedEditConfirmed = false;
   let activeVoucherFinalizedHint = false;
+  let detailOpenSequence = 0;
+  let openingVoucherId = null;
+  let detailActionInFlight = false;
+  let detailPromptInFlight = false;
+  let loadingWatchdogTimer = null;
   const detailPrefetchPromises = new Map();
   let detailPrefetchTimer = null;
 
   let isFolderAutoLoad = false;
 
-  function showLoading(show, text="Đang xử lý...") { 
-    document.getElementById('loadingSpinner').style.display = show ? 'flex' : 'none'; 
-    document.getElementById('loadingText').innerText = text;
+  function forceHideLoading() {
+    const spinner =
+      document.getElementById('loadingSpinner');
+
+    if (spinner) {
+      spinner.style.display = 'none';
+    }
+
+    if (loadingWatchdogTimer) {
+      clearTimeout(loadingWatchdogTimer);
+      loadingWatchdogTimer = null;
+    }
+  }
+
+  function showLoading(
+    show,
+    text = "Đang xử lý..."
+  ) {
+    const spinner =
+      document.getElementById('loadingSpinner');
+
+    const loadingText =
+      document.getElementById('loadingText');
+
+    if (!spinner || !loadingText) return;
+
+    if (!show) {
+      forceHideLoading();
+      return;
+    }
+
+    loadingText.innerText = text;
+    spinner.style.display = 'flex';
+
+    if (loadingWatchdogTimer) {
+      clearTimeout(loadingWatchdogTimer);
+    }
+
+    /*
+     * Không để lớp phủ toàn màn hình bị kẹt vô hạn
+     * khi một callback mạng không trở về.
+     */
+    loadingWatchdogTimer = setTimeout(() => {
+      forceHideLoading();
+
+      console.warn(
+        'Đã tự đóng lớp tải do vượt quá 20 giây.'
+      );
+    }, 20000);
   }
   let appPopupResolver = null;
 
@@ -1334,6 +1408,11 @@
     detailRefreshing = false;
     adminFinalizedEditConfirmed = false;
     activeVoucherFinalizedHint = false;
+    detailOpenSequence++;
+    openingVoucherId = null;
+    detailActionInFlight = false;
+    detailPromptInFlight = false;
+    forceHideLoading();
     skipNextListReload = false;
     detailPrefetchPromises.clear();
     if (detailPrefetchTimer) {
@@ -1381,6 +1460,13 @@
 
   function switchView(viewName) {
     if(syncInterval) clearInterval(syncInterval);
+
+    if (viewName !== 'detail') {
+      cancelPendingDetailOpen();
+      detailRefreshing = false;
+      syncInFlight = false;
+      forceHideLoading();
+    }
     ['upload', 'list', 'detail', 'admin', 'history'].forEach(v => document.getElementById('view-' + v).style.display = 'none');
     document.getElementById('view-' + viewName).style.display = 'block';
     
@@ -2734,6 +2820,84 @@ let d = new Date(v.time);
     }
   }
 
+  function clearOpeningVoucherCard(id = null) {
+    const targetId =
+      id === null
+        ? openingVoucherId
+        : String(id || '');
+
+    if (targetId) {
+      document
+        .querySelectorAll(
+          `.tracking-card[data-voucher-id="${CSS.escape(targetId)}"]`
+        )
+        .forEach(card => {
+          card.classList.remove('opening');
+        });
+    }
+
+    if (
+      id === null ||
+      String(openingVoucherId || '') === targetId
+    ) {
+      openingVoucherId = null;
+    }
+  }
+
+  function markOpeningVoucherCard(id) {
+    clearOpeningVoucherCard();
+
+    openingVoucherId = String(id || '');
+
+    document
+      .querySelectorAll(
+        `.tracking-card[data-voucher-id="${CSS.escape(openingVoucherId)}"]`
+      )
+      .forEach(card => {
+        card.classList.add('opening');
+      });
+  }
+
+  function setDetailActionsBusy(
+    busy,
+    message = ''
+  ) {
+    detailActionInFlight = Boolean(busy);
+
+    [
+      'btnFinishVoucher',
+      'btnFinishCheck',
+      'btnCloseDetail'
+    ].forEach(id => {
+      const button =
+        document.getElementById(id);
+
+      if (!button) return;
+
+      button.disabled = Boolean(busy);
+      button.classList.toggle(
+        'detail-action-busy',
+        Boolean(busy)
+      );
+    });
+
+    if (message) {
+      const modeText =
+        document.getElementById(
+          'detailModeText'
+        );
+
+      if (modeText) {
+        modeText.innerText = message;
+      }
+    }
+  }
+
+  function cancelPendingDetailOpen() {
+    detailOpenSequence++;
+    clearOpeningVoucherCard();
+  }
+
   function refreshDetailAccessUi(
     voucher,
     refreshing = false
@@ -2813,6 +2977,9 @@ let d = new Date(v.time);
     isViewer,
     options = {}
   ) {
+    forceHideLoading();
+    clearOpeningVoucherCard(voucher && voucher.id);
+
     const renderStartedAt = performance.now();
 
     cloudWaitList[voucher.id] = voucher;
@@ -2991,10 +3158,16 @@ let d = new Date(v.time);
       });
   }
 
-  function openDetail(id, state) {
+  async function openDetail(id, state) {
     id = String(id || '');
 
-    if (!id) return;
+    if (!id || detailActionInFlight) return;
+
+    const requestSequence =
+      ++detailOpenSequence;
+
+    markOpeningVoucherCard(id);
+    forceHideLoading();
 
     adminFinalizedEditConfirmed = false;
     activeVoucherFinalizedHint =
@@ -3009,69 +3182,84 @@ let d = new Date(v.time);
     const cachedVoucher =
       readVoucherDetailCache(id);
 
-    if (cachedVoucher) {
-      showLoading(false);
-
-      displayVoucherDetail(
-        cachedVoucher,
-        isViewer,
-        { refreshing: true }
-      );
-
-      refreshCachedVoucherDetail(
-        id,
-        cachedVoucher,
-        isViewer,
-        openedAt
-      );
-
-      return;
-    }
-
-    showLoading(true, 'Đang mở phiếu...');
-
-    prefetchVoucherDetail(id)
-      .then(voucher => {
-        if (id !== activeVoucherId) {
+    try {
+      if (cachedVoucher) {
+        if (
+          requestSequence !== detailOpenSequence ||
+          id !== activeVoucherId
+        ) {
           return;
-        }
-
-        showLoading(false);
-
-        if (!voucher) {
-          throw new Error(
-            'Phiếu không còn tồn tại hoặc không tải được.'
-          );
         }
 
         displayVoucherDetail(
-          voucher,
+          cachedVoucher,
           isViewer,
-          { refreshing: false }
+          { refreshing: true }
         );
 
-        startDetailSync(id, isViewer);
-
-        console.log('Open voucher timing:', {
-          source: 'server-or-prefetch',
-          totalMs: Math.round(
-            performance.now() - openedAt
-          )
-        });
-      })
-      .catch(error => {
-        if (id !== activeVoucherId) {
-          return;
-        }
-
-        showLoading(false);
-
-        showMsg(
-          error.message || String(error),
-          'Không mở được phiếu',
-          'danger'
+        refreshCachedVoucherDetail(
+          id,
+          cachedVoucher,
+          isViewer,
+          openedAt
         );
+
+        return;
+      }
+
+      const voucher =
+        await prefetchVoucherDetail(id);
+
+      if (
+        requestSequence !== detailOpenSequence ||
+        id !== activeVoucherId
+      ) {
+        return;
+      }
+
+      if (!voucher) {
+        throw new Error(
+          'Phiếu không còn tồn tại hoặc không tải được.'
+        );
+      }
+
+      displayVoucherDetail(
+        voucher,
+        isViewer,
+        { refreshing: false }
+      );
+
+      startDetailSync(id, isViewer);
+
+      console.log('Open voucher timing:', {
+        source: 'server-or-prefetch',
+        totalMs: Math.round(
+          performance.now() - openedAt
+        )
       });
+    } catch (error) {
+      if (
+        requestSequence !== detailOpenSequence ||
+        id !== activeVoucherId
+      ) {
+        return;
+      }
+
+      showMsg(
+        error.message || String(error),
+        'Không mở được phiếu',
+        'danger'
+      );
+    } finally {
+      /*
+       * Chỉ request mới nhất mới được dọn chỉ báo.
+       * Callback cũ không thể để lại overlay hoặc khóa thẻ.
+       */
+      if (requestSequence === detailOpenSequence) {
+        clearOpeningVoucherCard(id);
+        forceHideLoading();
+      }
+    }
   }
 
   function renderTabs(voucherData, isEditable) {
@@ -3589,6 +3777,7 @@ let d = new Date(v.time);
     if (
       syncInFlight ||
       mutationInFlight ||
+      detailActionInFlight ||
       id !== activeVoucherId
     ) return;
     syncInFlight = true;
@@ -3637,96 +3826,407 @@ let d = new Date(v.time);
       .getVoucherDeltaServer(id, currentVoucherVersion);
   }
 
-  function processSplitAndExit(isFinish) {
-      let v = cloudWaitList[activeVoucherId];
-      let khoKeys = [...new Set(v.items.map(it => it.khoKey))];
-      
-      if (khoKeys.length > 1) {
-          showLoading(true, "Đang xử lý tách phiếu đa kho...");
-          let payload = {};
-          khoKeys.forEach(kKey => {
-              let kItems = v.items.filter(it => it.khoKey === kKey);
-              let kVouchers = {};
-              if(v.vouchers && v.vouchers[kKey]) kVouchers[kKey] = v.vouchers[kKey];
-              
-              let isAllDone = kItems.every(it => it.status !== 'Chưa phát');
-              let isAllWaiting = kItems.every(it => it.status === 'Chưa phát');
-              let st = isAllDone ? 'done' : (isAllWaiting ? 'waiting' : 'progress');
-              
-              let newId = "P_" + Date.now() + "_" + Math.floor(Math.random()*10000) + "_" + kKey;
-              let pObj = { khoa: v.khoa, time: v.time, vouchers: kVouchers, items: kItems, state: st };
-              if (st === 'done') pObj.finishTime = new Date().toISOString();
-              payload[newId] = pObj;
-          });
+  async function processSplitAndExit(isFinish) {
+    if (detailActionInFlight) return false;
 
-          google.script.run.withSuccessHandler(() => {
-              google.script.run.withSuccessHandler(() => {
-                  showLoading(false);
-                  if(isFinish) showMsg("Đã CHỐT PHÁT thành công! Phiếu đa kho đã được tách.");
-                  switchView('list');
-              }).pushVouchersServer(JSON.stringify(payload));
-          }).deleteVoucherServer(activeVoucherId);
-      } else {
-          if (isFinish) {
-              showLoading(true, "Đang chốt phiếu...");
-              google.script.run.withSuccessHandler(r => { 
-                  showLoading(false); showMsg("Đã CHỐT PHÁT thành công!"); switchView('list'); 
-              }).finishVoucherServer(activeVoucherId);
-          } else {
-              switchView('list');
+    const voucher =
+      cloudWaitList[activeVoucherId];
+
+    if (
+      !voucher ||
+      !Array.isArray(voucher.items)
+    ) {
+      await showMsg(
+        'Không lấy được dữ liệu phiếu. Vui lòng mở lại phiếu.',
+        'Dữ liệu chưa sẵn sàng',
+        'warning'
+      );
+
+      return false;
+    }
+
+    const sourceVoucherId =
+      activeVoucherId;
+
+    setDetailActionsBusy(
+      true,
+      isFinish
+        ? '⏳ Đang chốt phiếu...'
+        : '⏳ Đang lưu phiếu...'
+    );
+
+    try {
+      const khoKeys = [
+        ...new Set(
+          voucher.items.map(it => it.khoKey)
+        )
+      ];
+
+      if (khoKeys.length > 1) {
+        showLoading(
+          true,
+          "Đang xử lý tách phiếu đa kho..."
+        );
+
+        const payload = {};
+
+        khoKeys.forEach(kKey => {
+          const kItems =
+            voucher.items.filter(
+              it => it.khoKey === kKey
+            );
+
+          const kVouchers = {};
+
+          if (
+            voucher.vouchers &&
+            voucher.vouchers[kKey]
+          ) {
+            kVouchers[kKey] =
+              voucher.vouchers[kKey];
           }
+
+          const isAllDone =
+            kItems.every(
+              it => it.status !== 'Chưa phát'
+            );
+
+          const isAllWaiting =
+            kItems.every(
+              it => it.status === 'Chưa phát'
+            );
+
+          const state = isAllDone
+            ? 'done'
+            : (
+                isAllWaiting
+                  ? 'waiting'
+                  : 'progress'
+              );
+
+          const newId =
+            "P_" +
+            Date.now() +
+            "_" +
+            Math.floor(Math.random() * 10000) +
+            "_" +
+            kKey;
+
+          const splitVoucher = {
+            khoa: voucher.khoa,
+            time: voucher.time,
+            vouchers: kVouchers,
+            items: kItems,
+            state: state
+          };
+
+          if (state === 'done') {
+            splitVoucher.finishTime =
+              new Date().toISOString();
+          }
+
+          payload[newId] = splitVoucher;
+        });
+
+        /*
+         * Tạo phiếu tách trước, chỉ xóa phiếu gốc
+         * sau khi server xác nhận đã lưu thành công.
+         */
+        const pushed = await gasCall(
+          'pushVouchersServer',
+          [JSON.stringify(payload)]
+        );
+
+        if (
+          pushed &&
+          pushed.success === false
+        ) {
+          throw new Error(
+            pushed.msg ||
+            'Không thể lưu các phiếu đã tách.'
+          );
+        }
+
+        const deleted = await gasCall(
+          'deleteVoucherServer',
+          [sourceVoucherId]
+        );
+
+        if (
+          deleted &&
+          deleted.success === false
+        ) {
+          throw new Error(
+            deleted.msg ||
+            'Đã tạo phiếu tách nhưng chưa xóa được phiếu gốc.'
+          );
+        }
+      } else if (isFinish) {
+        showLoading(
+          true,
+          "Đang chốt phiếu..."
+        );
+
+        const result = await gasCall(
+          'finishVoucherServer',
+          [sourceVoucherId]
+        );
+
+        if (
+          result &&
+          result.success === false
+        ) {
+          throw new Error(
+            result.msg ||
+            'Không thể chốt phiếu.'
+          );
+        }
       }
+
+      removeVoucherDetailCache(
+        sourceVoucherId
+      );
+
+      if (isFinish) {
+        await showMsg(
+          khoKeys.length > 1
+            ? 'Đã CHỐT PHÁT thành công! Phiếu đa kho đã được tách.'
+            : 'Đã CHỐT PHÁT thành công!',
+          'Hoàn tất',
+          'success'
+        );
+      }
+
+      switchView('list');
+      return true;
+    } catch (error) {
+      await showMsg(
+        error.message || String(error),
+        isFinish
+          ? 'Không chốt được phiếu'
+          : 'Không lưu được phiếu',
+        'danger'
+      );
+
+      return false;
+    } finally {
+      forceHideLoading();
+      setDetailActionsBusy(false);
+
+      const current =
+        cloudWaitList[activeVoucherId];
+
+      if (current) {
+        refreshDetailAccessUi(
+          current,
+          false
+        );
+      }
+    }
   }
 
-  async function closeDetail() { 
-    if (currentUser.role === 'xem') { switchView('list'); return; }
-    let v = cloudWaitList[activeVoucherId];
-    let myKhos = (currentUser.role === 'admin' || currentUser.kho === 'Tất cả') ? null : currentUser.kho.split(',').map(s => mapKhoToKey(s.trim()));
-    
-    let itemsToProcess = myKhos ? v.items.filter(it => myKhos.includes(it.khoKey)) : v.items;
-    let hasUnfinished = itemsToProcess.some(it => it.status === 'Chưa phát');
+  async function closeDetail() {
+    if (
+      detailActionInFlight ||
+      detailPromptInFlight
+    ) {
+      return;
+    }
 
-    if (!hasUnfinished) {
-       const shouldFinish = await showConfirm("Bạn đã phát ĐỦ 100% thuốc!\n\nBạn muốn CHỐT PHÁT phiếu này hay chỉ thoát?", "Hoàn tất phát thuốc", { type: 'success', confirmText: 'Chốt phát', cancelText: 'Chỉ thoát', confirmClass: 'btn-success' });
-       if(shouldFinish) {
-         processSplitAndExit(true); 
-       } else { processSplitAndExit(false); }
-    } else {
-       const shouldSave = await showConfirm("Còn thuốc CHƯA PHÁT XONG!\n\nLưu trạng thái 'Đang phát dở', tách phiếu theo kho và thoát?", "Phiếu chưa phát xong", { type: 'warning', confirmText: 'Lưu và thoát' });
-       if(shouldSave) { 
-         processSplitAndExit(false);
-       }
+    forceHideLoading();
+
+    if (currentUser.role === 'xem') {
+      switchView('list');
+      return;
+    }
+
+    const voucher =
+      cloudWaitList[activeVoucherId];
+
+    if (
+      !voucher ||
+      !Array.isArray(voucher.items)
+    ) {
+      switchView('list');
+      return;
+    }
+
+    detailPromptInFlight = true;
+
+    try {
+      const myKhos =
+        (
+          currentUser.role === 'admin' ||
+          currentUser.kho === 'Tất cả'
+        )
+          ? null
+          : currentUser.kho
+              .split(',')
+              .map(s =>
+                mapKhoToKey(s.trim())
+              );
+
+      const itemsToProcess = myKhos
+        ? voucher.items.filter(
+            it => myKhos.includes(it.khoKey)
+          )
+        : voucher.items;
+
+      const hasUnfinished =
+        itemsToProcess.some(
+          it => it.status === 'Chưa phát'
+        );
+
+      if (!hasUnfinished) {
+        const shouldFinish =
+          await showConfirm(
+            "Bạn đã phát ĐỦ 100% thuốc!\n\nBạn muốn CHỐT PHÁT phiếu này hay chỉ thoát?",
+            "Hoàn tất phát thuốc",
+            {
+              type: 'success',
+              confirmText: 'Chốt phát',
+              cancelText: 'Chỉ thoát',
+              confirmClass: 'btn-success'
+            }
+          );
+
+        detailPromptInFlight = false;
+
+        if (shouldFinish) {
+          await processSplitAndExit(true);
+        } else {
+          await processSplitAndExit(false);
+        }
+
+        return;
+      }
+
+      const shouldSave =
+        await showConfirm(
+          "Còn thuốc CHƯA PHÁT XONG!\n\nLưu trạng thái 'Đang phát dở', tách phiếu theo kho và thoát?",
+          "Phiếu chưa phát xong",
+          {
+            type: 'warning',
+            confirmText: 'Lưu và thoát'
+          }
+        );
+
+      detailPromptInFlight = false;
+
+      if (shouldSave) {
+        await processSplitAndExit(false);
+      }
+    } finally {
+      detailPromptInFlight = false;
     }
   }
 
   async function finishDistribution() {
-    let v = cloudWaitList[activeVoucherId];
-    let myKhos = (currentUser.role === 'admin' || currentUser.kho === 'Tất cả') ? null : currentUser.kho.split(',').map(s => mapKhoToKey(s.trim()));
-    
-    let unfinishedIdx = [];
-    v.items.forEach((it, idx) => { 
-        if(myKhos && !myKhos.includes(it.khoKey)) return; 
-        if(it.status === 'Chưa phát') {
-            unfinishedIdx.push(idx);
-            let tr = document.getElementById('tr_' + idx);
-            if(tr) tr.className = "item-row missed-item"; 
+    if (
+      detailActionInFlight ||
+      detailPromptInFlight
+    ) {
+      return;
+    }
+
+    forceHideLoading();
+
+    const voucher =
+      cloudWaitList[activeVoucherId];
+
+    if (
+      !voucher ||
+      !Array.isArray(voucher.items)
+    ) {
+      return showMsg(
+        'Không lấy được dữ liệu phiếu. Vui lòng mở lại phiếu.',
+        'Dữ liệu chưa sẵn sàng',
+        'warning'
+      );
+    }
+
+    const myKhos =
+      (
+        currentUser.role === 'admin' ||
+        currentUser.kho === 'Tất cả'
+      )
+        ? null
+        : currentUser.kho
+            .split(',')
+            .map(s =>
+              mapKhoToKey(s.trim())
+            );
+
+    const unfinishedIdx = [];
+
+    voucher.items.forEach((it, idx) => {
+      if (
+        myKhos &&
+        !myKhos.includes(it.khoKey)
+      ) {
+        return;
+      }
+
+      if (it.status === 'Chưa phát') {
+        unfinishedIdx.push(idx);
+
+        const row =
+          document.getElementById(
+            'tr_' + idx
+          );
+
+        if (row) {
+          row.className =
+            "item-row missed-item";
         }
+      }
     });
 
-    if(unfinishedIdx.length > 0) { 
-        await showMsg("Còn thuốc CHƯA PHÁT tại kho bạn quản lý!\n\nVui lòng kiểm tra các mục được BÔI ĐỎ đậm.", "Chưa thể chốt phát", "danger"); 
-        setTimeout(() => {
-           unfinishedIdx.forEach(idx => {
-             let tr = document.getElementById('tr_' + idx);
-             if(tr) tr.classList.remove('missed-item');
-           });
-        }, 10000); 
-        return; 
+    if (unfinishedIdx.length > 0) {
+      await showMsg(
+        "Còn thuốc CHƯA PHÁT tại kho bạn quản lý!\n\nVui lòng kiểm tra các mục được BÔI ĐỎ đậm.",
+        "Chưa thể chốt phát",
+        "danger"
+      );
+
+      setTimeout(() => {
+        unfinishedIdx.forEach(idx => {
+          const row =
+            document.getElementById(
+              'tr_' + idx
+            );
+
+          if (row) {
+            row.classList.remove(
+              'missed-item'
+            );
+          }
+        });
+      }, 10000);
+
+      return;
     }
-    
-    const ok = await showConfirm("Xác nhận đã phát đủ 100% thuốc ở kho bạn quản lý và chốt phiếu này?", "Chốt phát", { type: 'success', confirmText: 'Chốt phát', confirmClass: 'btn-success' });
-    if(ok) {
-        processSplitAndExit(true);
+
+    detailPromptInFlight = true;
+
+    try {
+      const ok = await showConfirm(
+        "Xác nhận đã phát đủ 100% thuốc ở kho bạn quản lý và chốt phiếu này?",
+        "Chốt phát",
+        {
+          type: 'success',
+          confirmText: 'Chốt phát',
+          confirmClass: 'btn-success'
+        }
+      );
+
+      detailPromptInFlight = false;
+
+      if (ok) {
+        await processSplitAndExit(true);
+      }
+    } finally {
+      detailPromptInFlight = false;
     }
   }
 
