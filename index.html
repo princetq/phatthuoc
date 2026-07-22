@@ -372,6 +372,12 @@
       white-space: nowrap;
       border: 1px solid rgba(0,0,0,0.1);
     }
+    .status-badge-text {
+      display: block;
+      line-height: 1;
+      transform: translateY(0);
+      pointer-events: none;
+    }
     .status-waiting { background: var(--danger); color: #fff; } 
     .status-progress { background: var(--yellow); color: #000; } 
     .status-done { background: var(--green); color: #fff; } 
@@ -505,6 +511,14 @@
       }
       .tracking-card-title-text {
         font-size: 22px;
+      }
+
+      /*
+       * Font mobile có baseline chữ in hoa có dấu hơi cao.
+       * Chỉ hạ phần chữ, không di chuyển thân nhãn.
+       */
+      .status-badge-text {
+        transform: translateY(2px);
       }
       .tracking-delete-btn {
         font-size: 17px;
@@ -2359,7 +2373,7 @@ let d = new Date(v.time);
         <div style="font-size:16px; color:var(--purple); margin-top:4px; font-weight:bold;">🏢 Kho: ${khoStr || "Tất cả kho"}</div>
         <div style="font-size:18px; margin-top:0px;"><b>📅 Ngày:</b> <span style="color:var(--danger);">${dateStr}</span></div>
         <div style="font-size:18px; margin-top:10px; line-height:1.4;"><b>🧾 Phiếu:</b> <span style="color:#333; font-weight:bold;">${phieuStr}</span></div>
-        <div class="tracking-card-status"><span class="status-badge ${bClass}">${bText}</span></div>
+        <div class="tracking-card-status"><span class="status-badge ${bClass}"><span class="status-badge-text">${bText}</span></span></div>
       </div>`;
   }
 
