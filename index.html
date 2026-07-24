@@ -14,7 +14,7 @@
   <meta name="apple-mobile-web-app-title" content="Phát thuốc">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="description" content="Ứng dụng quản lý phát thuốc và đối chiếu thuốc tại Khoa Dược">
-  <link rel="manifest" href="manifest.webmanifest?v=31">
+  <link rel="manifest" href="manifest.webmanifest?v=32">
   <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
   <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
   <title>Phát thuốc thông minh</title>
@@ -393,6 +393,25 @@
       transform: translateY(1px);
     }
 
+    .notification-send-actions {
+      display: grid;
+      grid-template-columns: minmax(160px, 1.4fr) minmax(110px, 0.9fr);
+      gap: 10px;
+      align-items: stretch;
+    }
+
+    .notification-send-actions button {
+      width: 100%;
+      min-height: 42px;
+      padding: 10px 14px !important;
+      border-radius: 7px;
+      font-family: 'Segoe UI', Roboto, Arial, sans-serif !important;
+      font-size: 17px !important;
+      font-weight: 700 !important;
+      line-height: 1.15;
+      white-space: nowrap;
+    }
+
     @media (max-width: 480px) {
       .notification-device-actions {
         grid-template-columns: 1fr 1fr;
@@ -463,29 +482,25 @@
     .app-footer { position: relative; margin: 20px auto 15px auto; width: calc(100% - 30px); max-width: 1200px; padding: 10px; text-align: center; font-weight: 900; color: var(--green); z-index: 99; }
     
     .header-actions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 10px; margin-left: auto; }
-    .header-actions button { font-size: 18px; }
-
-    /*
-     * Nút Lịch sử là mẫu định dạng gốc.
-     * Bật thông báo, Gửi thông báo và Cài ứng dụng dùng cùng
-     * font, cỡ chữ, độ đậm, khoảng đệm, bo góc và chiều cao.
-     */
-    #btnNavHistory,
-    #btnSendNotification,
-    #btnPushSubscribe,
-    #btnInstallApp {
-      min-height: 0;
+    .header-actions button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      min-height: 44px;
       padding: 10px 15px !important;
       border-radius: 6px;
       font-family: 'Segoe UI', Roboto, Arial, sans-serif !important;
       font-size: 18px !important;
       font-weight: 700 !important;
       font-style: normal;
-      line-height: normal;
+      line-height: 1.15;
       letter-spacing: normal;
       white-space: nowrap;
       text-transform: none;
       box-shadow: none;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .container { max-width: 1200px; margin: 20px auto; padding: 0 15px; display: none; }
@@ -869,8 +884,29 @@
       }
       
       .header-actions { width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-left: 0 !important; }
-      .header-actions button { width: 100%; padding: 8px; font-size: 14px !important; }
-      .header-actions .btn-danger { grid-column: 2; } /* Ép nút Thoát sang cột phải */
+      .header-actions button {
+        width: 100%;
+        min-height: 40px;
+        padding: 8px 10px !important;
+        font-size: 15px !important;
+        font-family: 'Segoe UI', Roboto, Arial, sans-serif !important;
+        font-weight: 700 !important;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .header-actions .btn-danger { grid-column: 2; } /* Ép nút Đăng xuất sang cột phải */
+
+      .notification-send-actions {
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+      }
+
+      .notification-send-actions button {
+        min-height: 40px;
+        font-size: 15px !important;
+        padding: 8px 10px !important;
+      }
       
       .user-badge { font-size: 12px; padding: 4px 10px; flex-grow: 1; text-align: center; }
       .dist-header button { font-size: 14px; padding: 6px 12px; }
@@ -1079,7 +1115,7 @@
     <button id="btnNavList" class="btn-success" onclick="switchView('list')">📋 Danh sách</button>
     <button id="btnNavHistory" class="btn-pink" onclick="switchView('history')">📜 Lịch sử</button>
     <button id="btnSendNotification" class="btn-warning" style="display:none;" onclick="openNotificationModal()">📣 Gửi thông báo</button>
-    <button id="btnPushSubscribe" class="notification-button-muted" onclick="enablePushNotifications()">🔕 Bật nhận TB</button>
+    <button id="btnPushSubscribe" class="notification-button-muted" onclick="enablePushNotifications()">Bật thông báo</button>
     <button id="btnInstallApp" class="btn-primary" style="display:none;" onclick="installWebApp()">📲 Cài ứng dụng</button>
     <button class="btn-indigo" onclick="openChangePassModal()">🔑 Đổi MK</button>
     <button class="btn-danger" onclick="handleLogout()">🚪 Đăng xuất</button>
@@ -1273,23 +1309,26 @@
     <label>Khoa nhận thông báo:</label>
     <select id="notifyTargetKhoa"></select>
 
-    <label>Đơn vị gửi:</label>
-    <select id="notifyWarehouse" onchange="updateNotificationPreview()"></select>
+    <label>Kho gửi:</label>
+    <select id="notifyWarehouse" onchange="handleNotificationWarehouseChange()"></select>
+
+    <label id="notifyCustomWarehouseLabel" style="display:none;">Tên kho gửi:</label>
+    <input type="text" id="notifyCustomWarehouseName" style="display:none;" maxlength="120" placeholder="Ví dụ: Kho Đông Y" oninput="updateNotificationPreview()">
 
     <label>Nội dung:</label>
     <textarea id="notifyMessage" maxlength="500" placeholder="Nhập nội dung cần thông báo..." oninput="updateNotificationPreview()"></textarea>
 
     <div class="notification-help">
-      Hệ thống tự thêm tên kho ở đầu nội dung. Tối đa 500 ký tự.
+      Hệ thống tự thêm tên kho gửi ở đầu nội dung. Tối đa 500 ký tự.
     </div>
 
     <div id="notificationPreview" class="notification-preview">
       Nội dung xem trước sẽ hiển thị tại đây.
     </div>
 
-    <div style="display:flex; gap:10px; flex-wrap:wrap;">
-      <button class="btn-success" style="flex:2; min-width:180px;" onclick="sendManualNotification()">Gửi thông báo</button>
-      <button class="btn-danger" style="flex:1; min-width:120px;" onclick="closeNotificationModal()">Hủy</button>
+    <div class="notification-send-actions">
+      <button id="btnManualNotifySend" class="btn-success" onclick="sendManualNotification()">Gửi thông báo</button>
+      <button id="btnManualNotifyCancel" class="btn-danger" onclick="closeNotificationModal()">Hủy</button>
     </div>
   </div>
 </div>
@@ -2405,92 +2444,104 @@
     notificationDeviceSubscriptionId =
       resolvedSubscriptionId;
 
-    showLoading(
-      true,
-      'Đang tải trạng thái thông báo...'
+    const localDepartments =
+      currentUser &&
+      Array.isArray(
+        currentUser.notifyDepartments
+      )
+        ? currentUser.notifyDepartments
+        : [];
+
+    applyCurrentUserNotificationDepartments(
+      localDepartments
     );
 
-    try {
-      notificationDeviceOptions =
-        await gasCall(
-          'getNotificationSubscriptionOptionsServer',
-          [{
-            deviceId:
-              getNotificationDeviceId(),
-            subscriptionId:
-              resolvedSubscriptionId
-          }]
-        );
+    document
+      .getElementById(
+        'deviceNotifyAccount'
+      )
+      .innerText =
+        (
+          currentUser.fullName ||
+          currentUser.username
+        ) +
+        ' (' +
+        currentUser.username +
+        ')';
 
-      if (
-        !notificationDeviceOptions ||
-        notificationDeviceOptions.success ===
-          false
-      ) {
-        throw new Error(
-          notificationDeviceOptions &&
-          notificationDeviceOptions.msg
-            ? notificationDeviceOptions.msg
-            : (
-                'Không tải được trạng thái thông báo.'
-              )
-        );
-      }
+    document
+      .getElementById(
+        'deviceNotifyAccountKhoa'
+      )
+      .innerText =
+        localDepartments.length
+          ? localDepartments.join(', ')
+          : 'Chưa được Admin gán khoa';
 
-      const accountDepartments =
-        notificationDeviceOptions
-          .accountDepartments || [];
-
-      applyCurrentUserNotificationDepartments(
-        accountDepartments
+    const pushEnabled =
+      Boolean(
+        sdk.Notifications.permission &&
+        sdk.User.PushSubscription
+          .optedIn
       );
 
-      document
-        .getElementById(
-          'deviceNotifyAccount'
-        )
-        .innerText =
-          (
-            currentUser.fullName ||
-            currentUser.username
-          ) +
-          ' (' +
-          currentUser.username +
-          ')';
+    document
+      .getElementById(
+        'deviceNotifyStatus'
+      )
+      .innerText =
+        pushEnabled
+          ? 'Đang bật nhận thông báo'
+          : 'Chưa bật nhận thông báo';
 
-      document
-        .getElementById(
-          'deviceNotifyAccountKhoa'
-        )
-        .innerText =
+    document
+      .getElementById(
+        'notificationDeviceModal'
+      )
+      .style.display = 'flex';
+
+    gasCall(
+      'getNotificationSubscriptionOptionsServer',
+      [{
+        deviceId:
+          getNotificationDeviceId(),
+        subscriptionId:
+          resolvedSubscriptionId
+      }]
+    )
+      .then(result => {
+        if (
+          !result ||
+          result.success === false
+        ) {
+          return;
+        }
+
+        notificationDeviceOptions =
+          result;
+
+        const accountDepartments =
+          result.accountDepartments || [];
+
+        applyCurrentUserNotificationDepartments(
+          accountDepartments
+        );
+
+        document
+          .getElementById(
+            'deviceNotifyAccountKhoa'
+          )
+          .innerText =
           accountDepartments.length
             ? accountDepartments.join(', ')
             : 'Chưa được Admin gán khoa';
-
-      const pushEnabled =
-        Boolean(
-          sdk.Notifications.permission &&
-          sdk.User.PushSubscription
-            .optedIn
+      })
+      .catch(error => {
+        console.warn(
+          'Không làm mới được trạng thái thông báo:',
+          error.message || String(error)
         );
-
-      document
-        .getElementById(
-          'deviceNotifyStatus'
-        )
-        .innerText =
-          pushEnabled
-            ? 'Đang bật nhận thông báo'
-            : 'Chưa bật nhận thông báo';
-
-      document
-        .getElementById(
-          'notificationDeviceModal'
-        )
-        .style.display = 'flex';
-    } finally {
-      showLoading(false);
-    }
+      });
   }
 
   async function saveDeviceNotificationRegistration() {
@@ -2657,7 +2708,7 @@
 
     if (!departments.length) {
       button.innerText =
-        '⚠️ Chưa gán khoa TB';
+        'Chưa gán khoa';
 
       button.title =
         'Admin cần gán khoa nhận thông báo cho tài khoản này.';
@@ -2674,20 +2725,32 @@
     }
 
     if (pushEnabled) {
+      const hasAll =
+        departments.some(
+          item =>
+            String(item).trim() ===
+            'Tất cả các khoa'
+        );
+
       const label =
-        departments.length === 1
-          ? departments[0]
-          : departments.length +
-            ' khoa';
+        hasAll
+          ? 'Tất cả các khoa'
+          : (
+              departments.length === 1
+                ? departments[0]
+                : departments.length +
+                  ' khoa'
+            );
 
       button.innerText =
-        '🔔 TB: ' + label;
+        label;
 
       button.title =
-        'Thông báo theo tài khoản. Bấm để xem trạng thái hoặc tắt trên thiết bị này.';
+        'Đang bật thông báo cho: ' +
+        departments.join(', ');
     } else {
       button.innerText =
-        '🔕 Bật nhận TB';
+        'Bật thông báo';
 
       button.title =
         'Bật thông báo trên thiết bị này cho: ' +
@@ -2864,20 +2927,241 @@
     return escapeHtmlText(value);
   }
 
-  async function openNotificationModal() {
-    try {
-      showLoading(
-        true,
-        'Đang tải danh sách khoa...'
+  function getSelectedNotificationWarehouseLabel() {
+    const select =
+      document.getElementById(
+        'notifyWarehouse'
       );
 
+    if (!select) {
+      return '';
+    }
+
+    if (
+      select.value === 'Khac'
+    ) {
+      return String(
+        document
+          .getElementById(
+            'notifyCustomWarehouseName'
+          )
+          .value || ''
+      ).trim();
+    }
+
+    const option =
+      select.options[
+        select.selectedIndex
+      ];
+
+    return option
+      ? String(
+          option.text || ''
+        ).trim()
+      : '';
+  }
+
+  function getNotificationPrefixText() {
+    const warehouseKey =
+      document
+        .getElementById(
+          'notifyWarehouse'
+        )
+        .value;
+
+    const customWarehouseName =
+      String(
+        document
+          .getElementById(
+            'notifyCustomWarehouseName'
+          )
+          .value || ''
+      ).trim();
+
+    if (
+      warehouseKey === 'Khac' &&
+      customWarehouseName
+    ) {
+      return (
+        customWarehouseName +
+        ' xin thông báo:'
+      );
+    }
+
+    return notificationPrefixByKey(
+      warehouseKey
+    );
+  }
+
+  function handleNotificationWarehouseChange() {
+    const warehouseKey =
+      document
+        .getElementById(
+          'notifyWarehouse'
+        )
+        .value;
+
+    const customLabel =
+      document.getElementById(
+        'notifyCustomWarehouseLabel'
+      );
+
+    const customInput =
+      document.getElementById(
+        'notifyCustomWarehouseName'
+      );
+
+    const visible =
+      warehouseKey === 'Khac';
+
+    customLabel.style.display =
+      visible
+        ? 'block'
+        : 'none';
+
+    customInput.style.display =
+      visible
+        ? 'block'
+        : 'none';
+
+    if (!visible) {
+      customInput.value = '';
+    }
+
+    updateNotificationPreview();
+  }
+
+  function setNotificationModalBusy(isBusy) {
+    [
+      'notifyTargetKhoa',
+      'notifyWarehouse',
+      'notifyCustomWarehouseName',
+      'notifyMessage',
+      'btnManualNotifySend',
+      'btnManualNotifyCancel'
+    ].forEach(id => {
+      const node =
+        document.getElementById(
+          id
+        );
+
+      if (
+        node &&
+        !(
+          id ===
+            'notifyCustomWarehouseName' &&
+          node.style.display ===
+            'none'
+        )
+      ) {
+        node.disabled =
+          Boolean(isBusy);
+      }
+    });
+  }
+
+  function fillNotificationModalOptions() {
+    const khoaSelect =
+      document.getElementById(
+        'notifyTargetKhoa'
+      );
+
+    const warehouseSelect =
+      document.getElementById(
+        'notifyWarehouse'
+      );
+
+    khoaSelect.innerHTML =
+      '<option value="">-- Chọn khoa nhận --</option>' +
+      '<option value="Tất cả các khoa">Tất cả các khoa</option>' +
+      (
+        notificationOptions
+          .departments || []
+      )
+        .map(khoa =>
+          `<option value="${escapeHtmlValue(khoa)}">${escapeHtmlText(khoa)}</option>`
+        )
+        .join('');
+
+    warehouseSelect.innerHTML =
+      (
+        notificationOptions
+          .warehouses || []
+      )
+        .map(item =>
+          `<option value="${escapeHtmlValue(item.key)}">${escapeHtmlText(item.name)}</option>`
+        )
+        .join('');
+
+    warehouseSelect.disabled =
+      (
+        notificationOptions
+          .warehouses || []
+      ).length <= 1;
+
+    handleNotificationWarehouseChange();
+    setNotificationModalBusy(false);
+  }
+
+  async function openNotificationModal() {
+    const modal =
+      document.getElementById(
+        'notificationSendModal'
+      );
+
+    modal.style.display = 'flex';
+
+    document
+      .getElementById(
+        'notifyMessage'
+      )
+      .value = '';
+
+    document
+      .getElementById(
+        'notifyCustomWarehouseName'
+      )
+      .value = '';
+
+    if (
+      notificationOptions &&
+      notificationOptions.success !== false &&
+      notificationOptions.enabled
+    ) {
+      fillNotificationModalOptions();
+      updateNotificationPreview();
+      return;
+    }
+
+    setNotificationModalBusy(true);
+
+    document
+      .getElementById(
+        'notifyTargetKhoa'
+      )
+      .innerHTML =
+      '<option value="">Đang tải danh sách khoa...</option>';
+
+    document
+      .getElementById(
+        'notifyWarehouse'
+      )
+      .innerHTML =
+      '<option value="">Đang tải danh sách kho...</option>';
+
+    document
+      .getElementById(
+        'notificationPreview'
+      )
+      .innerText =
+      'Đang tải cấu hình thông báo...';
+
+    try {
       notificationOptions =
         await gasCall(
           'getNotificationOptionsServer',
           []
         );
-
-      showLoading(false);
 
       if (
         !notificationOptions ||
@@ -2899,59 +3183,10 @@
         );
       }
 
-      const khoaSelect =
-        document.getElementById(
-          'notifyTargetKhoa'
-        );
-
-      const warehouseSelect =
-        document.getElementById(
-          'notifyWarehouse'
-        );
-
-      khoaSelect.innerHTML =
-        '<option value="">-- Chọn khoa nhận --</option>' +
-        '<option value="Tất cả các khoa">Tất cả các khoa</option>' +
-        (
-          notificationOptions
-            .departments || []
-        )
-          .map(khoa =>
-            `<option value="${escapeHtmlValue(khoa)}">${escapeHtmlText(khoa)}</option>`
-          )
-          .join('');
-
-      warehouseSelect.innerHTML =
-        (
-          notificationOptions
-            .warehouses || []
-        )
-          .map(item =>
-            `<option value="${escapeHtmlValue(item.key)}">${escapeHtmlText(item.name)}</option>`
-          )
-          .join('');
-
-      warehouseSelect.disabled =
-        (
-          notificationOptions
-            .warehouses || []
-        ).length <= 1;
-
-      document
-        .getElementById(
-          'notifyMessage'
-        )
-        .value = '';
-
+      fillNotificationModalOptions();
       updateNotificationPreview();
-
-      document
-        .getElementById(
-          'notificationSendModal'
-        )
-        .style.display = 'flex';
     } catch (error) {
-      showLoading(false);
+      closeNotificationModal();
 
       await showMsg(
         error.message || String(error),
@@ -2970,13 +3205,6 @@
   }
 
   function updateNotificationPreview() {
-    const warehouseKey =
-      document
-        .getElementById(
-          'notifyWarehouse'
-        )
-        .value;
-
     const message =
       document
         .getElementById(
@@ -2985,14 +3213,15 @@
         .value
         .trim();
 
+    const prefixText =
+      getNotificationPrefixText();
+
     document
       .getElementById(
         'notificationPreview'
       )
       .innerText =
-        notificationPrefixByKey(
-          warehouseKey
-        ) +
+        prefixText +
         (
           message
             ? ' ' + message
@@ -3015,6 +3244,15 @@
         )
         .value;
 
+    const customWarehouseName =
+      String(
+        document
+          .getElementById(
+            'notifyCustomWarehouseName'
+          )
+          .value || ''
+      ).trim();
+
     const message =
       document
         .getElementById(
@@ -3031,6 +3269,17 @@
       );
     }
 
+    if (
+      warehouseKey === 'Khac' &&
+      !customWarehouseName
+    ) {
+      return showMsg(
+        'Vui lòng nhập tên kho gửi.',
+        'Thiếu kho gửi',
+        'warning'
+      );
+    }
+
     if (!message) {
       return showMsg(
         'Vui lòng nhập nội dung thông báo.',
@@ -3039,16 +3288,17 @@
       );
     }
 
+    const previewText =
+      getNotificationPrefixText() +
+      ' ' +
+      message;
+
     const ok =
       await showConfirm(
         'Gửi thông báo sau đến ' +
         khoa +
         '?\n\n' +
-        notificationPrefixByKey(
-          warehouseKey
-        ) +
-        ' ' +
-        message,
+        previewText,
         'Xác nhận gửi thông báo',
         {
           type: 'warning',
@@ -3060,10 +3310,7 @@
     if (!ok) return;
 
     try {
-      showLoading(
-        true,
-        'Đang gửi thông báo...'
-      );
+      setNotificationModalBusy(true);
 
       const result =
         await gasCall(
@@ -3073,12 +3320,14 @@
               khoa,
             warehouseKey:
               warehouseKey,
+            customWarehouseName:
+              customWarehouseName,
             message:
               message
           }]
         );
 
-      showLoading(false);
+      setNotificationModalBusy(false);
 
       if (
         !result ||
@@ -3103,7 +3352,7 @@
         'success'
       );
     } catch (error) {
-      showLoading(false);
+      setNotificationModalBusy(false);
 
       await showMsg(
         error.message || String(error),
