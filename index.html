@@ -14,7 +14,7 @@
   <meta name="apple-mobile-web-app-title" content="Phát thuốc">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="description" content="Ứng dụng quản lý phát thuốc và đối chiếu thuốc tại Khoa Dược">
-  <link rel="manifest" href="manifest.webmanifest?v=25">
+  <link rel="manifest" href="manifest.webmanifest?v=28">
   <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
   <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
   <title>Phát thuốc thông minh</title>
@@ -213,6 +213,59 @@
       flex-shrink: 0;
     }
 
+    .app-brand-main {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .app-title {
+      margin: 0;
+      color: var(--green);
+      font-size: 26px;
+      line-height: 1.08;
+      font-weight: 900;
+      overflow-wrap: normal;
+      word-break: normal;
+    }
+
+    .app-user-summary {
+      font-size: 18px;
+      border-left: 2px solid #ccc;
+      padding-left: 15px;
+      min-width: 0;
+    }
+
+    .account-notify-summary {
+      display: grid;
+      gap: 10px;
+      margin: 14px 0;
+      padding: 14px;
+      border: 1px solid #d7e5df;
+      border-radius: 12px;
+      background: #f7fcf9;
+    }
+
+    .account-notify-row {
+      display: grid;
+      grid-template-columns: 130px minmax(0, 1fr);
+      align-items: start;
+      gap: 12px;
+      font-size: 16px;
+      line-height: 1.4;
+    }
+
+    .account-notify-row span {
+      color: #66756e;
+      font-weight: 700;
+    }
+
+    .account-notify-row strong {
+      color: #154d3d;
+      overflow-wrap: anywhere;
+    }
+
     .notification-button-active {
       background: #16856b !important;
     }
@@ -275,13 +328,18 @@
     }
 
     .device-notify-option {
-      display: flex;
+      display: grid;
+      grid-template-columns: 24px minmax(0, 1fr);
       align-items: center;
-      gap: 10px;
-      padding: 10px 8px;
+      column-gap: 15px;
+      min-height: 48px;
+      padding: 11px 10px;
       border-bottom: 1px solid #e4eee9;
       cursor: pointer;
-      font-weight: 700;
+      font-size: 17px;
+      line-height: 1.35;
+      font-weight: 800;
+      box-sizing: border-box;
     }
 
     .device-notify-option:last-child {
@@ -289,10 +347,38 @@
     }
 
     .device-notify-option input {
-      width: 20px;
-      height: 20px;
-      flex-shrink: 0;
+      width: 22px;
+      height: 22px;
       margin: 0;
+      align-self: center;
+      justify-self: center;
+      flex-shrink: 0;
+      accent-color: #16856b;
+    }
+
+    .device-notify-option span {
+      display: block;
+      min-width: 0;
+      margin: 0;
+      padding: 0;
+      line-height: 1.35;
+      align-self: center;
+    }
+
+    #btnPushSubscribe {
+      min-height: 44px;
+      padding: 10px 15px !important;
+      font-size: 18px !important;
+      line-height: 1.25;
+      font-weight: 900;
+    }
+
+    .notification-device-actions button {
+      min-height: 46px;
+      padding: 11px 14px;
+      font-size: 17px;
+      line-height: 1.25;
+      font-weight: 900;
     }
 
     .device-notify-note {
@@ -636,8 +722,49 @@
 
       .wellness-card { padding: 30px 20px; }
 
-      #appHeader { flex-direction: column; align-items: flex-start; padding: 15px; gap: 12px; }
-      #appHeader h2 { font-size: 24px !important; }
+      #appHeader {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 15px;
+        gap: 12px;
+      }
+
+      .app-brand-main {
+        width: 100%;
+        display: grid;
+        grid-template-columns: 46px minmax(0, 1fr);
+        align-items: center;
+        column-gap: 10px;
+        row-gap: 4px;
+      }
+
+      .app-brand-icon {
+        width: 44px;
+        height: 44px;
+      }
+
+      .app-title {
+        max-width: 100%;
+        font-size: 23px !important;
+        line-height: 1.02 !important;
+        letter-spacing: -0.25px;
+        margin: 0 !important;
+      }
+
+      .app-user-summary {
+        grid-column: 1 / -1;
+        width: 100%;
+        margin-top: 2px;
+        padding-left: 0;
+        border-left: 0;
+        font-size: 16px !important;
+        line-height: 1.3;
+      }
+
+      .account-notify-row {
+        grid-template-columns: 1fr;
+        gap: 2px;
+      }
       
       .header-actions { width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-left: 0 !important; }
       .header-actions button { width: 100%; padding: 8px; font-size: 14px !important; }
@@ -836,11 +963,11 @@
 </div>
 
 <div id="appHeader" class="glass-panel">
-  <div style="display:flex; align-items:center; gap: 12px;">
+  <div class="app-brand-main">
     <img class="app-brand-icon" src="icons/icon-192.png" alt="Icon Phát thuốc">
-    <h2 style="margin:0; color: var(--green); font-size: 26px;">Phát thuốc thông minh</h2>
-    <div style="font-size: 18px; border-left: 2px solid #ccc; padding-left: 15px;">
-      Xin chào, <b id="displayFullName" style="color: var(--primary-dark);"></b> 
+    <h2 class="app-title">Phát thuốc thông minh</h2>
+    <div class="app-user-summary">
+      Xin chào, <b id="displayFullName" style="color: var(--primary-dark);"></b>
       <span id="displayRoleBadge" style="font-size: 15px; background: #fff; padding: 3px 8px; border-radius: 10px; border: 1px solid #ddd; margin-left: 5px;"></span>
     </div>
   </div>
@@ -981,7 +1108,7 @@
         <input type="text" id="newPassword" placeholder="Mật khẩu">
       </div>
       <div>
-        <select id="newRole" onchange="updateUserDepartmentField('new')"><option value="phat">Phát thuốc</option><option value="xem">Người Lĩnh (Chỉ Xem)</option><option value="admin">Admin</option></select>
+        <select id="newRole" onchange="updateAccountNotificationDepartmentRequirement('new')"><option value="phat">Phát thuốc</option><option value="xem">Người Lĩnh (Chỉ Xem)</option><option value="admin">Admin</option></select>
         <label style="font-size:14px; font-weight:bold;">Kho (Giữ Ctrl để chọn nhiều):</label>
         <select id="newKho" multiple>
           <option value="Kho Tiêm/Viên Nội Trú">Kho Tiêm/Viên Nội Trú</option>
@@ -990,13 +1117,10 @@
           <option value="Tất cả">Tất cả</option>
         </select>
 
-        <div id="newUserDepartmentWrap" style="display:none;">
-          <label style="font-size:14px; font-weight:bold;">Khoa nhận thông báo:</label>
-          <select id="newNotifyKhoa"></select>
-          <div class="notification-help">
-            Chỉ dùng để gửi thông báo đúng khoa; không giới hạn quyền xem phiếu.
-            Hệ thống tự nhận alias có hoặc không có chữ “Khoa” trên phiếu.
-          </div>
+        <label style="font-size:14px; font-weight:bold;">Khoa nhận thông báo:</label>
+        <select id="newNotifyKhoa"></select>
+        <div id="newNotifyKhoaHelp" class="notification-help">
+          Người lĩnh bắt buộc chọn khoa. Admin và người phát có thể để trống hoặc chọn “Tất cả các khoa”.
         </div>
 
         <button class="btn-success" style="width: 100%; padding:10px;" onclick="createUser()">Tạo tài khoản</button>
@@ -1019,7 +1143,7 @@
     <label>Tên đăng nhập:</label><input type="text" id="editUsername">
     <label>Mật khẩu:</label><input type="text" id="editPassword">
     <label>Quyền:</label>
-    <select id="editRole" onchange="updateUserDepartmentField('edit')"><option value="phat">Phát thuốc</option><option value="xem">Người Lĩnh (Chỉ Xem)</option><option value="admin">Admin</option></select>
+    <select id="editRole" onchange="updateAccountNotificationDepartmentRequirement('edit')"><option value="phat">Phát thuốc</option><option value="xem">Người Lĩnh (Chỉ Xem)</option><option value="admin">Admin</option></select>
     <label>Kho quản lý (Giữ Ctrl để chọn nhiều):</label>
     <select id="editKho" multiple>
       <option value="Kho Tiêm/Viên Nội Trú">Kho Tiêm/Viên Nội Trú</option>
@@ -1028,13 +1152,10 @@
       <option value="Tất cả">Tất cả</option>
     </select>
 
-    <div id="editUserDepartmentWrap" style="display:none;">
-      <label>Khoa nhận thông báo:</label>
-      <select id="editNotifyKhoa"></select>
-      <div class="notification-help">
-        Chỉ dùng để gửi thông báo đúng khoa; không giới hạn quyền xem phiếu.
-        Hệ thống tự nhận alias có hoặc không có chữ “Khoa” trên phiếu.
-      </div>
+    <label>Khoa nhận thông báo:</label>
+    <select id="editNotifyKhoa"></select>
+    <div id="editNotifyKhoaHelp" class="notification-help">
+      Người lĩnh bắt buộc chọn khoa. Admin và người phát có thể để trống hoặc chọn “Tất cả các khoa”.
     </div>
 
     <button class="btn-success" style="width: 100%; margin-bottom:10px; margin-top:10px;" onclick="submitEditUser()">Lưu thay đổi</button>
@@ -1074,23 +1195,30 @@
 
 <div id="notificationDeviceModal" class="modal-overlay">
   <div class="modal-content notification-modal-content">
-    <h3 style="color:#16856b; margin-top:0;">🔔 Đăng ký khoa nhận thông báo</h3>
+    <h3 style="color:#16856b; margin-top:0;">🔔 Thông báo theo tài khoản</h3>
 
     <div class="device-notify-note">
-      Đây chỉ là lựa chọn thông báo trên thiết bị này, không thay đổi quyền xem hoặc sửa phiếu.
-      Mỗi điện thoại/máy tính có thể chọn khoa riêng.
+      Khoa nhận thông báo do Admin gán cho tài khoản. Thiết bị này chỉ bật hoặc tắt nhận push.
+      Đăng nhập cùng tài khoản trên thiết bị mới sẽ tự nhận đúng khoa sau khi bật thông báo.
     </div>
 
-    <label>Thiết bị này nhận thông báo của:</label>
-    <div id="deviceNotifyKhoaList" class="device-notify-list"></div>
+    <div class="account-notify-summary">
+      <div class="account-notify-row">
+        <span>Tài khoản</span>
+        <strong id="deviceNotifyAccount">—</strong>
+      </div>
+      <div class="account-notify-row">
+        <span>Khoa nhận</span>
+        <strong id="deviceNotifyAccountKhoa">—</strong>
+      </div>
+      <div class="account-notify-row">
+        <span>Thiết bị này</span>
+        <strong id="deviceNotifyStatus">—</strong>
+      </div>
+    </div>
 
-    <label>Khoa khác chưa có trong danh sách:</label>
-    <input id="deviceNotifyCustomKhoa" type="text" placeholder="Có thể nhập nhiều khoa, cách nhau bằng dấu phẩy">
-
-    <div id="deviceNotifyStatus" class="notification-help"></div>
-
-    <div style="display:flex; gap:10px; flex-wrap:wrap;">
-      <button class="btn-success" style="flex:2; min-width:180px;" onclick="saveDeviceNotificationRegistration()">Lưu đăng ký</button>
+    <div class="notification-device-actions" style="display:flex; gap:10px; flex-wrap:wrap;">
+      <button class="btn-success" style="flex:2; min-width:180px;" onclick="saveDeviceNotificationRegistration()">Đồng bộ thiết bị</button>
       <button class="btn-warning" style="flex:1; min-width:150px;" onclick="disableDeviceNotifications()">Tắt trên thiết bị</button>
       <button class="btn-danger" style="flex:1; min-width:100px;" onclick="closeDeviceNotificationModal()">Đóng</button>
     </div>
@@ -1565,8 +1693,7 @@
   );
 
   window.onload = function() {
-    populateUserDepartmentSelects();
-    updateUserDepartmentField('new');
+    populateAccountNotificationDepartmentSelects();
 
     registerPwaServiceWorker();
     updateInstallButton();
@@ -1665,6 +1792,13 @@
         window.location.search
       );
 
+    const voucherId =
+      String(
+        params.get('voucherId') ||
+        params.get('voucher') ||
+        ''
+      ).trim();
+
     const khoa =
       String(
         params.get('khoa') || ''
@@ -1674,6 +1808,38 @@
       String(
         params.get('view') || ''
       ).trim();
+
+    const clearDeepLink = () => {
+      try {
+        window.history.replaceState(
+          {},
+          document.title,
+          window.location.pathname
+        );
+      } catch (error) {
+        // Không ảnh hưởng chức năng chính.
+      }
+    };
+
+    if (voucherId) {
+      setTimeout(async () => {
+        const voucherCard =
+          cloudWaitList[voucherId];
+
+        try {
+          await openDetail(
+            voucherId,
+            voucherCard
+              ? voucherCard.state
+              : 'done'
+          );
+        } finally {
+          clearDeepLink();
+        }
+      }, 180);
+
+      return;
+    }
 
     if (!khoa) return;
 
@@ -1704,15 +1870,7 @@
         );
       }
 
-      try {
-        window.history.replaceState(
-          {},
-          document.title,
-          window.location.pathname
-        );
-      } catch (error) {
-        // Không ảnh hưởng chức năng chính.
-      }
+      clearDeepLink();
     }, 150);
   }
 
@@ -1988,39 +2146,7 @@
     return deviceId;
   }
 
-  function getSavedDeviceNotificationDepartments() {
-    try {
-      const value =
-        JSON.parse(
-          localStorage.getItem(
-            'phatthuoc_notification_departments'
-          ) || '[]'
-        );
-
-      return Array.isArray(value)
-        ? value
-            .map(item =>
-              String(item || '').trim()
-            )
-            .filter(Boolean)
-        : [];
-    } catch (error) {
-      return [];
-    }
-  }
-
-  function saveDeviceNotificationDepartments(
-    departments
-  ) {
-    localStorage.setItem(
-      'phatthuoc_notification_departments',
-      JSON.stringify(
-        departments || []
-      )
-    );
-  }
-
-  async function waitForPushSubscriptionId(
+      async function waitForPushSubscriptionId(
     sdk,
     timeoutMs = 12000
   ) {
@@ -2055,31 +2181,8 @@
   }
 
   async function registerCurrentNotificationDevice(
-    sdk,
-    departments
+    sdk
   ) {
-    const accountDepartments =
-      currentUser &&
-      currentUser.role === 'xem' &&
-      currentUser.notifyKhoa
-        ? [
-            currentUser.notifyKhoa
-          ]
-        : [];
-
-    const khoaList =
-      accountDepartments.length
-        ? accountDepartments
-        : (
-            Array.isArray(departments)
-              ? departments
-              : getSavedDeviceNotificationDepartments()
-          );
-
-    if (!khoaList.length) {
-      return null;
-    }
-
     const subscriptionId =
       await waitForPushSubscriptionId(
         sdk
@@ -2093,8 +2196,6 @@
             getNotificationDeviceId(),
           subscriptionId:
             subscriptionId,
-          khoaList:
-            khoaList,
           platform:
             navigator.platform || '',
           userAgent:
@@ -2110,7 +2211,7 @@
         result && result.msg
           ? result.msg
           : (
-              'Không lưu được đăng ký nhận thông báo.'
+              'Không đăng ký được thiết bị với tài khoản.'
             )
       );
     }
@@ -2118,8 +2219,8 @@
     notificationDeviceSubscriptionId =
       subscriptionId;
 
-    saveDeviceNotificationDepartments(
-      result.khoaList || khoaList
+    applyCurrentUserNotificationDepartments(
+      result.khoaList || []
     );
 
     updatePushNotificationButton();
@@ -2136,31 +2237,17 @@
       !sdk.User.PushSubscription
         .optedIn
     ) {
-      return;
-    }
-
-    const departments =
-      currentUser &&
-      currentUser.role === 'xem' &&
-      currentUser.notifyKhoa
-        ? [
-            currentUser.notifyKhoa
-          ]
-        : getSavedDeviceNotificationDepartments();
-
-    if (!departments.length) {
       updatePushNotificationButton();
       return;
     }
 
     try {
       await registerCurrentNotificationDevice(
-        sdk,
-        departments
+        sdk
       );
     } catch (error) {
       console.warn(
-        'Không đồng bộ được đăng ký thông báo thiết bị:',
+        'Không đồng bộ được thiết bị với tài khoản:',
         error.message || String(error)
       );
     }
@@ -2200,155 +2287,7 @@
       .style.display = 'none';
   }
 
-  function renderDeviceNotificationDepartmentOptions(
-    departments,
-    selected
-  ) {
-    const container =
-      document.getElementById(
-        'deviceNotifyKhoaList'
-      );
-
-    const selectedKeys =
-      new Set(
-        (selected || []).map(item =>
-          String(item || '')
-            .trim()
-            .toLowerCase()
-        )
-      );
-
-    const values = [
-      'Tất cả các khoa',
-      ...(departments || [])
-    ]
-      .map(item =>
-        String(item || '').trim()
-      )
-      .filter(Boolean)
-      .filter(
-        (item, index, array) =>
-          array.findIndex(
-            candidate =>
-              candidate.toLowerCase() ===
-              item.toLowerCase()
-          ) === index
-      );
-
-    container.innerHTML =
-      values
-        .map((name, index) => {
-          const checked =
-            selectedKeys.has(
-              name.toLowerCase()
-            )
-              ? 'checked'
-              : '';
-
-          return (
-            `<label class="device-notify-option">` +
-            `<input type="checkbox" class="device-notify-checkbox" value="${escapeHtmlValue(name)}" ${checked}>` +
-            `<span>${escapeHtmlText(name)}</span>` +
-            `</label>`
-          );
-        })
-        .join('');
-
-    const checkboxes =
-      Array.from(
-        container.querySelectorAll(
-          '.device-notify-checkbox'
-        )
-      );
-
-    checkboxes.forEach(box => {
-      box.addEventListener(
-        'change',
-        () => {
-          if (
-            box.value ===
-              'Tất cả các khoa' &&
-            box.checked
-          ) {
-            checkboxes.forEach(other => {
-              if (other !== box) {
-                other.checked = false;
-              }
-            });
-          } else if (box.checked) {
-            const allBox =
-              checkboxes.find(
-                item =>
-                  item.value ===
-                  'Tất cả các khoa'
-              );
-
-            if (allBox) {
-              allBox.checked = false;
-            }
-          }
-        }
-      );
-    });
-  }
-
-  function getSelectedDeviceNotificationDepartments() {
-    const checked =
-      Array.from(
-        document.querySelectorAll(
-          '#deviceNotifyKhoaList .device-notify-checkbox:checked'
-        )
-      ).map(item =>
-        String(item.value || '').trim()
-      );
-
-    const custom =
-      String(
-        document
-          .getElementById(
-            'deviceNotifyCustomKhoa'
-          )
-          .value || ''
-      )
-        .split(/[,;\n]+/)
-        .map(item =>
-          item.trim()
-        )
-        .filter(Boolean);
-
-    const combined =
-      [...checked, ...custom];
-
-    const output = [];
-
-    combined.forEach(name => {
-      if (
-        !output.some(
-          existing =>
-            existing.toLowerCase() ===
-            name.toLowerCase()
-        )
-      ) {
-        output.push(name);
-      }
-    });
-
-    if (
-      output.some(
-        name =>
-          name.toLowerCase() ===
-          'tất cả các khoa'
-      )
-    ) {
-      return [
-        'Tất cả các khoa'
-      ];
-    }
-
-    return output;
-  }
-
-  async function openDeviceNotificationModal(
+      async function openDeviceNotificationModal(
     subscriptionId
   ) {
     const sdk =
@@ -2357,16 +2296,16 @@
 
     const resolvedSubscriptionId =
       subscriptionId ||
-      await waitForPushSubscriptionId(
-        sdk
-      );
+      sdk.User.PushSubscription.id ||
+      notificationDeviceSubscriptionId ||
+      '';
 
     notificationDeviceSubscriptionId =
       resolvedSubscriptionId;
 
     showLoading(
       true,
-      'Đang tải danh sách khoa...'
+      'Đang tải trạng thái thông báo...'
     );
 
     try {
@@ -2391,66 +2330,56 @@
           notificationDeviceOptions.msg
             ? notificationDeviceOptions.msg
             : (
-                'Không tải được danh sách khoa.'
+                'Không tải được trạng thái thông báo.'
               )
         );
       }
 
-      const serverSelected =
-        notificationDeviceOptions.current &&
-        notificationDeviceOptions.current
-          .enabled
-          ? notificationDeviceOptions
-              .current.khoaList
-          : [];
-
-      const selected =
-        serverSelected.length
-          ? serverSelected
-          : getSavedDeviceNotificationDepartments();
-
-      renderDeviceNotificationDepartmentOptions(
+      const accountDepartments =
         notificationDeviceOptions
-          .departments || [],
-        selected
-      );
+          .accountDepartments || [];
 
-      const knownKeys =
-        new Set(
-          (
-            notificationDeviceOptions
-              .departments || []
-          )
-            .concat([
-              'Tất cả các khoa'
-            ])
-            .map(item =>
-              String(item || '')
-                .toLowerCase()
-            )
-        );
+      applyCurrentUserNotificationDepartments(
+        accountDepartments
+      );
 
       document
         .getElementById(
-          'deviceNotifyCustomKhoa'
+          'deviceNotifyAccount'
         )
-        .value =
-          selected
-            .filter(
-              item =>
-                !knownKeys.has(
-                  String(item || '')
-                    .toLowerCase()
-                )
-            )
-            .join(', ');
+        .innerText =
+          (
+            currentUser.fullName ||
+            currentUser.username
+          ) +
+          ' (' +
+          currentUser.username +
+          ')';
+
+      document
+        .getElementById(
+          'deviceNotifyAccountKhoa'
+        )
+        .innerText =
+          accountDepartments.length
+            ? accountDepartments.join(', ')
+            : 'Chưa được Admin gán khoa';
+
+      const pushEnabled =
+        Boolean(
+          sdk.Notifications.permission &&
+          sdk.User.PushSubscription
+            .optedIn
+        );
 
       document
         .getElementById(
           'deviceNotifyStatus'
         )
         .innerText =
-          'Mỗi thiết bị có lựa chọn riêng. Việc này không phân quyền người lĩnh theo khoa.';
+          pushEnabled
+            ? 'Đang bật nhận thông báo'
+            : 'Chưa bật nhận thông báo';
 
       document
         .getElementById(
@@ -2463,39 +2392,58 @@
   }
 
   async function saveDeviceNotificationRegistration() {
-    const departments =
-      getSelectedDeviceNotificationDepartments();
-
-    if (!departments.length) {
-      return showMsg(
-        'Vui lòng chọn ít nhất một khoa.',
-        'Chưa chọn khoa',
-        'warning'
-      );
-    }
-
     try {
       showLoading(
         true,
-        'Đang lưu đăng ký thiết bị...'
+        'Đang đồng bộ thiết bị...'
       );
 
       const sdk =
         await ensureOneSignalInitialized();
 
+      if (
+        !sdk.Notifications.permission
+      ) {
+        await sdk.Notifications
+          .requestPermission();
+      }
+
+      if (
+        !sdk.Notifications.permission
+      ) {
+        throw new Error(
+          'Bạn chưa cho phép trình duyệt gửi thông báo.'
+        );
+      }
+
+      if (
+        !sdk.User.PushSubscription
+          .optedIn
+      ) {
+        await sdk.User
+          .PushSubscription
+          .optIn();
+      }
+
+      await syncOneSignalCurrentUser(
+        sdk
+      );
+
       const result =
         await registerCurrentNotificationDevice(
-          sdk,
-          departments
+          sdk
         );
 
       showLoading(false);
-      closeDeviceNotificationModal();
+
+      await openDeviceNotificationModal(
+        result.subscriptionId
+      );
 
       await showMsg(
-        'Thiết bị này sẽ nhận thông báo của: ' +
+        'Thiết bị đã được liên kết với tài khoản và sẽ nhận thông báo của: ' +
         result.khoaList.join(', '),
-        'Đã lưu đăng ký',
+        'Đồng bộ thành công',
         'success'
       );
     } catch (error) {
@@ -2503,7 +2451,7 @@
 
       await showMsg(
         error.message || String(error),
-        'Không lưu được đăng ký',
+        'Không đồng bộ được thiết bị',
         'danger'
       );
     }
@@ -2512,12 +2460,12 @@
   async function disableDeviceNotifications() {
     const ok =
       await showConfirm(
-        'Tắt toàn bộ thông báo trên thiết bị này?',
+        'Tắt thông báo trên thiết bị này? Các thiết bị khác đăng nhập cùng tài khoản vẫn tiếp tục nhận.',
         'Tắt thông báo',
         {
           type: 'warning',
           confirmText:
-            'Tắt thông báo'
+            'Tắt trên thiết bị'
         }
       );
 
@@ -2555,10 +2503,6 @@
           .optOut();
       }
 
-      saveDeviceNotificationDepartments(
-        []
-      );
-
       notificationDeviceSubscriptionId =
         '';
 
@@ -2567,7 +2511,7 @@
       showLoading(false);
 
       await showMsg(
-        'Đã tắt thông báo trên thiết bị này.',
+        'Đã tắt thông báo trên thiết bị này. Cấu hình khoa của tài khoản vẫn được giữ nguyên.',
         'Đã tắt thông báo',
         'success'
       );
@@ -2590,66 +2534,95 @@
 
     if (!button) return;
 
-    const sdk = oneSignalSdk;
-
-    const pushEnabled = Boolean(
-      sdk &&
-      sdk.Notifications.permission &&
-      sdk.User.PushSubscription.optedIn
-    );
-
     const departments =
       currentUser &&
-      currentUser.role === 'xem' &&
-      currentUser.notifyKhoa
-        ? [
-            currentUser.notifyKhoa
-          ]
-        : getSavedDeviceNotificationDepartments();
+      Array.isArray(
+        currentUser.notifyDepartments
+      )
+        ? currentUser.notifyDepartments
+        : [];
 
-    const registered =
-      pushEnabled &&
-      departments.length > 0;
+    const sdk =
+      oneSignalSdk;
 
-    if (registered) {
+    const pushEnabled =
+      Boolean(
+        sdk &&
+        sdk.Notifications.permission &&
+        sdk.User.PushSubscription
+          .optedIn
+      );
+
+    if (!departments.length) {
+      button.innerText =
+        '⚠️ Chưa gán khoa TB';
+
+      button.title =
+        'Admin cần gán khoa nhận thông báo cho tài khoản này.';
+
+      button.classList.remove(
+        'notification-button-active'
+      );
+
+      button.classList.add(
+        'notification-button-muted'
+      );
+
+      return;
+    }
+
+    if (pushEnabled) {
       const label =
         departments.length === 1
           ? departments[0]
-          : departments.length + ' khoa';
+          : departments.length +
+            ' khoa';
 
       button.innerText =
         '🔔 TB: ' + label;
 
       button.title =
-        'Thiết bị nhận thông báo: ' +
-        departments.join(', ');
-    } else if (pushEnabled) {
-      button.innerText =
-        '🔔 Chọn khoa nhận TB';
-
-      button.title =
-        'Thông báo đã bật nhưng thiết bị chưa chọn khoa.';
+        'Thông báo theo tài khoản. Bấm để xem trạng thái hoặc tắt trên thiết bị này.';
     } else {
       button.innerText =
         '🔕 Bật nhận TB';
 
       button.title =
-        'Bật thông báo và chọn khoa cho thiết bị này.';
+        'Bật thông báo trên thiết bị này cho: ' +
+        departments.join(', ');
     }
 
     button.classList.toggle(
       'notification-button-active',
-      registered
+      pushEnabled
     );
 
     button.classList.toggle(
       'notification-button-muted',
-      !registered
+      !pushEnabled
     );
   }
 
   async function enablePushNotifications() {
     try {
+      const departments =
+        currentUser &&
+        Array.isArray(
+          currentUser.notifyDepartments
+        )
+          ? currentUser.notifyDepartments
+          : [];
+
+      if (!departments.length) {
+        await showMsg(
+          'Tài khoản chưa được Admin gán khoa nhận thông báo.',
+          'Chưa cấu hình khoa',
+          'warning'
+        );
+
+        return;
+      }
+
       const sdk =
         await ensureOneSignalInitialized();
 
@@ -2680,65 +2653,54 @@
         sdk
       );
 
-      if (
-        !sdk.Notifications.permission
-      ) {
-        await sdk.Notifications
-          .requestPermission();
-      }
-
-      if (
-        !sdk.Notifications.permission
-      ) {
-        throw new Error(
-          'Bạn chưa cho phép trình duyệt gửi thông báo.'
-        );
-      }
-
-      if (
-        !sdk.User.PushSubscription
-          .optedIn
-      ) {
-        await sdk.User
-          .PushSubscription
-          .optIn();
-      }
-
-      notificationDeviceSubscriptionId =
-        await waitForPushSubscriptionId(
-          sdk
+      const alreadyEnabled =
+        Boolean(
+          sdk.Notifications.permission &&
+          sdk.User.PushSubscription
+            .optedIn
         );
 
-      if (
-        currentUser.role === 'xem'
-      ) {
+      if (!alreadyEnabled) {
         if (
-          !currentUser.notifyKhoa
+          !sdk.Notifications.permission
+        ) {
+          await sdk.Notifications
+            .requestPermission();
+        }
+
+        if (
+          !sdk.Notifications.permission
         ) {
           throw new Error(
-            'Tài khoản Người lĩnh chưa được Admin chọn khoa nhận thông báo.'
+            'Bạn chưa cho phép trình duyệt gửi thông báo.'
           );
+        }
+
+        if (
+          !sdk.User.PushSubscription
+            .optedIn
+        ) {
+          await sdk.User
+            .PushSubscription
+            .optIn();
         }
 
         const result =
           await registerCurrentNotificationDevice(
-            sdk,
-            [
-              currentUser.notifyKhoa
-            ]
+            sdk
           );
 
-        updatePushNotificationButton();
-
         await showMsg(
-          'Thiết bị đã đăng ký nhận thông báo của: ' +
+          'Thiết bị này sẽ nhận thông báo của: ' +
           result.khoaList.join(', '),
           'Đã bật thông báo',
           'success'
         );
-
-        return;
       }
+
+      notificationDeviceSubscriptionId =
+        sdk.User.PushSubscription.id ||
+        notificationDeviceSubscriptionId;
 
       updatePushNotificationButton();
 
@@ -6978,53 +6940,57 @@ let d = new Date(v.time);
   }
 
 
-  function departmentOptionsHtml(
+
+  function notificationDepartmentOptionsHtml(
     selected = ''
   ) {
-    return (
-      '<option value="">-- Chọn khoa --</option>' +
-      HOSPITAL_DEPARTMENTS
-        .map(name => {
-          const selectedAttr =
-            name === selected
-              ? ' selected'
-              : '';
+    const values = [
+      '',
+      'Tất cả các khoa',
+      ...HOSPITAL_DEPARTMENTS
+    ];
 
-          return (
-            `<option value="${escapeHtmlValue(name)}"${selectedAttr}>` +
-            `${escapeHtmlText(name)}` +
-            `</option>`
-          );
-        })
-        .join('')
+    return values
+      .map(name => {
+        const label =
+          name ||
+          '-- Không nhận thông báo --';
+
+        const selectedAttr =
+          name === selected
+            ? ' selected'
+            : '';
+
+        return (
+          `<option value="${escapeHtmlValue(name)}"${selectedAttr}>` +
+          `${escapeHtmlText(label)}` +
+          `</option>`
+        );
+      })
+      .join('');
+  }
+
+  function populateAccountNotificationDepartmentSelects() {
+    [
+      'newNotifyKhoa',
+      'editNotifyKhoa'
+    ].forEach(id => {
+      const select =
+        document.getElementById(id);
+
+      if (select) {
+        select.innerHTML =
+          notificationDepartmentOptionsHtml();
+      }
+    });
+
+    updateAccountNotificationDepartmentRequirement(
+      'new'
     );
   }
 
-  function populateUserDepartmentSelects() {
-    const newSelect =
-      document.getElementById(
-        'newNotifyKhoa'
-      );
-
-    const editSelect =
-      document.getElementById(
-        'editNotifyKhoa'
-      );
-
-    if (newSelect) {
-      newSelect.innerHTML =
-        departmentOptionsHtml();
-    }
-
-    if (editSelect) {
-      editSelect.innerHTML =
-        departmentOptionsHtml();
-    }
-  }
-
-  function updateUserDepartmentField(
-    mode,
-    selected = ''
+  function updateAccountNotificationDepartmentRequirement(
+    mode
   ) {
     const prefix =
       mode === 'edit'
@@ -7038,79 +7004,119 @@ let d = new Date(v.time);
         )
         .value;
 
-    const wrap =
-      document.getElementById(
-        prefix +
-        'UserDepartmentWrap'
-      );
-
     const select =
       document.getElementById(
         prefix + 'NotifyKhoa'
       );
 
-    const isReceiver =
+    const help =
+      document.getElementById(
+        prefix + 'NotifyKhoaHelp'
+      );
+
+    const required =
       role === 'xem';
 
-    wrap.style.display =
-      isReceiver
-        ? 'block'
-        : 'none';
-
     select.required =
-      isReceiver;
+      required;
 
-    if (isReceiver) {
-      const value =
-        selected ||
-        select.value ||
-        '';
+    help.innerText =
+      required
+        ? (
+            'Tài khoản Người lĩnh bắt buộc chọn đúng một khoa nhận thông báo.'
+          )
+        : (
+            'Có thể để trống nếu tài khoản không cần nhận; chọn “Tất cả các khoa” nếu cần nhận toàn bộ.'
+          );
+  }
 
-      select.innerHTML =
-        departmentOptionsHtml(
-          value
-        );
+  function applyCurrentUserNotificationDepartments(
+    departments
+  ) {
+    if (!currentUser) return;
 
-      select.value = value;
-    } else {
-      select.value = '';
-    }
+    const normalized =
+      Array.isArray(departments)
+        ? departments
+            .map(item =>
+              String(item || '').trim()
+            )
+            .filter(Boolean)
+        : [];
+
+    currentUser.notifyDepartments =
+      normalized;
+
+    currentUser.notifyKhoa =
+      normalized.join(', ');
+
+    sessionStorage.setItem(
+      'logged_user',
+      JSON.stringify(currentUser)
+    );
   }
 
   function loadAdminUsers() {
-    google.script.run.withSuccessHandler(users => {
-      let tb = document.getElementById('userTableBody'); tb.innerHTML = "";
-      users.forEach(u => {
-        let roleDisplay = (u.role === 'phat' ? 'Phát thuốc' : (u.role === 'admin' ? 'Admin' : 'Người Lĩnh'));
-
-        const editPayload =
-          encodeURIComponent(
-            JSON.stringify({
-              username:
-                u.username,
-              password:
-                u.password || '',
-              fullName:
-                u.fullName,
-              role:
-                u.role,
-              kho:
-                u.kho,
-              notifyKhoa:
-                u.notifyKhoa || ''
-            })
+    google.script.run
+      .withSuccessHandler(users => {
+        const tableBody =
+          document.getElementById(
+            'userTableBody'
           );
 
-        tb.innerHTML += `<tr><td data-label="Tên hiển thị">${escapeHtmlText(u.fullName)}</td><td data-label="Username"><b>${escapeHtmlText(u.username)}</b></td><td data-label="Quyền">${roleDisplay}</td><td data-label="Kho">${escapeHtmlText(u.kho)}</td><td data-label="Khoa nhận TB">${escapeHtmlText(u.notifyKhoa || '—')}</td>
-        <td data-label="Hành động">
-          <div style="display:flex; gap:5px; justify-content: flex-end;">
-            <button class="btn-warning" style="padding: 5px 10px;" onclick="openEditUser('${editPayload}')">Sửa</button>
-            ${u.username.toLowerCase() !== 'admin' ? `<button class="btn-danger" style="padding: 5px 10px;" onclick="deleteUser('${u.username}')">Xóa</button>` : ''}
-          </div>
-        </td></tr>`;
-      });
-      showLoading(false); // Tắt màn hình load khi bảng đã tải xong
-    }).getUsersServer();
+        tableBody.innerHTML = '';
+
+        users.forEach(user => {
+          const roleDisplay =
+            user.role === 'phat'
+              ? 'Phát thuốc'
+              : (
+                  user.role === 'admin'
+                    ? 'Admin'
+                    : 'Người Lĩnh'
+                );
+
+          const editPayload =
+            encodeURIComponent(
+              JSON.stringify({
+                username:
+                  user.username,
+                password:
+                  user.password || '',
+                fullName:
+                  user.fullName,
+                role:
+                  user.role,
+                kho:
+                  user.kho,
+                notifyKhoa:
+                  user.notifyKhoa || ''
+              })
+            );
+
+          tableBody.innerHTML +=
+            `<tr>` +
+            `<td data-label="Tên hiển thị">${escapeHtmlText(user.fullName)}</td>` +
+            `<td data-label="Username"><b>${escapeHtmlText(user.username)}</b></td>` +
+            `<td data-label="Quyền">${roleDisplay}</td>` +
+            `<td data-label="Kho">${escapeHtmlText(user.kho)}</td>` +
+            `<td data-label="Khoa nhận TB">${escapeHtmlText(user.notifyKhoa || '—')}</td>` +
+            `<td data-label="Hành động">` +
+              `<div style="display:flex; gap:5px; justify-content:flex-end;">` +
+                `<button class="btn-warning" style="padding:5px 10px;" onclick="openEditUser('${editPayload}')">Sửa</button>` +
+                (
+                  user.username.toLowerCase() !== 'admin'
+                    ? `<button class="btn-danger" style="padding:5px 10px;" onclick="deleteUser('${user.username}')">Xóa</button>`
+                    : ''
+                ) +
+              `</div>` +
+            `</td>` +
+            `</tr>`;
+        });
+
+        showLoading(false);
+      })
+      .getUsersServer();
   }
 
   async function deleteUser(un) {
@@ -7127,20 +7133,18 @@ let d = new Date(v.time);
         .value;
 
     const notifyKhoa =
-      role === 'xem'
-        ? document
-            .getElementById(
-              'newNotifyKhoa'
-            )
-            .value
-        : '';
+      document
+        .getElementById(
+          'newNotifyKhoa'
+        )
+        .value;
 
     if (
       role === 'xem' &&
       !notifyKhoa
     ) {
       return showMsg(
-        'Vui lòng chọn khoa cho tài khoản Người lĩnh.',
+        'Vui lòng chọn khoa nhận thông báo cho tài khoản Người lĩnh.',
         'Chưa chọn khoa',
         'warning'
       );
@@ -7159,7 +7163,9 @@ let d = new Date(v.time);
           )
           .selectedOptions
       )
-        .map(opt => opt.value)
+        .map(option =>
+          option.value
+        )
         .join(', ');
 
     google.script.run
@@ -7223,28 +7229,78 @@ let d = new Date(v.time);
         )
       );
 
-    document.getElementById('editOldUsername').value = data.username;
-    document.getElementById('editUsername').value = data.username;
-    document.getElementById('editPassword').value = data.password || '';
-    document.getElementById('editFullName').value = data.fullName || '';
-    document.getElementById('editRole').value = data.role || 'xem';
+    document
+      .getElementById(
+        'editOldUsername'
+      )
+      .value =
+        data.username;
 
-    updateUserDepartmentField(
-      'edit',
-      data.notifyKhoa || ''
+    document
+      .getElementById(
+        'editUsername'
+      )
+      .value =
+        data.username;
+
+    document
+      .getElementById(
+        'editPassword'
+      )
+      .value =
+        data.password || '';
+
+    document
+      .getElementById(
+        'editFullName'
+      )
+      .value =
+        data.fullName || '';
+
+    document
+      .getElementById(
+        'editRole'
+      )
+      .value =
+        data.role || 'xem';
+
+    document
+      .getElementById(
+        'editNotifyKhoa'
+      )
+      .innerHTML =
+        notificationDepartmentOptionsHtml(
+          data.notifyKhoa || ''
+        );
+
+    document
+      .getElementById(
+        'editNotifyKhoa'
+      )
+      .value =
+        data.notifyKhoa || '';
+
+    updateAccountNotificationDepartmentRequirement(
+      'edit'
     );
 
     const khoArray =
       String(data.kho || '')
         .split(',')
-        .map(s => s.trim());
+        .map(value =>
+          value.trim()
+        );
 
     Array.from(
-      document.getElementById('editKho').options
-    ).forEach(opt => {
-      opt.selected =
+      document
+        .getElementById(
+          'editKho'
+        )
+        .options
+    ).forEach(option => {
+      option.selected =
         khoArray.includes(
-          opt.value
+          option.value
         );
     });
 
@@ -7264,20 +7320,18 @@ let d = new Date(v.time);
         .value;
 
     const notifyKhoa =
-      role === 'xem'
-        ? document
-            .getElementById(
-              'editNotifyKhoa'
-            )
-            .value
-        : '';
+      document
+        .getElementById(
+          'editNotifyKhoa'
+        )
+        .value;
 
     if (
       role === 'xem' &&
       !notifyKhoa
     ) {
       return showMsg(
-        'Vui lòng chọn khoa cho tài khoản Người lĩnh.',
+        'Vui lòng chọn khoa nhận thông báo cho tài khoản Người lĩnh.',
         'Chưa chọn khoa',
         'warning'
       );
@@ -7291,7 +7345,9 @@ let d = new Date(v.time);
           )
           .selectedOptions
       )
-        .map(opt => opt.value)
+        .map(option =>
+          option.value
+        )
         .join(', ');
 
     google.script.run
