@@ -7,14 +7,14 @@
   <link rel="dns-prefetch" href="//script.google.com">
   <link rel="dns-prefetch" href="//script.googleusercontent.com">
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-  <meta name="theme-color" content="#16856b">
+  <meta name="theme-color" content="#e9ecef">
   <meta name="application-name" content="Phát thuốc">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Phát thuốc">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="description" content="Ứng dụng quản lý phát thuốc và đối chiếu thuốc tại Khoa Dược">
-  <link rel="manifest" href="manifest.webmanifest?v=28">
+  <link rel="manifest" href="manifest.webmanifest?v=31">
   <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
   <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
   <title>Phát thuốc thông minh</title>
@@ -225,7 +225,7 @@
       color: var(--green);
       font-size: 26px;
       line-height: 1.08;
-      font-weight: 900;
+      font-weight: 700;
       overflow-wrap: normal;
       word-break: normal;
     }
@@ -338,7 +338,7 @@
       cursor: pointer;
       font-size: 17px;
       line-height: 1.35;
-      font-weight: 800;
+      font-weight: 700;
       box-sizing: border-box;
     }
 
@@ -365,20 +365,48 @@
       align-self: center;
     }
 
-    #btnPushSubscribe {
-      min-height: 44px;
-      padding: 10px 15px !important;
-      font-size: 18px !important;
-      line-height: 1.25;
-      font-weight: 900;
+    .notification-device-actions {
+      display: grid !important;
+      grid-template-columns:
+        minmax(135px, 1.25fr)
+        minmax(125px, 1fr)
+        minmax(78px, 0.62fr);
+      gap: 8px !important;
+      align-items: stretch;
     }
 
     .notification-device-actions button {
-      min-height: 46px;
-      padding: 11px 14px;
-      font-size: 17px;
-      line-height: 1.25;
-      font-weight: 900;
+      width: 100%;
+      min-width: 0 !important;
+      min-height: 39px;
+      padding: 8px 10px !important;
+      border-radius: 7px;
+      font-size: 15px;
+      line-height: 1.18;
+      font-weight: 700;
+      letter-spacing: 0;
+      white-space: normal;
+      box-shadow: none;
+    }
+
+    .notification-device-actions button:active {
+      transform: translateY(1px);
+    }
+
+    @media (max-width: 480px) {
+      .notification-device-actions {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .notification-device-actions button:first-child {
+        grid-column: 1 / -1;
+      }
+
+      .notification-device-actions button {
+        min-height: 38px;
+        font-size: 14.5px;
+        padding: 7px 9px !important;
+      }
     }
 
     .device-notify-note {
@@ -392,11 +420,73 @@
       margin-bottom: 10px;
     }
 
+
+    /*
+     * Các phần bổ sung từ hệ thống PWA/OneSignal dùng đúng font
+     * gốc của ứng dụng; không dùng kiểu chữ riêng.
+     */
+    .app-title,
+    .app-user-summary,
+    .account-notify-summary,
+    .account-notify-row,
+    .notification-modal-content,
+    .notification-preview,
+    .notification-help,
+    .install-hint,
+    .device-notify-note,
+    .notification-device-actions,
+    .notification-device-actions button {
+      font-family: 'Segoe UI', Roboto, Arial, sans-serif !important;
+      font-style: normal;
+      letter-spacing: normal;
+    }
+
+    .app-title {
+      font-weight: 700;
+    }
+
+    .app-user-summary,
+    .account-notify-summary,
+    .notification-modal-content,
+    .notification-help,
+    .install-hint,
+    .device-notify-note {
+      font-weight: 400;
+    }
+
+    .account-notify-row span,
+    .account-notify-row strong {
+      font-weight: 700;
+    }
+
     #appHeader { padding: 12px 20px; display: none; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; position: relative; margin: 15px auto; max-width: 1200px; width: calc(100% - 30px); z-index: 100; }
     .app-footer { position: relative; margin: 20px auto 15px auto; width: calc(100% - 30px); max-width: 1200px; padding: 10px; text-align: center; font-weight: 900; color: var(--green); z-index: 99; }
     
     .header-actions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 10px; margin-left: auto; }
     .header-actions button { font-size: 18px; }
+
+    /*
+     * Nút Lịch sử là mẫu định dạng gốc.
+     * Bật thông báo, Gửi thông báo và Cài ứng dụng dùng cùng
+     * font, cỡ chữ, độ đậm, khoảng đệm, bo góc và chiều cao.
+     */
+    #btnNavHistory,
+    #btnSendNotification,
+    #btnPushSubscribe,
+    #btnInstallApp {
+      min-height: 0;
+      padding: 10px 15px !important;
+      border-radius: 6px;
+      font-family: 'Segoe UI', Roboto, Arial, sans-serif !important;
+      font-size: 18px !important;
+      font-weight: 700 !important;
+      font-style: normal;
+      line-height: normal;
+      letter-spacing: normal;
+      white-space: nowrap;
+      text-transform: none;
+      box-shadow: none;
+    }
 
     .container { max-width: 1200px; margin: 20px auto; padding: 0 15px; display: none; }
     .card { background: var(--card); padding: 25px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 20px; }
@@ -753,12 +843,24 @@
 
       .app-user-summary {
         grid-column: 1 / -1;
-        width: 100%;
+        width: auto;
+        max-width: 100%;
         margin-top: 2px;
+        margin-left: auto;
         padding-left: 0;
+        padding-right: 2px;
         border-left: 0;
         font-size: 16px !important;
         line-height: 1.3;
+        text-align: right;
+        justify-self: end;
+      }
+
+
+      .app-user-summary #displayRoleBadge {
+        display: inline-block;
+        margin-left: 5px !important;
+        white-space: nowrap;
       }
 
       .account-notify-row {
@@ -1217,10 +1319,10 @@
       </div>
     </div>
 
-    <div class="notification-device-actions" style="display:flex; gap:10px; flex-wrap:wrap;">
-      <button class="btn-success" style="flex:2; min-width:180px;" onclick="saveDeviceNotificationRegistration()">Đồng bộ thiết bị</button>
-      <button class="btn-warning" style="flex:1; min-width:150px;" onclick="disableDeviceNotifications()">Tắt trên thiết bị</button>
-      <button class="btn-danger" style="flex:1; min-width:100px;" onclick="closeDeviceNotificationModal()">Đóng</button>
+    <div class="notification-device-actions">
+      <button class="btn-success" onclick="saveDeviceNotificationRegistration()">Đồng bộ thiết bị</button>
+      <button class="btn-warning" onclick="disableDeviceNotifications()">Tắt trên thiết bị</button>
+      <button class="btn-danger" onclick="closeDeviceNotificationModal()">Đóng</button>
     </div>
   </div>
 </div>
