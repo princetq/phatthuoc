@@ -14,7 +14,7 @@
   <meta name="apple-mobile-web-app-title" content="Phát thuốc">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="description" content="Ứng dụng quản lý phát thuốc và đối chiếu thuốc tại Khoa Dược">
-  <link rel="manifest" href="manifest.webmanifest?v=32">
+  <link rel="manifest" href="manifest.webmanifest?v=33">
   <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
   <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
   <title>Phát thuốc thông minh</title>
@@ -160,9 +160,47 @@
 
     input, select { width: 100%; padding: 12px; margin: 8px 0 15px; border: 1px solid #ccc; border-radius: 8px; font-size: 16px; }
     select[multiple] { height: 100px; }
-    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; justify-content: center; align-items: center; z-index: 1000; }
-    .modal-content { background: #fff; padding: 25px; border-radius: 10px; width: 100%; max-width: 450px; text-align: center; max-height: 90vh; overflow-y: auto; }
-    .modal-content label { text-align: left; display: block; font-weight: bold; margin-bottom: -5px; }
+    html.modal-page-locked,
+    body.modal-page-locked {
+      overflow: hidden !important;
+      overscroll-behavior: none;
+    }
+
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      padding: 15px;
+      overflow: hidden;
+      overscroll-behavior: contain;
+      touch-action: none;
+    }
+
+    .modal-content {
+      background: #fff;
+      padding: 25px;
+      border-radius: 10px;
+      width: 100%;
+      max-width: 450px;
+      text-align: center;
+      max-height: calc(100dvh - 30px);
+      overflow-x: hidden;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
+      touch-action: pan-y;
+    }
+
+    .modal-content label {
+      text-align: left;
+      display: block;
+      font-weight: bold;
+      margin-bottom: -5px;
+    }
 
 
     /* ======== POPUP THÔNG BÁO / XÁC NHẬN DÙNG CHUNG ======== */
@@ -1115,7 +1153,7 @@
     <button id="btnNavList" class="btn-success" onclick="switchView('list')">📋 Danh sách</button>
     <button id="btnNavHistory" class="btn-pink" onclick="switchView('history')">📜 Lịch sử</button>
     <button id="btnSendNotification" class="btn-warning" style="display:none;" onclick="openNotificationModal()">📣 Gửi thông báo</button>
-    <button id="btnPushSubscribe" class="notification-button-muted" onclick="enablePushNotifications()">Bật thông báo</button>
+    <button id="btnPushSubscribe" class="notification-button-muted" onclick="enablePushNotifications()">🔕 Bật thông báo</button>
     <button id="btnInstallApp" class="btn-primary" style="display:none;" onclick="installWebApp()">📲 Cài ứng dụng</button>
     <button class="btn-indigo" onclick="openChangePassModal()">🔑 Đổi MK</button>
     <button class="btn-danger" onclick="handleLogout()">🚪 Đăng xuất</button>
@@ -1833,7 +1871,194 @@
     }
   );
 
+
+  let modalPageScrollY = 0;
+  let modalPageIsLocked = false;
+  let modalScrollObserver = null;
+
+  function hasVisibleModal() {
+    return Array.from(
+      document.querySelectorAll(
+        '.modal-overlay'
+      )
+    ).some(modal => {
+      const style =
+        window.getComputedStyle(
+          modal
+        );
+
+      return (
+        style.display !== 'none' &&
+        style.visibility !== 'hidden'
+      );
+    });
+  }
+
+  function lockPageScrollForModal() {
+    if (modalPageIsLocked) {
+      return;
+    }
+
+    modalPageScrollY =
+      window.scrollY ||
+      window.pageYOffset ||
+      0;
+
+    document.documentElement
+      .classList.add(
+        'modal-page-locked'
+      );
+
+    document.body
+      .classList.add(
+        'modal-page-locked'
+      );
+
+    document.body.style.position =
+      'fixed';
+
+    document.body.style.top =
+      '-' +
+      modalPageScrollY +
+      'px';
+
+    document.body.style.left =
+      '0';
+
+    document.body.style.right =
+      '0';
+
+    document.body.style.width =
+      '100%';
+
+    modalPageIsLocked =
+      true;
+  }
+
+  function unlockPageScrollForModal() {
+    if (!modalPageIsLocked) {
+      return;
+    }
+
+    document.documentElement
+      .classList.remove(
+        'modal-page-locked'
+      );
+
+    document.body
+      .classList.remove(
+        'modal-page-locked'
+      );
+
+    document.body.style.position =
+      '';
+
+    document.body.style.top =
+      '';
+
+    document.body.style.left =
+      '';
+
+    document.body.style.right =
+      '';
+
+    document.body.style.width =
+      '';
+
+    window.scrollTo(
+      0,
+      modalPageScrollY
+    );
+
+    modalPageIsLocked =
+      false;
+  }
+
+  function syncModalPageScrollLock() {
+    if (hasVisibleModal()) {
+      lockPageScrollForModal();
+    } else {
+      unlockPageScrollForModal();
+    }
+  }
+
+  function initializeModalPageScrollLock() {
+    if (modalScrollObserver) {
+      return;
+    }
+
+    const modals =
+      Array.from(
+        document.querySelectorAll(
+          '.modal-overlay'
+        )
+      );
+
+    modalScrollObserver =
+      new MutationObserver(() => {
+        window.requestAnimationFrame(
+          syncModalPageScrollLock
+        );
+      });
+
+    modals.forEach(modal => {
+      modalScrollObserver.observe(
+        modal,
+        {
+          attributes: true,
+          attributeFilter: [
+            'style',
+            'class'
+          ]
+        }
+      );
+    });
+
+    document.addEventListener(
+      'touchmove',
+      event => {
+        const visibleModal =
+          modals.find(modal => {
+            const style =
+              window.getComputedStyle(
+                modal
+              );
+
+            return (
+              style.display !== 'none' &&
+              style.visibility !==
+                'hidden'
+            );
+          });
+
+        if (!visibleModal) {
+          return;
+        }
+
+        const modalContent =
+          event.target.closest(
+            '.modal-content'
+          );
+
+        if (
+          !modalContent ||
+          !visibleModal.contains(
+            modalContent
+          )
+        ) {
+          event.preventDefault();
+        }
+      },
+      {
+        passive: false
+      }
+    );
+
+    syncModalPageScrollLock();
+  }
+
   window.onload = function() {
+    initializeModalPageScrollLock();
     populateAccountNotificationDepartmentSelects();
 
     registerPwaServiceWorker();
@@ -2708,7 +2933,7 @@
 
     if (!departments.length) {
       button.innerText =
-        'Chưa gán khoa';
+        '🔔 Chưa gán khoa';
 
       button.title =
         'Admin cần gán khoa nhận thông báo cho tài khoản này.';
@@ -2743,14 +2968,14 @@
             );
 
       button.innerText =
-        label;
+        '🔔 ' + label;
 
       button.title =
         'Đang bật thông báo cho: ' +
         departments.join(', ');
     } else {
       button.innerText =
-        'Bật thông báo';
+        '🔕 Bật thông báo';
 
       button.title =
         'Bật thông báo trên thiết bị này cho: ' +
