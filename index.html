@@ -14,7 +14,7 @@
   <meta name="apple-mobile-web-app-title" content="Phát thuốc">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="description" content="Ứng dụng quản lý phát thuốc và đối chiếu thuốc tại Khoa Dược">
-  <link rel="manifest" href="manifest.webmanifest?v=35">
+  <link rel="manifest" href="manifest.webmanifest?v=37">
   <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
   <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
   <title>Phát thuốc thông minh</title>
@@ -233,6 +233,52 @@
     #appPopupModal.popup-warning .app-popup-icon { background: #fff3cd; color: #d39e00; }
     #appPopupModal.popup-danger .app-popup-icon { background: #ffebee; color: var(--danger); }
     #appPopupModal.popup-success .app-popup-icon { background: #e8f5e9; color: var(--green); }
+
+    .admin-logout-content {
+      max-width: 520px;
+      text-align: left;
+    }
+
+    .admin-logout-note {
+      margin: 0 0 18px;
+      padding: 13px;
+      border: 1px solid #f0c36d;
+      border-radius: 8px;
+      background: #fff8e8;
+      color: #5f4a20;
+      font-size: 16px;
+      line-height: 1.5;
+    }
+
+    .admin-logout-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .admin-logout-actions button {
+      width: 100%;
+      min-height: 44px;
+      padding: 10px 12px !important;
+      font-family: 'Segoe UI', Roboto, Arial, sans-serif !important;
+      font-size: 16px !important;
+      font-weight: 700 !important;
+      line-height: 1.2;
+    }
+
+    .admin-logout-actions .admin-logout-cancel {
+      grid-column: 1 / -1;
+    }
+
+    @media (max-width: 480px) {
+      .admin-logout-actions {
+        grid-template-columns: 1fr;
+      }
+
+      .admin-logout-actions .admin-logout-cancel {
+        grid-column: auto;
+      }
+    }
     @media (max-width: 480px) {
       .app-popup-content { padding: 22px 18px; }
       .app-popup-title { font-size: 21px; }
@@ -315,6 +361,123 @@
     .notification-modal-content {
       max-width: 620px;
       text-align: left;
+    }
+
+    .department-search-select {
+      position: relative;
+      width: 100%;
+      margin: 8px 0 15px;
+      z-index: 30;
+    }
+
+    .department-search-input {
+      width: 100%;
+      min-height: 44px;
+      margin: 0 !important;
+      padding: 11px 42px 11px 12px !important;
+      border: 1px solid #c8d4cf !important;
+      border-radius: 8px !important;
+      background: #fff !important;
+      color: #222;
+      font-family: 'Segoe UI', Roboto, Arial, sans-serif !important;
+      font-size: 16px !important;
+      font-weight: 400 !important;
+      box-sizing: border-box;
+    }
+
+    .department-search-input:focus {
+      outline: none;
+      border-color: #16856b !important;
+      box-shadow: 0 0 0 3px rgba(22,133,107,0.14);
+    }
+
+    .department-search-input:disabled {
+      background: #f1f3f2 !important;
+      color: #7a8580;
+      cursor: not-allowed;
+    }
+
+    .department-search-arrow {
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 42px;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #51635b;
+      pointer-events: none;
+      font-size: 14px;
+    }
+
+    .department-search-menu {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: calc(100% + 4px);
+      display: none;
+      max-height: 300px;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
+      padding: 5px;
+      border: 1px solid #c8d4cf;
+      border-radius: 8px;
+      background: #fff;
+      box-shadow: 0 12px 28px rgba(0,0,0,0.18);
+      z-index: 5000;
+    }
+
+    .department-search-menu.open {
+      display: block;
+    }
+
+    .department-search-option {
+      width: 100%;
+      min-height: 40px;
+      display: block;
+      padding: 9px 11px;
+      border: 0;
+      border-radius: 6px;
+      background: #fff;
+      color: #202824;
+      font-family: 'Segoe UI', Roboto, Arial, sans-serif;
+      font-size: 16px;
+      font-weight: 400;
+      line-height: 1.3;
+      text-align: left;
+      cursor: pointer;
+      white-space: normal;
+      overflow-wrap: anywhere;
+    }
+
+    .department-search-option:hover,
+    .department-search-option:focus {
+      background: #e9f7f2;
+      color: #125d4b;
+      outline: none;
+    }
+
+    .department-search-option.selected {
+      background: #dff3eb;
+      color: #125d4b;
+      font-weight: 700;
+    }
+
+    .department-search-empty {
+      padding: 12px;
+      color: #6c757d;
+      text-align: center;
+      font-size: 15px;
+    }
+
+    .department-source-select {
+      display: none !important;
+    }
+
+    .department-search-select.open {
+      z-index: 5100;
     }
 
     .notification-modal-content textarea {
@@ -1294,7 +1457,12 @@
         </select>
 
         <label style="font-size:14px; font-weight:bold;">Khoa nhận thông báo:</label>
-        <select id="newNotifyKhoa"></select>
+        <div class="department-search-select" data-select-id="newNotifyKhoa">
+          <input type="text" class="department-search-input" placeholder="Gõ tên khoa để tìm..." autocomplete="off" aria-label="Tìm khoa nhận thông báo">
+          <span class="department-search-arrow">▼</span>
+          <div class="department-search-menu" role="listbox"></div>
+        </div>
+        <select id="newNotifyKhoa" class="department-source-select" tabindex="-1" aria-hidden="true"></select>
         <div id="newNotifyKhoaHelp" class="notification-help">
           Người lĩnh bắt buộc chọn khoa. Admin và người phát có thể để trống hoặc chọn “Tất cả các khoa”.
         </div>
@@ -1329,7 +1497,12 @@
     </select>
 
     <label>Khoa nhận thông báo:</label>
-    <select id="editNotifyKhoa"></select>
+    <div class="department-search-select" data-select-id="editNotifyKhoa">
+      <input type="text" class="department-search-input" placeholder="Gõ tên khoa để tìm..." autocomplete="off" aria-label="Tìm khoa nhận thông báo">
+      <span class="department-search-arrow">▼</span>
+      <div class="department-search-menu" role="listbox"></div>
+    </div>
+    <select id="editNotifyKhoa" class="department-source-select" tabindex="-1" aria-hidden="true"></select>
     <div id="editNotifyKhoaHelp" class="notification-help">
       Người lĩnh bắt buộc chọn khoa. Admin và người phát có thể để trống hoặc chọn “Tất cả các khoa”.
     </div>
@@ -1345,7 +1518,12 @@
     <h3 style="color:#16856b; margin-top:0;">📣 Gửi thông báo đến khoa</h3>
 
     <label>Khoa nhận thông báo:</label>
-    <select id="notifyTargetKhoa"></select>
+    <div class="department-search-select" data-select-id="notifyTargetKhoa">
+      <input type="text" class="department-search-input" placeholder="Gõ tên khoa để tìm..." autocomplete="off" aria-label="Tìm khoa nhận thông báo">
+      <span class="department-search-arrow">▼</span>
+      <div class="department-search-menu" role="listbox"></div>
+    </div>
+    <select id="notifyTargetKhoa" class="department-source-select" tabindex="-1" aria-hidden="true"></select>
 
     <label>Kho gửi:</label>
     <select id="notifyWarehouse" onchange="handleNotificationWarehouseChange()"></select>
@@ -1413,6 +1591,31 @@
   </div>
 </div>
 
+
+<div id="adminLogoutModal" class="modal-overlay">
+  <div class="modal-content admin-logout-content">
+    <h3 style="color:var(--danger); margin-top:0;">🚪 Đăng xuất tài khoản Admin</h3>
+
+    <div class="admin-logout-note">
+      Chọn phạm vi đăng xuất. “Tất cả thiết bị” sẽ làm mất hiệu lực phiên Admin đang mở trên các máy khác.
+    </div>
+
+    <div class="admin-logout-actions">
+      <button class="btn-warning" type="button" onclick="logoutCurrentDevice()">
+        Thiết bị này
+      </button>
+
+      <button class="btn-danger" type="button" onclick="logoutAllDevices()">
+        Tất cả thiết bị
+      </button>
+
+      <button class="btn-primary admin-logout-cancel" type="button" onclick="closeAdminLogoutModal()">
+        Hủy
+      </button>
+    </div>
+  </div>
+</div>
+
 <div id="changePassModal" class="modal-overlay">
   <div class="modal-content">
     <h3 style="color: var(--orange); margin-top:0;">Đổi Mật Khẩu</h3>
@@ -1459,6 +1662,232 @@
   let gasRequestCounter = 0;
   const gasPendingRequests = new Map();
   let backendWarmPromise = null;
+
+
+  const AUTH_STORAGE_KEY =
+    'phat_thuoc_auth_v36';
+
+  function decodeSessionTokenPayload(
+    token
+  ) {
+    try {
+      const body =
+        String(token || '')
+          .split('.')[0];
+
+      if (!body) {
+        return null;
+      }
+
+      const normalized =
+        body
+          .replace(/-/g, '+')
+          .replace(/_/g, '/');
+
+      const padded =
+        normalized +
+        '='.repeat(
+          (
+            4 -
+            normalized.length % 4
+          ) % 4
+        );
+
+      return JSON.parse(
+        decodeURIComponent(
+          Array.from(
+            atob(padded)
+          )
+            .map(character =>
+              '%' +
+              character
+                .charCodeAt(0)
+                .toString(16)
+                .padStart(2, '0')
+            )
+            .join('')
+        )
+      );
+    } catch (error) {
+      return null;
+    }
+  }
+
+  function clearPersistedAuthSession() {
+    localStorage.removeItem(
+      AUTH_STORAGE_KEY
+    );
+
+    sessionStorage.removeItem(
+      'logged_user'
+    );
+
+    sessionStorage.removeItem(
+      'session_token'
+    );
+  }
+
+  function persistAuthSession(
+    user,
+    token,
+    expiresAt = null
+  ) {
+    const payload =
+      decodeSessionTokenPayload(
+        token
+      );
+
+    const normalizedExpiresAt =
+      Number(
+        expiresAt !== null
+          ? expiresAt
+          : (
+              payload &&
+              payload.exp
+                ? payload.exp
+                : 0
+            )
+      );
+
+    localStorage.setItem(
+      AUTH_STORAGE_KEY,
+      JSON.stringify({
+        user: user || null,
+        token:
+          String(token || ''),
+        expiresAt:
+          normalizedExpiresAt,
+        savedAt:
+          Date.now()
+      })
+    );
+
+    sessionStorage.removeItem(
+      'logged_user'
+    );
+
+    sessionStorage.removeItem(
+      'session_token'
+    );
+  }
+
+  function readPersistedAuthSession() {
+    let raw =
+      localStorage.getItem(
+        AUTH_STORAGE_KEY
+      );
+
+    if (!raw) {
+      const legacyUser =
+        sessionStorage.getItem(
+          'logged_user'
+        );
+
+      const legacyToken =
+        sessionStorage.getItem(
+          'session_token'
+        );
+
+      if (
+        legacyUser &&
+        legacyToken
+      ) {
+        try {
+          const user =
+            JSON.parse(
+              legacyUser
+            );
+
+          const payload =
+            decodeSessionTokenPayload(
+              legacyToken
+            );
+
+          persistAuthSession(
+            user,
+            legacyToken,
+            payload
+              ? Number(
+                  payload.exp || 0
+                )
+              : 0
+          );
+
+          raw =
+            localStorage.getItem(
+              AUTH_STORAGE_KEY
+            );
+        } catch (error) {
+          clearPersistedAuthSession();
+          return null;
+        }
+      }
+    }
+
+    if (!raw) {
+      return null;
+    }
+
+    try {
+      const state =
+        JSON.parse(raw);
+
+      if (
+        !state ||
+        !state.user ||
+        !state.token
+      ) {
+        clearPersistedAuthSession();
+        return null;
+      }
+
+      const expiresAt =
+        Number(
+          state.expiresAt || 0
+        );
+
+      if (
+        expiresAt > 0 &&
+        expiresAt <= Date.now()
+      ) {
+        clearPersistedAuthSession();
+        return null;
+      }
+
+      return state;
+    } catch (error) {
+      clearPersistedAuthSession();
+      return null;
+    }
+  }
+
+  function getPersistedSessionToken() {
+    const state =
+      readPersistedAuthSession();
+
+    return state
+      ? String(
+          state.token || ''
+        )
+      : '';
+  }
+
+  function updatePersistedUser(
+    user
+  ) {
+    const state =
+      readPersistedAuthSession();
+
+    if (!state) {
+      return;
+    }
+
+    persistAuthSession(
+      user,
+      state.token,
+      state.expiresAt
+    );
+  }
 
   function prewarmBackend() {
     if (backendWarmPromise) {
@@ -1566,7 +1995,8 @@
     await waitForGasBridge();
 
     const id = 'REQ_' + Date.now() + '_' + (++gasRequestCounter);
-    const token = sessionStorage.getItem('session_token') || '';
+    const token =
+      getPersistedSessionToken();
 
     return new Promise((resolve, reject) => {
       const timeout = setTimeout(() => {
@@ -1621,8 +2051,14 @@
                 );
               }
 
-              if (/Phiên đăng nhập|hết hạn/i.test(error.message || '')) {
-                handleLogout();
+              if (
+                isInvalidSessionError(
+                  error
+                )
+              ) {
+                forceLogoutForInvalidSession(
+                  error
+                );
               }
             });
         };
@@ -1650,6 +2086,9 @@
   let cloudHistoryData = [];
   let activeVoucherId = null;
   let syncInterval = null;
+  let adminSessionValidationTimer = null;
+  let adminSessionValidationInFlight = false;
+  let forcedSessionLogoutHandled = false;
   let currentVoucherVersion = 0;
   let syncInFlight = false;
   let mutationInFlight = false;
@@ -2060,6 +2499,7 @@
   window.onload = function() {
     initializeModalPageScrollLock();
     populateAccountNotificationDepartmentSelects();
+    initializeDepartmentSearchSelects();
 
     registerPwaServiceWorker();
     updateInstallButton();
@@ -2101,11 +2541,20 @@
       );
     }
 
+    const persistedAuth =
+      readPersistedAuthSession();
+
     let saved =
-      sessionStorage.getItem('logged_user');
+      persistedAuth
+        ? JSON.stringify(
+            persistedAuth.user
+          )
+        : '';
 
     let token =
-      sessionStorage.getItem('session_token');
+      persistedAuth
+        ? persistedAuth.token
+        : '';
 
     detailSyncIntervalMs = Math.max(
       500,
@@ -2130,7 +2579,7 @@
 
         initUI();
       } catch (e) {
-        sessionStorage.clear();
+        clearPersistedAuthSession();
       }
     }
   }
@@ -3342,6 +3791,10 @@
           Boolean(isBusy);
       }
     });
+
+    refreshDepartmentSearchSelect(
+      'notifyTargetKhoa'
+    );
   }
 
   function fillNotificationModalOptions() {
@@ -3382,6 +3835,10 @@
         notificationOptions
           .warehouses || []
       ).length <= 1;
+
+    refreshDepartmentSearchSelect(
+      'notifyTargetKhoa'
+    );
 
     handleNotificationWarehouseChange();
     setNotificationModalBusy(false);
@@ -3713,14 +4170,10 @@
           String(detailSyncIntervalMs)
         );
 
-        sessionStorage.setItem(
-          'logged_user',
-          JSON.stringify(currentUser)
-        );
-
-        sessionStorage.setItem(
-          'session_token',
-          res.token || ''
+        persistAuthSession(
+          currentUser,
+          res.token || '',
+          res.sessionExpiresAt
         );
 
         if (
@@ -3752,7 +4205,112 @@
       .loginServer(u, p);
   }
 
-  function handleLogout() {
+  function isInvalidSessionError(
+    error
+  ) {
+    return /Phiên đăng nhập|hết hạn|đăng xuất trên toàn bộ thiết bị/i
+      .test(
+        error &&
+        error.message
+          ? error.message
+          : String(error || '')
+      );
+  }
+
+  function openAdminLogoutModal() {
+    document
+      .getElementById(
+        'adminLogoutModal'
+      )
+      .style.display = 'flex';
+  }
+
+  function closeAdminLogoutModal() {
+    document
+      .getElementById(
+        'adminLogoutModal'
+      )
+      .style.display = 'none';
+  }
+
+  function stopAdminSessionValidation() {
+    if (
+      adminSessionValidationTimer
+    ) {
+      clearInterval(
+        adminSessionValidationTimer
+      );
+
+      adminSessionValidationTimer =
+        null;
+    }
+
+    adminSessionValidationInFlight =
+      false;
+  }
+
+  async function validateAdminSessionNow() {
+    if (
+      !currentUser ||
+      currentUser.role !== 'admin' ||
+      adminSessionValidationInFlight
+    ) {
+      return;
+    }
+
+    adminSessionValidationInFlight =
+      true;
+
+    try {
+      await gasCall(
+        'validateSessionServer',
+        []
+      );
+    } catch (error) {
+      if (
+        isInvalidSessionError(
+          error
+        )
+      ) {
+        await forceLogoutForInvalidSession(
+          error
+        );
+      } else {
+        console.warn(
+          'Không kiểm tra được phiên Admin:',
+          error.message || String(error)
+        );
+      }
+    } finally {
+      adminSessionValidationInFlight =
+        false;
+    }
+  }
+
+  function startAdminSessionValidation() {
+    stopAdminSessionValidation();
+
+    if (
+      !currentUser ||
+      currentUser.role !== 'admin'
+    ) {
+      return;
+    }
+
+    setTimeout(
+      validateAdminSessionNow,
+      1500
+    );
+
+    adminSessionValidationTimer =
+      setInterval(
+        validateAdminSessionNow,
+        15000
+      );
+  }
+
+  function performLocalLogout() {
+    stopAdminSessionValidation();
     logoutOneSignalUser();
 
     if(syncInterval) clearInterval(syncInterval);
@@ -3772,12 +4330,21 @@
     forceHideLoading();
     skipNextListReload = false;
     detailPrefetchPromises.clear();
+
     if (detailPrefetchTimer) {
       clearTimeout(detailPrefetchTimer);
       detailPrefetchTimer = null;
     }
-    sessionStorage.removeItem('logged_user');
-    sessionStorage.removeItem('session_token');
+
+    document
+      .querySelectorAll(
+        '.modal-overlay'
+      )
+      .forEach(modal => {
+        modal.style.display = 'none';
+      });
+
+    clearPersistedAuthSession();
     currentUser = null;
     activeVoucherId = null;
     parsedFileData = {};
@@ -3785,21 +4352,186 @@
     cloudHistoryData = [];
     showLoading(false);
 
-    ['upload', 'list', 'detail', 'admin', 'history'].forEach(v => {
-      let el = document.getElementById('view-' + v);
-      if(el) el.style.display = 'none';
+    [
+      'upload',
+      'list',
+      'detail',
+      'admin',
+      'history'
+    ].forEach(v => {
+      let el =
+        document.getElementById(
+          'view-' + v
+        );
+
+      if(el) {
+        el.style.display = 'none';
+      }
     });
 
-    document.getElementById('appHeader').style.display = 'none';
-    document.getElementById('loginUsername').value = '';
-    document.getElementById('loginPassword').value = '';
-    document.getElementById('loginError').style.display = 'none';
-    document.getElementById('loginError').innerText = '';
-    document.getElementById('loginScreen').style.display = 'flex';
-    setTimeout(() => document.getElementById('loginUsername').focus(), 100);
+    document
+      .getElementById(
+        'appHeader'
+      )
+      .style.display = 'none';
+
+    document
+      .getElementById(
+        'loginUsername'
+      )
+      .value = '';
+
+    document
+      .getElementById(
+        'loginPassword'
+      )
+      .value = '';
+
+    document
+      .getElementById(
+        'loginError'
+      )
+      .style.display = 'none';
+
+    document
+      .getElementById(
+        'loginError'
+      )
+      .innerText = '';
+
+    document
+      .getElementById(
+        'loginScreen'
+      )
+      .style.display = 'flex';
+
+    setTimeout(
+      () =>
+        document
+          .getElementById(
+            'loginUsername'
+          )
+          .focus(),
+      100
+    );
   }
 
+  function logoutCurrentDevice() {
+    closeAdminLogoutModal();
+    performLocalLogout();
+  }
+
+  async function logoutAllDevices() {
+    try {
+      showLoading(
+        true,
+        'Đang đăng xuất toàn bộ thiết bị...'
+      );
+
+      const result =
+        await gasCall(
+          'logoutAllDevicesServer',
+          []
+        );
+
+      showLoading(false);
+
+      if (
+        !result ||
+        result.success === false
+      ) {
+        throw new Error(
+          result &&
+          result.message
+            ? result.message
+            : 'Không đăng xuất được toàn bộ thiết bị.'
+        );
+      }
+
+      closeAdminLogoutModal();
+      performLocalLogout();
+
+      await showMsg(
+        'Đã đăng xuất tài khoản Admin trên toàn bộ thiết bị.',
+        'Đăng xuất thành công',
+        'success'
+      );
+    } catch (error) {
+      showLoading(false);
+
+      await showMsg(
+        error.message || String(error),
+        'Không thể đăng xuất toàn bộ thiết bị',
+        'danger'
+      );
+    }
+  }
+
+  async function forceLogoutForInvalidSession(
+    error
+  ) {
+    if (
+      forcedSessionLogoutHandled
+    ) {
+      return;
+    }
+
+    forcedSessionLogoutHandled =
+      true;
+
+    const message =
+      /đăng xuất trên toàn bộ thiết bị/i
+        .test(
+          error &&
+          error.message
+            ? error.message
+            : String(error || '')
+        )
+        ? 'Tài khoản Admin đã được đăng xuất trên toàn bộ thiết bị.'
+        : 'Phiên đăng nhập không còn hiệu lực. Vui lòng đăng nhập lại.';
+
+    performLocalLogout();
+
+    await showMsg(
+      message,
+      'Đã đăng xuất',
+      'warning'
+    );
+  }
+
+  function handleLogout() {
+    if (
+      currentUser &&
+      currentUser.role === 'admin'
+    ) {
+      openAdminLogoutModal();
+      return;
+    }
+
+    performLocalLogout();
+  }
+
+  document.addEventListener(
+    'visibilitychange',
+    () => {
+      if (
+        document.visibilityState ===
+        'visible'
+      ) {
+        validateAdminSessionNow();
+      }
+    }
+  );
+
+  window.addEventListener(
+    'focus',
+    validateAdminSessionNow
+  );
+
   function initUI() {
+    forcedSessionLogoutHandled =
+      false;
+
     document.getElementById('loginScreen').style.display = 'none';
     document.getElementById('appHeader').style.display = 'flex';
     document.getElementById('displayFullName').innerText = currentUser.fullName;
@@ -3822,6 +4554,7 @@
     }
 
     updateInstallButton();
+    startAdminSessionValidation();
 
     ensureOneSignalInitialized()
       .catch(error => {
@@ -3891,7 +4624,9 @@
           showLoading(false);
           if(res.success) {
               currentUser.localFolder = link;
-              sessionStorage.setItem('logged_user', JSON.stringify(currentUser));
+              updatePersistedUser(
+                currentUser
+              );
               showMsg("Đã lưu đường dẫn thành công!");
           } else {
               showMsg("Lỗi: " + (res.msg || "Không thể lưu đường dẫn."));
@@ -7576,6 +8311,443 @@ let d = new Date(v.time);
 
 
 
+
+  const departmentSearchWidgets =
+    new Map();
+
+  function normalizeDepartmentSearchText(
+    value
+  ) {
+    return String(value || '')
+      .normalize('NFD')
+      .replace(
+        /[\u0300-\u036f]/g,
+        ''
+      )
+      .replace(/đ/g, 'd')
+      .replace(/Đ/g, 'D')
+      .toLowerCase()
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  function closeDepartmentSearchMenus(
+    exceptId = ''
+  ) {
+    departmentSearchWidgets
+      .forEach((widget, selectId) => {
+        if (
+          exceptId &&
+          selectId === exceptId
+        ) {
+          return;
+        }
+
+        widget.wrapper
+          .classList.remove(
+            'open'
+          );
+
+        widget.menu
+          .classList.remove(
+            'open'
+          );
+
+        const selectedOption =
+          widget.select
+            .options[
+              widget.select
+                .selectedIndex
+            ];
+
+        widget.input.value =
+          selectedOption
+            ? selectedOption.text
+            : '';
+      });
+  }
+
+  function renderDepartmentSearchOptions(
+    selectId,
+    query = ''
+  ) {
+    const widget =
+      departmentSearchWidgets.get(
+        selectId
+      );
+
+    if (!widget) {
+      return;
+    }
+
+    const normalizedQuery =
+      normalizeDepartmentSearchText(
+        query
+      );
+
+    const matches =
+      Array.from(
+        widget.select.options
+      )
+        .map((option, optionIndex) => ({
+          option,
+          optionIndex,
+          normalized:
+            normalizeDepartmentSearchText(
+              option.text
+            )
+        }))
+        .filter(item =>
+          !normalizedQuery ||
+          item.normalized.includes(
+            normalizedQuery
+          )
+        );
+
+    widget.menu.innerHTML =
+      matches.length
+        ? matches
+            .map(item => {
+              const selectedClass =
+                item.option.selected
+                  ? ' selected'
+                  : '';
+
+              return (
+                `<button type="button" class="department-search-option${selectedClass}" ` +
+                `data-option-index="${item.optionIndex}" role="option">` +
+                `${escapeHtmlText(item.option.text)}` +
+                `</button>`
+              );
+            })
+            .join('')
+        : (
+            '<div class="department-search-empty">' +
+            'Không tìm thấy khoa phù hợp' +
+            '</div>'
+          );
+
+    widget.wrapper
+      .classList.add(
+        'open'
+      );
+
+    widget.menu
+      .classList.add(
+        'open'
+      );
+  }
+
+  function refreshDepartmentSearchSelect(
+    selectId
+  ) {
+    const widget =
+      departmentSearchWidgets.get(
+        selectId
+      );
+
+    if (!widget) {
+      return;
+    }
+
+    const selectedOption =
+      widget.select
+        .options[
+          widget.select
+            .selectedIndex
+        ];
+
+    widget.input.value =
+      selectedOption
+        ? selectedOption.text
+        : '';
+
+    widget.input.disabled =
+      Boolean(
+        widget.select.disabled
+      );
+
+    if (
+      widget.menu
+        .classList.contains(
+          'open'
+        )
+    ) {
+      renderDepartmentSearchOptions(
+        selectId,
+        ''
+      );
+    }
+  }
+
+  function initializeDepartmentSearchSelect(
+    selectId
+  ) {
+    if (
+      departmentSearchWidgets.has(
+        selectId
+      )
+    ) {
+      refreshDepartmentSearchSelect(
+        selectId
+      );
+      return;
+    }
+
+    const select =
+      document.getElementById(
+        selectId
+      );
+
+    const wrapper =
+      document.querySelector(
+        `.department-search-select[data-select-id="${selectId}"]`
+      );
+
+    if (
+      !select ||
+      !wrapper
+    ) {
+      return;
+    }
+
+    const input =
+      wrapper.querySelector(
+        '.department-search-input'
+      );
+
+    const menu =
+      wrapper.querySelector(
+        '.department-search-menu'
+      );
+
+    const widget = {
+      select,
+      wrapper,
+      input,
+      menu,
+      observer: null
+    };
+
+    departmentSearchWidgets.set(
+      selectId,
+      widget
+    );
+
+    input.addEventListener(
+      'focus',
+      () => {
+        if (input.disabled) {
+          return;
+        }
+
+        closeDepartmentSearchMenus(
+          selectId
+        );
+
+        input.select();
+
+        renderDepartmentSearchOptions(
+          selectId,
+          ''
+        );
+      }
+    );
+
+    input.addEventListener(
+      'input',
+      () => {
+        renderDepartmentSearchOptions(
+          selectId,
+          input.value
+        );
+      }
+    );
+
+    input.addEventListener(
+      'keydown',
+      event => {
+        if (
+          event.key === 'Escape'
+        ) {
+          closeDepartmentSearchMenus();
+          input.blur();
+        }
+
+        if (
+          event.key === 'ArrowDown'
+        ) {
+          event.preventDefault();
+
+          const firstOption =
+            menu.querySelector(
+              '.department-search-option'
+            );
+
+          if (firstOption) {
+            firstOption.focus();
+          }
+        }
+      }
+    );
+
+    menu.addEventListener(
+      'click',
+      event => {
+        const button =
+          event.target.closest(
+            '.department-search-option'
+          );
+
+        if (!button) {
+          return;
+        }
+
+        const optionIndex =
+          Number(
+            button.dataset
+              .optionIndex
+          );
+
+        if (
+          !Number.isInteger(
+            optionIndex
+          ) ||
+          !select.options[
+            optionIndex
+          ]
+        ) {
+          return;
+        }
+
+        select.selectedIndex =
+          optionIndex;
+
+        select.dispatchEvent(
+          new Event(
+            'change',
+            {
+              bubbles: true
+            }
+          )
+        );
+
+        input.value =
+          select.options[
+            optionIndex
+          ].text;
+
+        closeDepartmentSearchMenus();
+      }
+    );
+
+    menu.addEventListener(
+      'keydown',
+      event => {
+        const options =
+          Array.from(
+            menu.querySelectorAll(
+              '.department-search-option'
+            )
+          );
+
+        const currentIndex =
+          options.indexOf(
+            document.activeElement
+          );
+
+        if (
+          event.key === 'ArrowDown'
+        ) {
+          event.preventDefault();
+
+          const next =
+            options[
+              Math.min(
+                currentIndex + 1,
+                options.length - 1
+              )
+            ];
+
+          if (next) {
+            next.focus();
+          }
+        }
+
+        if (
+          event.key === 'ArrowUp'
+        ) {
+          event.preventDefault();
+
+          if (currentIndex <= 0) {
+            input.focus();
+          } else {
+            options[
+              currentIndex - 1
+            ].focus();
+          }
+        }
+
+        if (
+          event.key === 'Escape'
+        ) {
+          closeDepartmentSearchMenus();
+          input.focus();
+        }
+      }
+    );
+
+    widget.observer =
+      new MutationObserver(() => {
+        window.requestAnimationFrame(
+          () => {
+            refreshDepartmentSearchSelect(
+              selectId
+            );
+          }
+        );
+      });
+
+    widget.observer.observe(
+      select,
+      {
+        childList: true,
+        subtree: true,
+        attributes: true,
+        attributeFilter: [
+          'disabled'
+        ]
+      }
+    );
+
+    refreshDepartmentSearchSelect(
+      selectId
+    );
+  }
+
+  function initializeDepartmentSearchSelects() {
+    [
+      'newNotifyKhoa',
+      'editNotifyKhoa',
+      'notifyTargetKhoa'
+    ].forEach(
+      initializeDepartmentSearchSelect
+    );
+
+    document.addEventListener(
+      'click',
+      event => {
+        if (
+          !event.target.closest(
+            '.department-search-select'
+          )
+        ) {
+          closeDepartmentSearchMenus();
+        }
+      }
+    );
+  }
+
   function notificationDepartmentOptionsHtml(
     selected = ''
   ) {
@@ -7616,6 +8788,10 @@ let d = new Date(v.time);
       if (select) {
         select.innerHTML =
           notificationDepartmentOptionsHtml();
+
+        refreshDepartmentSearchSelect(
+          id
+        );
       }
     });
 
@@ -7685,9 +8861,8 @@ let d = new Date(v.time);
     currentUser.notifyKhoa =
       normalized.join(', ');
 
-    sessionStorage.setItem(
-      'logged_user',
-      JSON.stringify(currentUser)
+    updatePersistedUser(
+      currentUser
     );
   }
 
@@ -7826,6 +9001,10 @@ let d = new Date(v.time);
           )
           .value = '';
 
+        refreshDepartmentSearchSelect(
+          'newNotifyKhoa'
+        );
+
         loadAdminUsers();
       })
       .createUserServer({
@@ -7914,6 +9093,10 @@ let d = new Date(v.time);
       )
       .value =
         data.notifyKhoa || '';
+
+    refreshDepartmentSearchSelect(
+      'editNotifyKhoa'
+    );
 
     updateAccountNotificationDepartmentRequirement(
       'edit'
