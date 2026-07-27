@@ -14,7 +14,7 @@
   <meta name="apple-mobile-web-app-title" content="Phát thuốc">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="description" content="Ứng dụng quản lý phát thuốc và đối chiếu thuốc tại Khoa Dược">
-  <link rel="manifest" href="manifest.webmanifest?v=33">
+  <link rel="manifest" href="manifest.webmanifest?v=35">
   <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
   <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
   <title>Phát thuốc thông minh</title>
@@ -2175,6 +2175,27 @@
         params.get('view') || ''
       ).trim();
 
+    const notificationType =
+      String(
+        params.get(
+          'notificationType'
+        ) || ''
+      ).trim();
+
+    const notificationTitle =
+      String(
+        params.get(
+          'notificationTitle'
+        ) || ''
+      ).trim();
+
+    const notificationMessage =
+      String(
+        params.get(
+          'notificationMessage'
+        ) || ''
+      ).trim();
+
     const clearDeepLink = () => {
       try {
         window.history.replaceState(
@@ -2199,6 +2220,44 @@
               ? voucherCard.state
               : 'done'
           );
+
+          const detailView =
+            document.getElementById(
+              'view-detail'
+            );
+
+          const detailOpened =
+            activeVoucherId ===
+              voucherId &&
+            detailView &&
+            detailView.style.display ===
+              'block';
+
+          if (
+            detailOpened &&
+            notificationType ===
+              'warehouse_done' &&
+            notificationMessage
+          ) {
+            await openAppPopup(
+              notificationMessage,
+              {
+                title:
+                  notificationTitle ||
+                  'Thông báo đã phát xong',
+                type:
+                  'success',
+                icon:
+                  '🔔',
+                showCancel:
+                  false,
+                confirmText:
+                  'Đóng tin nhắn',
+                confirmClass:
+                  'btn-success'
+              }
+            );
+          }
         } finally {
           clearDeepLink();
         }
