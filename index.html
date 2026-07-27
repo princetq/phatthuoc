@@ -14,7 +14,7 @@
   <meta name="apple-mobile-web-app-title" content="Phát thuốc">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="description" content="Ứng dụng quản lý phát thuốc và đối chiếu thuốc tại Khoa Dược">
-  <link rel="manifest" href="manifest.webmanifest?v=37">
+  <link rel="manifest" href="manifest.webmanifest?v=38">
   <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
   <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
   <title>Phát thuốc thông minh</title>
@@ -4554,6 +4554,7 @@
     }
 
     updateInstallButton();
+    resetVoucherDepartmentFiltersForAccount();
     startAdminSessionValidation();
 
     ensureOneSignalInitialized()
@@ -5480,6 +5481,189 @@ let d = new Date(v.time);
       </div>`;
   }
 
+
+  const voucherDepartmentFilterInitialized = {
+    active: false,
+    history: false
+  };
+
+  function getCurrentAccountDefaultVoucherDepartment() {
+    if (
+      !currentUser ||
+      currentUser.role !== 'xem'
+    ) {
+      return '';
+    }
+
+    let departments =
+      Array.isArray(
+        currentUser.notifyDepartments
+      )
+        ? currentUser.notifyDepartments
+        : [];
+
+    if (
+      !departments.length &&
+      currentUser.notifyKhoa
+    ) {
+      departments =
+        String(
+          currentUser.notifyKhoa
+        )
+          .split(',')
+          .map(item =>
+            item.trim()
+          )
+          .filter(Boolean);
+    }
+
+    const specificDepartments =
+      departments
+        .map(item =>
+          String(item || '').trim()
+        )
+        .filter(Boolean)
+        .filter(item => {
+          const normalized =
+            item.toLowerCase();
+
+          return (
+            normalized !==
+              'tất cả' &&
+            normalized !==
+              'tất cả các khoa'
+          );
+        });
+
+    return (
+      specificDepartments.length === 1
+        ? specificDepartments[0]
+        : ''
+    );
+  }
+
+  function resetVoucherDepartmentFiltersForAccount() {
+    voucherDepartmentFilterInitialized
+      .active = false;
+
+    voucherDepartmentFilterInitialized
+      .history = false;
+
+    [
+      {
+        type: 'active',
+        inputId: 'searchKhoa',
+        selectId: 'filterKhoa'
+      },
+      {
+        type: 'history',
+        inputId:
+          'searchHistoryKhoa',
+        selectId:
+          'filterHistoryKhoa'
+      }
+    ].forEach(item => {
+      const input =
+        document.getElementById(
+          item.inputId
+        );
+
+      const select =
+        document.getElementById(
+          item.selectId
+        );
+
+      if (input) {
+        input.value = '';
+
+        updateSearchIcon(
+          item.type,
+          false
+        );
+      }
+
+      if (select) {
+        select.value =
+          'Tất cả các khoa';
+
+        select.title =
+          'Tất cả các khoa';
+      }
+    });
+  }
+
+  function markVoucherDepartmentFilterInitialized(
+    type
+  ) {
+    const key =
+      type === 'history'
+        ? 'history'
+        : 'active';
+
+    voucherDepartmentFilterInitialized[
+      key
+    ] = true;
+  }
+
+  function getVoucherDepartmentFilterForRender(
+    type
+  ) {
+    const isHistory =
+      type === 'history';
+
+    const key =
+      isHistory
+        ? 'history'
+        : 'active';
+
+    const input =
+      document.getElementById(
+        isHistory
+          ? 'searchHistoryKhoa'
+          : 'searchKhoa'
+      );
+
+    if (!input) {
+      return '';
+    }
+
+    if (
+      !voucherDepartmentFilterInitialized[
+        key
+      ]
+    ) {
+      voucherDepartmentFilterInitialized[
+        key
+      ] = true;
+
+      const defaultDepartment =
+        getCurrentAccountDefaultVoucherDepartment();
+
+      if (defaultDepartment) {
+        input.value =
+          defaultDepartment;
+
+        updateSearchIcon(
+          type,
+          true
+        );
+
+        return defaultDepartment;
+      }
+
+      input.value = '';
+
+      updateSearchIcon(
+        type,
+        false
+      );
+
+      return '';
+    }
+
+    return input.value.trim();
+  }
+
   function openSearch(type) {
       let sc = document.getElementById(type === 'history' ? 'scHistory' : 'scActive');
       let inp = document.getElementById(type === 'history' ? 'searchHistoryKhoa' : 'searchKhoa');
@@ -5504,6 +5688,10 @@ let d = new Date(v.time);
   }
 
   function handleSearchInput(type) {
+      markVoucherDepartmentFilterInitialized(
+        type
+      );
+
       let isHistory = type === 'history';
       let searchInput = document.getElementById(isHistory ? 'searchHistoryKhoa' : 'searchKhoa');
       let selectBtn = document.getElementById(isHistory ? 'filterHistoryKhoa' : 'filterKhoa');
@@ -5522,6 +5710,10 @@ let d = new Date(v.time);
   }
 
   function clearSearch(type) {
+      markVoucherDepartmentFilterInitialized(
+        type
+      );
+
       let isHistory = type === 'history';
       let searchInput = document.getElementById(isHistory ? 'searchHistoryKhoa' : 'searchKhoa');
       let selectBtn = document.getElementById(isHistory ? 'filterHistoryKhoa' : 'filterKhoa');
@@ -5534,6 +5726,10 @@ let d = new Date(v.time);
   }
   
   function handleSelectChange(type) {
+      markVoucherDepartmentFilterInitialized(
+        type
+      );
+
       let isHistory = type === 'history';
       let searchInput = document.getElementById(isHistory ? 'searchHistoryKhoa' : 'searchKhoa');
       let selectBtn = document.getElementById(isHistory ? 'filterHistoryKhoa' : 'filterKhoa');
@@ -5744,11 +5940,43 @@ let d = new Date(v.time);
 
     let searchInput = document.getElementById('searchKhoa');
     let selectBtn = document.getElementById('filterKhoa');
-    let currentFilter = searchInput.value.trim();
 
-    // Danh sách khoa lấy từ chính các phiếu đang được hiển thị,
-    // không còn liệt kê khoa chỉ có phiếu ở trạng thái đã bỏ chọn hoặc phiếu đã phát ngày cũ.
-    let uniqueKhoas = [...new Set(visibleArr.map(v => v.khoa))].sort((a, b) => a.localeCompare(b, 'vi'));
+    let currentFilter =
+      getVoucherDepartmentFilterForRender(
+        'active'
+      );
+
+    const accountDefaultDepartment =
+      getCurrentAccountDefaultVoucherDepartment();
+
+    // Danh sách khoa lấy từ chính các phiếu đang được hiển thị.
+    // Luôn thêm khoa được phân quyền để bộ lọc vẫn hiển thị đúng
+    // ngay cả khi hiện tại khoa đó chưa có phiếu.
+    let uniqueKhoas =
+      [
+        ...new Set(
+          visibleArr.map(v => v.khoa)
+        )
+      ];
+
+    if (
+      accountDefaultDepartment &&
+      !uniqueKhoas.includes(
+        accountDefaultDepartment
+      )
+    ) {
+      uniqueKhoas.push(
+        accountDefaultDepartment
+      );
+    }
+
+    uniqueKhoas.sort(
+      (a, b) =>
+        a.localeCompare(
+          b,
+          'vi'
+        )
+    );
     
     let dlKhoaSearch = document.getElementById('dlKhoaSearch');
     let dlHTML = '';
@@ -5772,8 +6000,17 @@ let d = new Date(v.time);
             selectBtn.value = currentFilter;
         } else {
             selectBtn.value = "Tất cả các khoa";
-            // Nếu khoa từng chọn không còn phiếu ở bộ lọc hiện tại thì tự xóa lọc khoa cũ.
-            if (prevSelect !== "Tất cả các khoa" && currentFilter === prevSelect) {
+
+            /*
+             * Chỉ xóa bộ lọc cũ khi đó không phải khoa mặc định
+             * của tài khoản Người lĩnh.
+             */
+            if (
+              prevSelect !== "Tất cả các khoa" &&
+              currentFilter === prevSelect &&
+              currentFilter !==
+                accountDefaultDepartment
+            ) {
               searchInput.value = '';
               currentFilter = '';
               updateSearchIcon('active', false);
@@ -5918,9 +6155,40 @@ let d = new Date(v.time);
     
     let searchInput = document.getElementById('searchHistoryKhoa');
     let selectBtn = document.getElementById('filterHistoryKhoa');
-    let currentFilter = searchInput.value.trim();
 
-    let uniqueKhoas = [...new Set(arr.map(v => v.khoa))].sort((a, b) => a.localeCompare(b, 'vi'));
+    let currentFilter =
+      getVoucherDepartmentFilterForRender(
+        'history'
+      );
+
+    const accountDefaultDepartment =
+      getCurrentAccountDefaultVoucherDepartment();
+
+    let uniqueKhoas =
+      [
+        ...new Set(
+          arr.map(v => v.khoa)
+        )
+      ];
+
+    if (
+      accountDefaultDepartment &&
+      !uniqueKhoas.includes(
+        accountDefaultDepartment
+      )
+    ) {
+      uniqueKhoas.push(
+        accountDefaultDepartment
+      );
+    }
+
+    uniqueKhoas.sort(
+      (a, b) =>
+        a.localeCompare(
+          b,
+          'vi'
+        )
+    );
     
     let dlHistoryKhoaSearch = document.getElementById('dlHistoryKhoaSearch');
     let dlHTML = '';
