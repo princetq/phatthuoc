@@ -14,7 +14,7 @@
   <meta name="apple-mobile-web-app-title" content="Phát thuốc">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="description" content="Ứng dụng quản lý phát thuốc và đối chiếu thuốc tại Khoa Dược">
-  <link rel="manifest" href="manifest.webmanifest?v=39">
+  <link rel="manifest" href="manifest.webmanifest?v=41">
   <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
   <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
   <title>Phát thuốc thông minh</title>
@@ -707,6 +707,11 @@
     .container { max-width: 1200px; margin: 20px auto; padding: 0 15px; display: none; }
     .card { background: var(--card); padding: 25px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 20px; }
     .upload-area { border: 2px dashed var(--green); padding: 30px; text-align: center; background: #eefaf3; cursor: pointer; border-radius: 10px; margin-bottom: 20px; }
+    .upload-area.drag-active {
+      background: #dff4e8;
+      border-style: solid;
+      box-shadow: 0 0 0 4px rgba(22,133,107,0.12);
+    }
 
     .tracking-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 15px; }
     .tracking-card {
@@ -1327,7 +1332,11 @@
   <div class="card">
     <h1 style="color:var(--green); text-align:center; margin-top:0;">NẠP FILE EXCEL VÀO HỆ THỐNG</h1>
     
-    <div class="upload-area" onclick="isFolderAutoLoad = false; document.getElementById('fileInput').click()">
+    <div id="singleFileDropArea" class="upload-area"
+         onclick="isFolderAutoLoad = false; document.getElementById('fileInput').click()"
+         ondragover="handleSingleFileDragOver(event)"
+         ondragleave="handleSingleFileDragLeave(event)"
+         ondrop="handleSingleFileDrop(event)">
       <h3 style="color:var(--green);">+ Kéo thả hoặc Chọn File Excel từ máy tính</h3>
       <input type="file" id="fileInput" accept=".xlsx, .xls, .csv" multiple style="display:none" onchange="isFolderAutoLoad = false; handleFiles(this.files)">
     </div>
@@ -2081,7 +2090,8 @@
   const V_COLORS = ['#dc3545', '#007bff', '#28a745', '#fd7e14', '#6f42c1', '#e83e8c'];
 
   let currentUser = null;
-  let parsedFileData = {}; 
+  let parsedFileData = {};
+  let parsedDuplicateStatus = {};
   let cloudWaitList = {};
   let cloudHistoryData = [];
   let activeVoucherId = null;
@@ -4944,47 +4954,317 @@
   }
 
   function getBaseKhoaName(khoaName) {
-    return String(khoaName || '').replace(/ \(phiếu trùng\)/g, '').trim();
+    return String(khoaName || '')
+      .replace(
+        / \(phiếu trùng\)/gi,
+        ''
+      )
+      .trim();
   }
 
-  function isDuplicateVoucher(khoa, vouchersObj) {
-    let localVStr = [...new Set(getVoucherStrings(vouchersObj))].sort().join("||");
-    let serverGroups = {};
-    Object.values(cloudWaitList || {}).forEach(v => {
-      let exactKhoa = String(v.khoa).trim();
-      let baseKhoa = getBaseKhoaName(exactKhoa);
-      if (baseKhoa === String(khoa).trim()) {
-        if (!serverGroups[exactKhoa]) serverGroups[exactKhoa] = new Set();
-        getVoucherStrings(v.vouchers).forEach(str => serverGroups[exactKhoa].add(str));
+  function isDuplicateVoucher(
+    khoa
+  ) {
+    const status =
+      parsedDuplicateStatus[
+        String(khoa || '')
+      ];
+
+    return Boolean(
+      status &&
+      status.duplicate
+    );
+  }
+
+  function buildDuplicateCheckCandidates(
+    khoaKeys = null
+  ) {
+    const keys =
+      Array.isArray(khoaKeys)
+        ? khoaKeys
+        : Object.keys(
+            parsedFileData || {}
+          );
+
+    return keys
+      .filter(khoa =>
+        parsedFileData[khoa]
+      )
+      .map(khoa => ({
+        key:
+          khoa,
+        khoa:
+          khoa,
+        vouchers:
+          parsedFileData[khoa]
+            .vouchers || {},
+        items:
+          parsedFileData[khoa]
+            .items || []
+      }));
+  }
+
+  function refreshParsedDuplicateStatus(
+    khoaKeys = null
+  ) {
+    const candidates =
+      buildDuplicateCheckCandidates(
+        khoaKeys
+      );
+
+    if (!candidates.length) {
+      if (!khoaKeys) {
+        parsedDuplicateStatus = {};
       }
-    });
-    return Object.values(serverGroups).some(vSet => {
-      let serverVStr = [...vSet].sort().join("||");
-      if (localVStr !== "") return localVStr === serverVStr;
-      return serverVStr === "";
-    });
-  }
 
-  function refreshCloudWaitListForDuplicateCheck() {
+      return Promise.resolve({});
+    }
+
     return new Promise(resolve => {
       try {
         google.script.run
-          .withSuccessHandler(data => { cloudWaitList = data || {}; resolve(); })
-          .withFailureHandler(() => { resolve(); })
-          .getVouchersServer();
-      } catch (e) {
-        resolve();
+          .withSuccessHandler(response => {
+            const results =
+              response &&
+              response.results
+                ? response.results
+                : {};
+
+            if (!khoaKeys) {
+              parsedDuplicateStatus = {};
+            }
+
+            candidates.forEach(candidate => {
+              parsedDuplicateStatus[
+                candidate.key
+              ] =
+                results[
+                  candidate.key
+                ] || {
+                  duplicate: false,
+                  matchedCount: 0,
+                  tokenCount: 0
+                };
+            });
+
+            resolve(results);
+          })
+          .withFailureHandler(error => {
+            console.error(
+              'Không kiểm tra được phiếu trùng:',
+              error && error.message
+                ? error.message
+                : String(error || '')
+            );
+
+            /*
+             * Không tự coi là không trùng khi máy chủ lỗi.
+             * Nạp từ thư mục sẽ còn một lớp chặn cuối ở backend.
+             */
+            resolve({});
+          })
+          .checkVoucherDuplicatesServer(
+            JSON.stringify(
+              candidates
+            )
+          );
+      } catch (error) {
+        console.error(error);
+        resolve({});
       }
     });
+  }
+
+
+  function handleSingleFileDragOver(
+    event
+  ) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (
+      event.dataTransfer
+    ) {
+      event.dataTransfer.dropEffect =
+        'copy';
+    }
+
+    const area =
+      document.getElementById(
+        'singleFileDropArea'
+      );
+
+    if (area) {
+      area.classList.add(
+        'drag-active'
+      );
+    }
+  }
+
+  function handleSingleFileDragLeave(
+    event
+  ) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const area =
+      document.getElementById(
+        'singleFileDropArea'
+      );
+
+    if (area) {
+      area.classList.remove(
+        'drag-active'
+      );
+    }
+  }
+
+  function handleSingleFileDrop(
+    event
+  ) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const area =
+      document.getElementById(
+        'singleFileDropArea'
+      );
+
+    if (area) {
+      area.classList.remove(
+        'drag-active'
+      );
+    }
+
+    const files =
+      event.dataTransfer
+        ? event.dataTransfer.files
+        : null;
+
+    if (
+      !files ||
+      !files.length
+    ) {
+      return;
+    }
+
+    isFolderAutoLoad = false;
+    handleFiles(files);
+  }
+
+  function mergeInsertedVoucherCards(
+    insertedCards
+  ) {
+    if (
+      !insertedCards ||
+      typeof insertedCards !==
+        'object'
+    ) {
+      return 0;
+    }
+
+    let merged = 0;
+
+    Object.keys(
+      insertedCards
+    ).forEach(id => {
+      const card =
+        insertedCards[id];
+
+      if (
+        !card ||
+        !card.id
+      ) {
+        return;
+      }
+
+      cloudWaitList[id] = card;
+      merged++;
+    });
+
+    if (merged) {
+      saveVoucherCardsLocalCache(
+        cloudWaitList
+      );
+    }
+
+    return merged;
+  }
+
+  function prepareVoucherListForInsertedCards(
+    insertedCards
+  ) {
+    const cards =
+      insertedCards &&
+      typeof insertedCards ===
+        'object'
+        ? Object.values(
+            insertedCards
+          ).filter(Boolean)
+        : [];
+
+    if (!cards.length) {
+      return;
+    }
+
+    /*
+     * Tài khoản nạp phiếu là Admin/Người phát.
+     * Xóa bộ lọc khoa cũ và bảo đảm trạng thái Chưa phát đang bật
+     * để các phiếu vừa nạp chắc chắn xuất hiện ngay trên màn hình.
+     */
+    markVoucherDepartmentFilterInitialized(
+      'active'
+    );
+
+    const searchInput =
+      document.getElementById(
+        'searchKhoa'
+      );
+
+    if (searchInput) {
+      searchInput.value = '';
+    }
+
+    const departmentSelect =
+      document.getElementById(
+        'filterKhoa'
+      );
+
+    if (departmentSelect) {
+      departmentSelect.value =
+        'Tất cả các khoa';
+
+      departmentSelect.title =
+        'Tất cả các khoa';
+    }
+
+    updateSearchIcon(
+      'active',
+      false
+    );
+
+    const waitingFilter =
+      document.querySelector(
+        '.voucher-state-filter[value="waiting"]'
+      );
+
+    if (waitingFilter) {
+      waitingFilter.checked = true;
+    }
+
+    updateStatusFilterLabel();
   }
 
   async function handleFiles(files) {
     if (!files || files.length === 0) return;
-    showLoading(true, "Đang tải dữ liệu để kiểm tra phiếu trùng...");
-    await refreshCloudWaitListForDuplicateCheck();
 
-    showLoading(true, "Đang phân tích file...");
-    parsedFileData = {}; 
+    showLoading(
+      true,
+      "Đang phân tích file..."
+    );
+
+    parsedFileData = {};
+    parsedDuplicateStatus = {};
     
     for (let i = 0; i < files.length; i++) {
       await new Promise((resolve) => {
@@ -5002,23 +5282,38 @@
       });
     }
 
+    showLoading(
+      true,
+      "Đang kiểm tra phiếu trùng..."
+    );
+
+    await refreshParsedDuplicateStatus();
+
     let duplicateKhoas = [];
-    Object.keys(parsedFileData).forEach(khoa => {
-        if (isDuplicateVoucher(khoa, parsedFileData[khoa].vouchers)) duplicateKhoas.push(khoa);
-    });
+
+    Object.keys(parsedFileData)
+      .forEach(khoa => {
+        if (
+          isDuplicateVoucher(
+            khoa
+          )
+        ) {
+          duplicateKhoas.push(
+            khoa
+          );
+        }
+      });
 
     if (duplicateKhoas.length > 0) {
         if (isFolderAutoLoad) {
-            let todayStr = new Date().toLocaleDateString('vi-VN');
-            let hasWarned = localStorage.getItem('lastAutoWarnDate');
-            
-            if (hasWarned !== todayStr) {
-                await showMsg("Phát hiện các phiếu đã có trên hệ thống, gồm cả phiếu Chưa phát, Đang phát hoặc Đã phát (" + duplicateKhoas.join(", ") + ").\n\nCác phiếu này được bôi đỏ và tự động BỎ TÍCH CHỌN. Chỉ khi bạn tự tích chọn lại thì hệ thống mới đưa vào danh sách chờ phát và ghi chú là 'phiếu trùng'.\n\nThông báo này chỉ hiện 1 lần mỗi ngày để tránh làm phiền.", "Cảnh báo phiếu trùng", "warning");
-                localStorage.setItem('lastAutoWarnDate', todayStr);
-            } else {
-                // Giữ phiếu trùng trong danh sách nạp nhưng tự động bỏ tích chọn.
-                // Chỉ đưa vào danh sách chờ phát nếu người dùng tự tích chọn lại.
-            }
+            /*
+             * Nạp từ thư mục: loại phiếu trùng hoàn toàn im lặng.
+             * Không hiện cảnh báo, không tạo checkbox và không cho chọn lại.
+             */
+            duplicateKhoas.forEach(khoa => {
+              delete parsedFileData[khoa];
+              delete parsedDuplicateStatus[khoa];
+            });
         } else {
             await showMsg("Phát hiện các phiếu giống hệt với phiếu đang có trên hệ thống, gồm cả phiếu Chưa phát, Đang phát hoặc Đã phát (" + duplicateKhoas.join(", ") + ").\n\nCác phiếu này được bôi đỏ và tự động BỎ TÍCH CHỌN. Chỉ khi bạn tự tích chọn lại thì hệ thống mới đưa vào danh sách chờ phát và ghi chú là 'phiếu trùng'.", "Cảnh báo phiếu trùng", "warning");
         }
@@ -5067,6 +5362,7 @@
       const ok = await showConfirm("Bạn có chắc chắn muốn hủy bỏ toàn bộ danh sách nạp này không?", "Hủy danh sách nạp", { type: 'danger', confirmText: 'Hủy toàn bộ', confirmClass: 'btn-danger' });
       if(ok) {
           parsedFileData = {};
+          parsedDuplicateStatus = {};
           renderUploadList(); 
       }
   }
@@ -5075,6 +5371,7 @@
       const ok = await showConfirm("Xóa " + khoa + " khỏi danh sách nạp?", "Xóa phiếu đang nạp", { type: 'danger', confirmText: 'Xóa', confirmClass: 'btn-danger' });
       if(ok) {
           delete parsedFileData[khoa];
+          delete parsedDuplicateStatus[khoa];
           renderUploadList(); 
       }
   }
@@ -5116,7 +5413,7 @@
           vc.HT.forEach(x => allVouchers.add(x.split('|')[0]));
       }
 
-      let isDup = isDuplicateVoucher(khoa, parsedFileData[khoa].vouchers);
+      let isDup = isDuplicateVoucher(khoa);
       
       let borderCard = isDup ? 'border:2px solid var(--danger);' : 'border:1px solid #ccc;';
       let bgHeader = isDup ? '#ffebee' : '#f0f0f0';
@@ -5147,16 +5444,58 @@
     if(checksNode.length === 0) return showMsg("Vui lòng chọn ít nhất 1 khoa!");
     let checks = Array.from(checksNode);
     
-    showLoading(true, "Đang kiểm tra lại phiếu trùng...");
-    await refreshCloudWaitListForDuplicateCheck();
+    showLoading(
+      true,
+      "Đang kiểm tra lại phiếu trùng..."
+    );
+
+    const selectedKhoaKeys =
+      checks.map(cb => cb.value);
+
+    await refreshParsedDuplicateStatus(
+      selectedKhoaKeys
+    );
 
     let duplicateKhoas = [];
+
     checks.forEach(cb => {
       let k = cb.value;
-      if (isDuplicateVoucher(k, parsedFileData[k].vouchers)) duplicateKhoas.push(k);
+
+      if (
+        isDuplicateVoucher(k)
+      ) {
+        duplicateKhoas.push(k);
+      }
     });
 
     showLoading(false);
+
+    if (
+      duplicateKhoas.length > 0 &&
+      isFolderAutoLoad
+    ) {
+      duplicateKhoas.forEach(khoa => {
+        delete parsedFileData[khoa];
+      });
+
+      checks = checks.filter(cb =>
+        !duplicateKhoas.includes(
+          cb.value
+        )
+      );
+
+      duplicateKhoas.forEach(khoa => {
+        delete parsedDuplicateStatus[khoa];
+      });
+
+      renderUploadList();
+      duplicateKhoas = [];
+
+      if (!checks.length) {
+        return;
+      }
+    }
+
     if (duplicateKhoas.length > 0) {
         const acceptDuplicate = await showConfirm("Bạn vẫn muốn đưa các phiếu trùng lặp (" + duplicateKhoas.join(", ") + ") vào danh sách?\n\nCác phiếu này đã có trong mục Chưa phát, Đang phát hoặc Đã phát. Hệ thống sẽ tự động thêm chữ '(phiếu trùng)'.", "Xác nhận nạp phiếu trùng", { type: 'warning', confirmText: 'Vẫn đưa vào' });
         if (!acceptDuplicate) {
@@ -5165,30 +5504,129 @@
         }
     }
 
+    const uploadMode =
+      isFolderAutoLoad
+        ? 'folder'
+        : 'manual';
+
     let payload = {};
+
     checks.forEach(cb => {
       let k = cb.value;
-      let finalKhoa = duplicateKhoas.includes(k) ? (k + " (phiếu trùng)") : k;
-      payload["P_" + Date.now() + "_" + Math.floor(Math.random()*10000)] = { khoa: finalKhoa, time: new Date().toISOString(), vouchers: parsedFileData[k].vouchers, items: parsedFileData[k].items };
+
+      const allowDuplicate =
+        duplicateKhoas.includes(k);
+
+      let finalKhoa =
+        allowDuplicate
+          ? (k + " (phiếu trùng)")
+          : k;
+
+      payload[
+        "P_" +
+        Date.now() +
+        "_" +
+        Math.floor(
+          Math.random() * 10000
+        )
+      ] = {
+        sourceKey:
+          k,
+        uploadMode:
+          uploadMode,
+        allowDuplicate:
+          allowDuplicate,
+        khoa:
+          finalKhoa,
+        time:
+          new Date().toISOString(),
+        vouchers:
+          parsedFileData[k].vouchers,
+        items:
+          parsedFileData[k].items
+      };
     });
     
     showLoading(true, "Đang lưu...");
     google.script.run
-      .withSuccessHandler(r => { 
+      .withSuccessHandler(async r => {
         showLoading(false);
         if (!r || r.success === false) {
           showMsg((r && r.msg) || 'Không thể đưa phiếu vào danh sách.', 'Nạp phiếu thất bại', 'warning');
           return;
         }
-        checks.forEach(cb => { delete parsedFileData[cb.value]; });
-        renderUploadList(); 
-        switchView('list'); 
+        const blockedDuplicates =
+          Array.isArray(
+            r.blockedDuplicates
+          )
+            ? r.blockedDuplicates
+            : [];
+
+        const blockedSet =
+          new Set(
+            blockedDuplicates
+          );
+
+        checks.forEach(cb => {
+          if (
+            !blockedSet.has(
+              cb.value
+            )
+          ) {
+            delete parsedFileData[
+              cb.value
+            ];
+
+            delete parsedDuplicateStatus[
+              cb.value
+            ];
+          }
+        });
+
+        renderUploadList();
+
+        if (
+          blockedDuplicates.length
+        ) {
+          await showMsg(
+            "Máy chủ vừa phát hiện phiếu trùng ở bước kiểm tra cuối (" +
+              blockedDuplicates.join(", ") +
+              ").\n\nCác phiếu này chưa được nạp. Hãy tích chọn lại để xác nhận nạp bằng file đơn lẻ.",
+            "Phát hiện phiếu trùng",
+            "warning"
+          );
+
+          if (
+            Number(r.inserted || 0) === 0
+          ) {
+            return;
+          }
+        }
+
+        /*
+         * Ghép ngay các thẻ vừa được máy chủ xác nhận vào dữ liệu cục bộ.
+         * Nhờ đó khi quay về danh sách, phiếu xuất hiện tức thời,
+         * không phải chờ thêm một lượt tải danh sách 1–2 giây.
+         */
+        mergeInsertedVoucherCards(
+          r.insertedCards || {}
+        );
+
+        prepareVoucherListForInsertedCards(
+          r.insertedCards || {}
+        );
+
+        skipNextListReload = true;
+        switchView('list');
       })
       .withFailureHandler(error => {
         showLoading(false);
         showMsg(error.message || String(error), 'Lỗi nạp phiếu', 'danger');
       })
-      .pushVouchersServer(JSON.stringify(payload));
+      .pushVouchersServer(
+        JSON.stringify(payload),
+        uploadMode
+      );
   }
 
   function formatDateDDMMYYYY(value) {
