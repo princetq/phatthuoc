@@ -14,7 +14,7 @@
   <meta name="apple-mobile-web-app-title" content="Phát thuốc">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="description" content="Ứng dụng quản lý phát thuốc và đối chiếu thuốc tại Khoa Dược">
-  <link rel="manifest" href="manifest.webmanifest?v=38">
+  <link rel="manifest" href="manifest.webmanifest?v=39">
   <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
   <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
   <title>Phát thuốc thông minh</title>
@@ -2601,6 +2601,216 @@
 
 
 
+
+  function isAllDepartmentsValue(
+    value
+  ) {
+    const normalized =
+      String(value || '')
+        .trim()
+        .toLowerCase();
+
+    return (
+      normalized ===
+        'tất cả' ||
+      normalized ===
+        'tất cả các khoa'
+    );
+  }
+
+  function showManualNotificationOnMain(
+    title,
+    message,
+    department = ''
+  ) {
+    if (
+      !currentUser ||
+      !message
+    ) {
+      return Promise.resolve(
+        false
+      );
+    }
+
+    switchView(
+      'list'
+    );
+
+    const input =
+      document.getElementById(
+        'searchKhoa'
+      );
+
+    if (input) {
+      markVoucherDepartmentFilterInitialized(
+        'active'
+      );
+
+      if (
+        department &&
+        !isAllDepartmentsValue(
+          department
+        )
+      ) {
+        input.value =
+          department;
+
+        handleSearchInput(
+          'active'
+        );
+      } else if (
+        isAllDepartmentsValue(
+          department
+        )
+      ) {
+        input.value = '';
+
+        const select =
+          document.getElementById(
+            'filterKhoa'
+          );
+
+        if (select) {
+          select.value =
+            'Tất cả các khoa';
+
+          select.title =
+            'Tất cả các khoa';
+        }
+
+        updateSearchIcon(
+          'active',
+          false
+        );
+
+        renderTrackingList();
+      }
+    }
+
+    return openAppPopup(
+      message,
+      {
+        title:
+          title ||
+          'Thông báo từ Khoa Dược',
+        type:
+          'warning',
+        icon:
+          '🔔',
+        showCancel:
+          false,
+        confirmText:
+          'Đóng tin nhắn',
+        confirmClass:
+          'btn-primary'
+      }
+    );
+  }
+
+  function extractOneSignalNotificationData(
+    event
+  ) {
+    let notification = null;
+
+    if (
+      event &&
+      event.notification
+    ) {
+      notification =
+        event.notification;
+    } else if (
+      event &&
+      typeof event.getNotification ===
+        'function'
+    ) {
+      try {
+        notification =
+          event.getNotification();
+      } catch (error) {
+        notification = null;
+      }
+    }
+
+    notification =
+      notification || {};
+
+    const additionalData =
+      notification.additionalData ||
+      notification.data ||
+      (
+        notification.rawPayload &&
+        notification.rawPayload
+          .additionalData
+      ) ||
+      {};
+
+    return {
+      type:
+        String(
+          additionalData.type ||
+          ''
+        ).trim(),
+      department:
+        String(
+          additionalData.khoa ||
+          ''
+        ).trim(),
+      title:
+        String(
+          additionalData
+            .notificationTitle ||
+          notification.title ||
+          ''
+        ).trim(),
+      message:
+        String(
+          additionalData
+            .notificationMessage ||
+          notification.body ||
+          notification.message ||
+          ''
+        ).trim(),
+      notificationId:
+        String(
+          additionalData
+            .notificationId ||
+          notification.notificationId ||
+          notification.id ||
+          ''
+        ).trim()
+    };
+  }
+
+  function handleOneSignalForegroundNotification(
+    event
+  ) {
+    const payload =
+      extractOneSignalNotificationData(
+        event
+      );
+
+    if (
+      payload.type !== 'manual' ||
+      !payload.message ||
+      !currentUser ||
+      document.visibilityState !==
+        'visible'
+    ) {
+      return;
+    }
+
+    window.setTimeout(
+      () => {
+        showManualNotificationOnMain(
+          payload.title,
+          payload.message,
+          payload.department
+        );
+      },
+      0
+    );
+  }
+
   function applyNotificationDeepLink() {
     const params =
       new URLSearchParams(
@@ -2642,6 +2852,13 @@
       String(
         params.get(
           'notificationMessage'
+        ) || ''
+      ).trim();
+
+    const notificationId =
+      String(
+        params.get(
+          'notificationId'
         ) || ''
       ).trim();
 
@@ -2711,6 +2928,26 @@
           clearDeepLink();
         }
       }, 180);
+
+      return;
+    }
+
+    if (
+      notificationType ===
+        'manual' &&
+      notificationMessage
+    ) {
+      setTimeout(async () => {
+        try {
+          await showManualNotificationOnMain(
+            notificationTitle,
+            notificationMessage,
+            khoa
+          );
+        } finally {
+          clearDeepLink();
+        }
+      }, 150);
 
       return;
     }
@@ -2955,6 +3192,12 @@
                     .addEventListener(
                       'permissionChange',
                       updatePushNotificationButton
+                    );
+
+                  OneSignal.Notifications
+                    .addEventListener(
+                      'foregroundWillDisplay',
+                      handleOneSignalForegroundNotification
                     );
 
                   clearTimeout(timeout);
