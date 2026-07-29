@@ -14,7 +14,7 @@
   <meta name="apple-mobile-web-app-title" content="Phát thuốc">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="description" content="Ứng dụng quản lý phát thuốc và đối chiếu thuốc tại Khoa Dược">
-  <link rel="manifest" href="manifest.webmanifest?v=41">
+  <link rel="manifest" href="manifest.webmanifest?v=42">
   <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
   <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
   <title>Phát thuốc thông minh</title>
@@ -2127,6 +2127,18 @@
   let detailPrefetchTimer = null;
 
   let isFolderAutoLoad = false;
+
+  const FILE_PARSE_CONCURRENCY =
+    Math.max(
+      2,
+      Math.min(
+        4,
+        Number(
+          navigator.hardwareConcurrency ||
+          4
+        )
+      )
+    );
 
   const HOSPITAL_DEPARTMENTS = [
     'Khoa Cấp Cứu',
@@ -4976,6 +4988,24 @@
     );
   }
 
+  function hasVoucherIdentityData(
+    vouchers
+  ) {
+    return Object.keys(
+      vouchers || {}
+    )
+      .some(khoKey => {
+        const group =
+          vouchers[khoKey] || {};
+
+        return (
+          (group.TQ || []).length ||
+          (group.BT || []).length ||
+          (group.HT || []).length
+        );
+      });
+  }
+
   function buildDuplicateCheckCandidates(
     khoaKeys = null
   ) {
@@ -4990,18 +5020,51 @@
       .filter(khoa =>
         parsedFileData[khoa]
       )
-      .map(khoa => ({
-        key:
-          khoa,
-        khoa:
-          khoa,
-        vouchers:
-          parsedFileData[khoa]
-            .vouchers || {},
-        items:
-          parsedFileData[khoa]
-            .items || []
-      }));
+      .map(khoa => {
+        const source =
+          parsedFileData[khoa];
+
+        const vouchers =
+          source.vouchers || {};
+
+        /*
+         * Có số phiếu thì chỉ gửi khoa + vouchers.
+         * Chỉ gửi chữ ký thuốc gọn nhẹ khi file không có số phiếu.
+         */
+        const items =
+          hasVoucherIdentityData(
+            vouchers
+          )
+            ? []
+            : (
+                source.items || []
+              )
+                .map(item => ({
+                  khoKey:
+                    item.khoKey,
+                  ma:
+                    item.ma,
+                  ten:
+                    item.ten,
+                  dvt:
+                    item.dvt,
+                  sl:
+                    item.sl,
+                  loaiThuoc:
+                    item.loaiThuoc
+                }));
+
+        return {
+          key:
+            khoa,
+          khoa:
+            khoa,
+          vouchers:
+            vouchers,
+          items:
+            items
+        };
+      });
   }
 
   function refreshParsedDuplicateStatus(
@@ -5255,75 +5318,220 @@
     updateStatusFilterLabel();
   }
 
+  function readFileAsArrayBufferFast(
+    file
+  ) {
+    if (
+      file &&
+      typeof file.arrayBuffer ===
+        'function'
+    ) {
+      return file.arrayBuffer();
+    }
+
+    return new Promise(
+      (resolve, reject) => {
+        const reader =
+          new FileReader();
+
+        reader.onload =
+          event =>
+            resolve(
+              event.target.result
+            );
+
+        reader.onerror =
+          () =>
+            reject(
+              reader.error ||
+              new Error(
+                'Không đọc được file.'
+              )
+            );
+
+        reader.readAsArrayBuffer(
+          file
+        );
+      }
+    );
+  }
+
+  async function parseImportFile(
+    file,
+    allowedKhoKeys
+  ) {
+    const buffer =
+      await readFileAsArrayBufferFast(
+        file
+      );
+
+    const data =
+      new Uint8Array(
+        buffer
+      );
+
+    const workbook =
+      XLSX.read(
+        data,
+        {
+          type: 'array'
+        }
+      );
+
+    const rows =
+      XLSX.utils
+        .sheet_to_json(
+          workbook.Sheets[
+            workbook
+              .SheetNames[0]
+          ],
+          {
+            header: 1,
+            defval: ''
+          }
+        );
+
+    parseRows(
+      rows,
+      allowedKhoKeys
+    );
+  }
+
   async function handleFiles(files) {
-    if (!files || files.length === 0) return;
+    if (
+      !files ||
+      files.length === 0
+    ) {
+      return;
+    }
 
     showLoading(
       true,
-      "Đang phân tích file..."
+      'Đang đọc và phân tích file...'
     );
 
     parsedFileData = {};
     parsedDuplicateStatus = {};
-    
-    for (let i = 0; i < files.length; i++) {
-      await new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onload = (e) => {
+
+    const fileList =
+      Array.from(files);
+
+    const allowedKhoKeys =
+      getAllowedKhoKeysForCurrentUser();
+
+    let nextIndex = 0;
+    let failedCount = 0;
+
+    const worker =
+      async () => {
+        while (
+          nextIndex <
+          fileList.length
+        ) {
+          const index =
+            nextIndex++;
+
           try {
-            const data = new Uint8Array(e.target.result);
-            const wb = XLSX.read(data, {type: 'array'});
-            const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {header: 1, defval: ""});
-            parseRows(rows); 
-          } catch(err) { console.error(err); }
-          resolve();
-        };
-        reader.readAsArrayBuffer(files[i]);
-      });
-    }
+            await parseImportFile(
+              fileList[index],
+              allowedKhoKeys
+            );
+          } catch (error) {
+            failedCount++;
+
+            console.error(
+              'Lỗi đọc file:',
+              fileList[index]
+                ? fileList[index].name
+                : '',
+              error
+            );
+          }
+        }
+      };
+
+    const workerCount =
+      Math.min(
+        FILE_PARSE_CONCURRENCY,
+        fileList.length
+      );
+
+    await Promise.all(
+      Array.from(
+        {
+          length:
+            workerCount
+        },
+        () => worker()
+      )
+    );
 
     showLoading(
       true,
-      "Đang kiểm tra phiếu trùng..."
+      'Đang kiểm tra phiếu trùng...'
     );
 
     await refreshParsedDuplicateStatus();
 
-    let duplicateKhoas = [];
+    const duplicateKhoas =
+      Object.keys(
+        parsedFileData
+      )
+        .filter(
+          isDuplicateVoucher
+        );
 
-    Object.keys(parsedFileData)
-      .forEach(khoa => {
-        if (
-          isDuplicateVoucher(
-            khoa
-          )
-        ) {
-          duplicateKhoas.push(
-            khoa
-          );
-        }
-      });
+    if (
+      duplicateKhoas.length > 0
+    ) {
+      if (
+        isFolderAutoLoad
+      ) {
+        /*
+         * Nạp từ thư mục:
+         * loại trùng hoàn toàn im lặng trước khi render.
+         */
+        duplicateKhoas
+          .forEach(khoa => {
+            delete parsedFileData[
+              khoa
+            ];
 
-    if (duplicateKhoas.length > 0) {
-        if (isFolderAutoLoad) {
-            /*
-             * Nạp từ thư mục: loại phiếu trùng hoàn toàn im lặng.
-             * Không hiện cảnh báo, không tạo checkbox và không cho chọn lại.
-             */
-            duplicateKhoas.forEach(khoa => {
-              delete parsedFileData[khoa];
-              delete parsedDuplicateStatus[khoa];
-            });
-        } else {
-            await showMsg("Phát hiện các phiếu giống hệt với phiếu đang có trên hệ thống, gồm cả phiếu Chưa phát, Đang phát hoặc Đã phát (" + duplicateKhoas.join(", ") + ").\n\nCác phiếu này được bôi đỏ và tự động BỎ TÍCH CHỌN. Chỉ khi bạn tự tích chọn lại thì hệ thống mới đưa vào danh sách chờ phát và ghi chú là 'phiếu trùng'.", "Cảnh báo phiếu trùng", "warning");
-        }
+            delete parsedDuplicateStatus[
+              khoa
+            ];
+          });
+      } else {
+        await showMsg(
+          'Phát hiện các phiếu giống hệt với phiếu đang có trên hệ thống, gồm cả phiếu Chưa phát, Đang phát hoặc Đã phát (' +
+            duplicateKhoas.join(', ') +
+            ').\\n\\nCác phiếu này được bôi đỏ và tự động BỎ TÍCH CHỌN. Chỉ khi bạn tự tích chọn lại thì hệ thống mới đưa vào danh sách chờ phát và ghi chú là “phiếu trùng”.',
+          'Cảnh báo phiếu trùng',
+          'warning'
+        );
+      }
     }
 
     renderUploadList();
     showLoading(false);
+
+    if (
+      failedCount > 0
+    ) {
+      await showMsg(
+        'Có ' +
+          failedCount +
+          ' file không đọc được. Các file còn lại đã được xử lý.',
+        'Một số file bị lỗi',
+        'warning'
+      );
+    }
   }
 
-  function parseRows(rows) {
+  function parseRows(
+    rows,
+    allowedKhoKeys
+  ) {
     let h = { khoa: -1, kho: -1, loaiPhieu: -1, ma: -1, ten: -1, dvt: -1, sl: -1, phieuTQ: -1, phieuBT: -1, phieuHT: -1 };
     for(let i=0; i<Math.min(20, rows.length); i++) {
       let rowHeader = rows[i].map(x => String(x).trim().toUpperCase());
@@ -5339,7 +5547,6 @@
     for(let i=1; i<rows.length; i++) {
       let r = rows[i]; if(!r || r.length === 0) continue;
       let khoa = String(r[h.khoa]||"").trim(); let khoName = String(r[h.kho]||"").trim(); let khoKey = mapKhoToKey(khoName);
-      let allowedKhoKeys = getAllowedKhoKeysForCurrentUser();
       if (allowedKhoKeys && !allowedKhoKeys.includes(khoKey)) continue;
       let ma = String(r[h.ma]||"").trim(); let ten = String(r[h.ten]||"").trim(); let dvt = String(r[h.dvt]||"").trim(); let sl = parseFloat(r[h.sl]);
       if(!khoa || !ma || !ten || isNaN(sl) || sl === 0 || khoa.toUpperCase() === "NGAY") continue;
@@ -5444,49 +5651,39 @@
     if(checksNode.length === 0) return showMsg("Vui lòng chọn ít nhất 1 khoa!");
     let checks = Array.from(checksNode);
     
-    showLoading(
-      true,
-      "Đang kiểm tra lại phiếu trùng..."
-    );
-
-    const selectedKhoaKeys =
-      checks.map(cb => cb.value);
-
-    await refreshParsedDuplicateStatus(
-      selectedKhoaKeys
-    );
-
-    let duplicateKhoas = [];
-
-    checks.forEach(cb => {
-      let k = cb.value;
-
-      if (
-        isDuplicateVoucher(k)
-      ) {
-        duplicateKhoas.push(k);
-      }
-    });
-
-    showLoading(false);
+    /*
+     * Không gọi máy chủ kiểm tra trùng lần hai.
+     * Backend vẫn kiểm tra lại ngay trong pushVouchersServer
+     * trước khi ghi nên không giảm độ an toàn.
+     */
+    let duplicateKhoas =
+      checks
+        .map(cb => cb.value)
+        .filter(
+          isDuplicateVoucher
+        );
 
     if (
       duplicateKhoas.length > 0 &&
       isFolderAutoLoad
     ) {
-      duplicateKhoas.forEach(khoa => {
-        delete parsedFileData[khoa];
-      });
+      duplicateKhoas
+        .forEach(khoa => {
+          delete parsedFileData[
+            khoa
+          ];
 
-      checks = checks.filter(cb =>
-        !duplicateKhoas.includes(
-          cb.value
-        )
-      );
+          delete parsedDuplicateStatus[
+            khoa
+          ];
+        });
 
-      duplicateKhoas.forEach(khoa => {
-        delete parsedDuplicateStatus[khoa];
-      });
+      checks =
+        checks.filter(cb =>
+          !duplicateKhoas.includes(
+            cb.value
+          )
+        );
 
       renderUploadList();
       duplicateKhoas = [];
