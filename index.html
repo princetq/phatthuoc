@@ -14,7 +14,7 @@
   <meta name="apple-mobile-web-app-title" content="Phát thuốc">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="description" content="Ứng dụng quản lý phát thuốc và đối chiếu thuốc tại Khoa Dược">
-  <link rel="manifest" href="manifest.webmanifest?v=42">
+  <link rel="manifest" href="manifest.webmanifest?v=421">
   <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
   <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
   <title>Phát thuốc thông minh</title>
@@ -1350,6 +1350,7 @@
          <button class="btn-primary" onclick="loadFromLocalFolder()">💻 Mở & Nạp File Trong Thư Mục Này</button>
        </div>
        <input type="file" id="folderInput" webkitdirectory directory multiple style="display:none" onchange="isFolderAutoLoad = true; handleFiles(this.files)">
+       <div id="folderImportSummary" style="display:none; margin-top:12px; padding:11px 13px; border:1px solid #90caf9; border-radius:8px; background:#e3f2fd; color:#0d47a1; font-weight:700; line-height:1.5;"></div>
     </div>
 
     <div id="uploadResultArea" style="display:none; margin-top: 20px;">
@@ -2127,6 +2128,7 @@
   let detailPrefetchTimer = null;
 
   let isFolderAutoLoad = false;
+  let folderImportSummary = null;
 
   const FILE_PARSE_CONCURRENCY =
     Math.max(
@@ -4915,7 +4917,11 @@
   }
 
   function loadFromLocalFolder() {
-      document.getElementById('folderInput').click();
+    const input = document.getElementById('folderInput');
+    if (!input) return;
+    input.value = '';
+    isFolderAutoLoad = true;
+    input.click();
   }
 
   function mapKhoToKey(khoName) {
@@ -5006,136 +5012,117 @@
       });
   }
 
+  function buildDuplicateCandidate(
+    sourceData,
+    khoa,
+    candidateKey
+  ) {
+    const source = sourceData[khoa];
+
+    if (!source) return null;
+
+    const vouchers =
+      source.vouchers || {};
+
+    const items =
+      hasVoucherIdentityData(vouchers)
+        ? []
+        : (source.items || []).map(item => ({
+            khoKey: item.khoKey,
+            ma: item.ma,
+            ten: item.ten,
+            dvt: item.dvt,
+            sl: item.sl,
+            loaiThuoc: item.loaiThuoc
+          }));
+
+    return {
+      key: candidateKey,
+      khoa: khoa,
+      vouchers: vouchers,
+      items: items
+    };
+  }
+
   function buildDuplicateCheckCandidates(
     khoaKeys = null
   ) {
     const keys =
       Array.isArray(khoaKeys)
         ? khoaKeys
-        : Object.keys(
-            parsedFileData || {}
-          );
+        : Object.keys(parsedFileData || {});
 
     return keys
-      .filter(khoa =>
-        parsedFileData[khoa]
+      .map(khoa =>
+        buildDuplicateCandidate(
+          parsedFileData,
+          khoa,
+          khoa
+        )
       )
-      .map(khoa => {
-        const source =
-          parsedFileData[khoa];
-
-        const vouchers =
-          source.vouchers || {};
-
-        /*
-         * Có số phiếu thì chỉ gửi khoa + vouchers.
-         * Chỉ gửi chữ ký thuốc gọn nhẹ khi file không có số phiếu.
-         */
-        const items =
-          hasVoucherIdentityData(
-            vouchers
-          )
-            ? []
-            : (
-                source.items || []
-              )
-                .map(item => ({
-                  khoKey:
-                    item.khoKey,
-                  ma:
-                    item.ma,
-                  ten:
-                    item.ten,
-                  dvt:
-                    item.dvt,
-                  sl:
-                    item.sl,
-                  loaiThuoc:
-                    item.loaiThuoc
-                }));
-
-        return {
-          key:
-            khoa,
-          khoa:
-            khoa,
-          vouchers:
-            vouchers,
-          items:
-            items
-        };
-      });
+      .filter(Boolean);
   }
 
-  function refreshParsedDuplicateStatus(
+  async function requestDuplicateCheckCandidates(
+    candidates
+  ) {
+    if (!candidates || !candidates.length) {
+      return {};
+    }
+
+    const response =
+      await gasCall(
+        'checkVoucherDuplicatesServer',
+        [JSON.stringify(candidates)]
+      );
+
+    return response && response.results
+      ? response.results
+      : {};
+  }
+
+  async function refreshParsedDuplicateStatus(
     khoaKeys = null
   ) {
     const candidates =
-      buildDuplicateCheckCandidates(
-        khoaKeys
-      );
+      buildDuplicateCheckCandidates(khoaKeys);
 
     if (!candidates.length) {
       if (!khoaKeys) {
         parsedDuplicateStatus = {};
       }
-
-      return Promise.resolve({});
+      return {};
     }
 
-    return new Promise(resolve => {
-      try {
-        google.script.run
-          .withSuccessHandler(response => {
-            const results =
-              response &&
-              response.results
-                ? response.results
-                : {};
+    try {
+      const results =
+        await requestDuplicateCheckCandidates(
+          candidates
+        );
 
-            if (!khoaKeys) {
-              parsedDuplicateStatus = {};
-            }
-
-            candidates.forEach(candidate => {
-              parsedDuplicateStatus[
-                candidate.key
-              ] =
-                results[
-                  candidate.key
-                ] || {
-                  duplicate: false,
-                  matchedCount: 0,
-                  tokenCount: 0
-                };
-            });
-
-            resolve(results);
-          })
-          .withFailureHandler(error => {
-            console.error(
-              'Không kiểm tra được phiếu trùng:',
-              error && error.message
-                ? error.message
-                : String(error || '')
-            );
-
-            /*
-             * Không tự coi là không trùng khi máy chủ lỗi.
-             * Nạp từ thư mục sẽ còn một lớp chặn cuối ở backend.
-             */
-            resolve({});
-          })
-          .checkVoucherDuplicatesServer(
-            JSON.stringify(
-              candidates
-            )
-          );
-      } catch (error) {
-        console.error(error);
-        resolve({});
+      if (!khoaKeys) {
+        parsedDuplicateStatus = {};
       }
-    });
+
+      candidates.forEach(candidate => {
+        parsedDuplicateStatus[candidate.key] =
+          results[candidate.key] || {
+            duplicate: false,
+            matchedCount: 0,
+            tokenCount: 0
+          };
+      });
+
+      return results;
+    } catch (error) {
+      console.error(
+        'Không kiểm tra được phiếu trùng:',
+        error && error.message
+          ? error.message
+          : String(error || '')
+      );
+      return {};
+    }
   }
 
 
@@ -5361,47 +5348,149 @@
     allowedKhoKeys
   ) {
     const buffer =
-      await readFileAsArrayBufferFast(
-        file
-      );
-
-    const data =
-      new Uint8Array(
-        buffer
-      );
+      await readFileAsArrayBufferFast(file);
 
     const workbook =
       XLSX.read(
-        data,
-        {
-          type: 'array'
-        }
+        new Uint8Array(buffer),
+        { type: 'array' }
       );
 
     const rows =
-      XLSX.utils
-        .sheet_to_json(
-          workbook.Sheets[
-            workbook
-              .SheetNames[0]
-          ],
-          {
-            header: 1,
-            defval: ''
-          }
-        );
+      XLSX.utils.sheet_to_json(
+        workbook.Sheets[
+          workbook.SheetNames[0]
+        ],
+        {
+          header: 1,
+          defval: ''
+        }
+      );
+
+    const localData = {};
 
     parseRows(
       rows,
-      allowedKhoKeys
+      allowedKhoKeys,
+      localData
     );
+
+    return {
+      fileName: file && file.name
+        ? file.name
+        : '',
+      data: localData
+    };
+  }
+
+  function mergeParsedImportData(
+    target,
+    source
+  ) {
+    Object.keys(source || {})
+      .forEach(khoa => {
+        const incoming = source[khoa];
+        if (!incoming) return;
+
+        if (!target[khoa]) {
+          target[khoa] = {
+            items: [],
+            vouchers: {}
+          };
+        }
+
+        const existing = target[khoa];
+        const itemSignatures = new Set(
+          (existing.items || []).map(item =>
+            [
+              item.khoKey,
+              item.ma,
+              item.ten,
+              item.dvt,
+              Number(item.sl || 0),
+              item.loaiThuoc
+            ].join('|')
+          )
+        );
+
+        (incoming.items || []).forEach(item => {
+          const signature = [
+            item.khoKey,
+            item.ma,
+            item.ten,
+            item.dvt,
+            Number(item.sl || 0),
+            item.loaiThuoc
+          ].join('|');
+
+          if (!itemSignatures.has(signature)) {
+            itemSignatures.add(signature);
+            existing.items.push(item);
+          }
+        });
+
+        Object.keys(incoming.vouchers || {})
+          .forEach(khoKey => {
+            if (!existing.vouchers[khoKey]) {
+              existing.vouchers[khoKey] = {
+                TQ: [], BT: [], HT: [], dates: []
+              };
+            }
+
+            const targetVoucher =
+              existing.vouchers[khoKey];
+            const sourceVoucher =
+              incoming.vouchers[khoKey] || {};
+
+            ['TQ','BT','HT','dates']
+              .forEach(field => {
+                targetVoucher[field] = Array.from(
+                  new Set(
+                    (targetVoucher[field] || [])
+                      .concat(sourceVoucher[field] || [])
+                  )
+                );
+              });
+          });
+      });
+  }
+
+  function renderFolderImportSummary() {
+    const element =
+      document.getElementById(
+        'folderImportSummary'
+      );
+
+    if (!element) return;
+
+    if (!folderImportSummary || !isFolderAutoLoad) {
+      element.style.display = 'none';
+      element.innerText = '';
+      return;
+    }
+
+    const summary = folderImportSummary;
+
+    element.innerText =
+      'Đã đọc ' +
+      summary.filesRead + '/' +
+      summary.totalFiles +
+      ' file. Có ' +
+      summary.newUnits +
+      ' phiếu mới; tự bỏ qua ' +
+      summary.duplicateUnits +
+      ' phiếu trùng' +
+      (summary.failedFiles > 0
+        ? '; ' + summary.failedFiles +
+          ' file không đọc được'
+        : '') +
+      '.';
+
+    element.style.display = 'block';
   }
 
   async function handleFiles(files) {
-    if (
-      !files ||
-      files.length === 0
-    ) {
+    if (!files || files.length === 0) {
       return;
     }
 
@@ -5412,58 +5501,56 @@
 
     parsedFileData = {};
     parsedDuplicateStatus = {};
+    folderImportSummary = null;
+    renderFolderImportSummary();
 
-    const fileList =
-      Array.from(files);
-
+    const fileList = Array.from(files);
     const allowedKhoKeys =
       getAllowedKhoKeysForCurrentUser();
 
     let nextIndex = 0;
     let failedCount = 0;
+    const parsedUnits =
+      new Array(fileList.length);
 
-    const worker =
-      async () => {
-        while (
-          nextIndex <
-          fileList.length
-        ) {
-          const index =
-            nextIndex++;
+    const worker = async () => {
+      while (nextIndex < fileList.length) {
+        const index = nextIndex++;
 
-          try {
+        try {
+          parsedUnits[index] =
             await parseImportFile(
               fileList[index],
               allowedKhoKeys
             );
-          } catch (error) {
-            failedCount++;
-
-            console.error(
-              'Lỗi đọc file:',
-              fileList[index]
-                ? fileList[index].name
-                : '',
-              error
-            );
-          }
+        } catch (error) {
+          failedCount++;
+          console.error(
+            'Lỗi đọc file:',
+            fileList[index]
+              ? fileList[index].name
+              : '',
+            error
+          );
         }
-      };
+      }
+    };
 
-    const workerCount =
-      Math.min(
-        FILE_PARSE_CONCURRENCY,
-        fileList.length
-      );
+    const workerCount = Math.min(
+      FILE_PARSE_CONCURRENCY,
+      fileList.length
+    );
 
     await Promise.all(
       Array.from(
-        {
-          length:
-            workerCount
-        },
+        { length: workerCount },
         () => worker()
       )
+    );
+
+    const validUnits = parsedUnits.filter(unit =>
+      unit && unit.data &&
+      Object.keys(unit.data).length
     );
 
     showLoading(
@@ -5471,37 +5558,113 @@
       'Đang kiểm tra phiếu trùng...'
     );
 
-    await refreshParsedDuplicateStatus();
+    if (isFolderAutoLoad) {
+      /*
+       * Kiểm tra theo từng file/khoa trước khi gộp.
+       * Một file trùng không còn làm mất toàn bộ phiếu mới
+       * của cùng khoa trong thư mục.
+       */
+      const candidates = [];
+      const candidateMeta = {};
 
-    const duplicateKhoas =
-      Object.keys(
-        parsedFileData
-      )
-        .filter(
-          isDuplicateVoucher
+      validUnits.forEach((unit, unitIndex) => {
+        Object.keys(unit.data).forEach(khoa => {
+          const candidateKey =
+            'F' + unitIndex + '::' + khoa;
+          const candidate =
+            buildDuplicateCandidate(
+              unit.data,
+              khoa,
+              candidateKey
+            );
+
+          if (candidate) {
+            candidates.push(candidate);
+            candidateMeta[candidateKey] = {
+              unit: unit,
+              khoa: khoa
+            };
+          }
+        });
+      });
+
+      let results = {};
+
+      try {
+        results =
+          await requestDuplicateCheckCandidates(
+            candidates
+          );
+      } catch (error) {
+        console.error(
+          'Không kiểm tra được phiếu trùng từ thư mục:',
+          error.message || String(error)
+        );
+      }
+
+      let duplicateUnits = 0;
+      let newUnits = 0;
+
+      candidates.forEach(candidate => {
+        const meta = candidateMeta[candidate.key];
+        const duplicate = Boolean(
+          results[candidate.key] &&
+          results[candidate.key].duplicate
         );
 
-    if (
-      duplicateKhoas.length > 0
-    ) {
-      if (
-        isFolderAutoLoad
-      ) {
-        /*
-         * Nạp từ thư mục:
-         * loại trùng hoàn toàn im lặng trước khi render.
-         */
-        duplicateKhoas
-          .forEach(khoa => {
-            delete parsedFileData[
-              khoa
-            ];
+        if (duplicate) {
+          duplicateUnits++;
+          return;
+        }
 
-            delete parsedDuplicateStatus[
-              khoa
-            ];
-          });
-      } else {
+        mergeParsedImportData(
+          parsedFileData,
+          {
+            [meta.khoa]:
+              meta.unit.data[meta.khoa]
+          }
+        );
+
+        parsedDuplicateStatus[meta.khoa] = {
+          duplicate: false,
+          matchedCount: 0,
+          tokenCount:
+            results[candidate.key]
+              ? Number(
+                  results[candidate.key]
+                    .tokenCount || 0
+                )
+              : 0
+        };
+
+        newUnits++;
+      });
+
+      folderImportSummary = {
+        totalFiles: fileList.length,
+        filesRead: validUnits.length,
+        newUnits: newUnits,
+        duplicateUnits: duplicateUnits,
+        failedFiles: failedCount
+      };
+
+      /* Không mở modal cảnh báo cho nạp từ thư mục. */
+      renderFolderImportSummary();
+    } else {
+      validUnits.forEach(unit => {
+        mergeParsedImportData(
+          parsedFileData,
+          unit.data
+        );
+      });
+
+      await refreshParsedDuplicateStatus();
+
+      const duplicateKhoas =
+        Object.keys(parsedFileData)
+          .filter(isDuplicateVoucher);
+
+      if (duplicateKhoas.length > 0) {
         await showMsg(
           'Phát hiện các phiếu giống hệt với phiếu đang có trên hệ thống, gồm cả phiếu Chưa phát, Đang phát hoặc Đã phát (' +
             duplicateKhoas.join(', ') +
@@ -5515,12 +5678,9 @@
     renderUploadList();
     showLoading(false);
 
-    if (
-      failedCount > 0
-    ) {
+    if (!isFolderAutoLoad && failedCount > 0) {
       await showMsg(
-        'Có ' +
-          failedCount +
+        'Có ' + failedCount +
           ' file không đọc được. Các file còn lại đã được xử lý.',
         'Một số file bị lỗi',
         'warning'
@@ -5530,7 +5690,8 @@
 
   function parseRows(
     rows,
-    allowedKhoKeys
+    allowedKhoKeys,
+    targetData = parsedFileData
   ) {
     let h = { khoa: -1, kho: -1, loaiPhieu: -1, ma: -1, ten: -1, dvt: -1, sl: -1, phieuTQ: -1, phieuBT: -1, phieuHT: -1 };
     for(let i=0; i<Math.min(20, rows.length); i++) {
@@ -5551,17 +5712,17 @@
       let ma = String(r[h.ma]||"").trim(); let ten = String(r[h.ten]||"").trim(); let dvt = String(r[h.dvt]||"").trim(); let sl = parseFloat(r[h.sl]);
       if(!khoa || !ma || !ten || isNaN(sl) || sl === 0 || khoa.toUpperCase() === "NGAY") continue;
       
-      if(!parsedFileData[khoa]) {
-        parsedFileData[khoa] = { items: [], vouchers: {} };
+      if(!targetData[khoa]) {
+        targetData[khoa] = { items: [], vouchers: {} };
       }
-      if(!parsedFileData[khoa].vouchers[khoKey]) {
-        parsedFileData[khoa].vouchers[khoKey] = { TQ:[], BT:[], HT:[], dates:[] };
+      if(!targetData[khoa].vouchers[khoKey]) {
+        targetData[khoa].vouchers[khoKey] = { TQ:[], BT:[], HT:[], dates:[] };
       }
-      let vCat = parsedFileData[khoa].vouchers[khoKey];
+      let vCat = targetData[khoa].vouchers[khoKey];
       if(h.phieuTQ !== -1) processVoucherString(r[h.phieuTQ], vCat.TQ, vCat.dates);
       if(h.phieuBT !== -1) processVoucherString(r[h.phieuBT], vCat.BT, vCat.dates);
       if(h.phieuHT !== -1) processVoucherString(r[h.phieuHT], vCat.HT, vCat.dates);
-      parsedFileData[khoa].items.push({ khoKey: khoKey, ma: ma, ten: ten, dvt: dvt, sl: sl, loaiThuoc: String(r[h.loaiPhieu]||"").trim(), status: 'Chưa phát' });
+      targetData[khoa].items.push({ khoKey: khoKey, ma: ma, ten: ten, dvt: dvt, sl: sl, loaiThuoc: String(r[h.loaiPhieu]||"").trim(), status: 'Chưa phát' });
     }
   }
 
@@ -5570,6 +5731,8 @@
       if(ok) {
           parsedFileData = {};
           parsedDuplicateStatus = {};
+          folderImportSummary = null;
+          renderFolderImportSummary();
           renderUploadList(); 
       }
   }
