@@ -1543,11 +1543,11 @@
         </div>
         <select id="newNotifyKhoa" class="department-source-select" tabindex="-1" aria-hidden="true"></select>
         <div id="newNotifyKhoaHelp" class="notification-help">
-          Mọi vai trò đều có thể nhận thông báo. Người lĩnh bắt buộc chọn khoa; Admin và Người phát có thể để trống hoặc chọn “Tất cả các khoa”.
+          Người lĩnh bắt buộc chọn khoa. Admin và người phát có thể để trống hoặc chọn “Tất cả các khoa”.
         </div>
 
 
-        <div id="newNotifyTypesWrap" class="automatic-notification-types" style="display:block;">
+        <div id="newNotifyTypesWrap" class="automatic-notification-types">
           <span class="automatic-notification-types-title">Loại thông báo tự động:</span>
           <label class="automatic-notification-type-row">
             <input type="checkbox" id="newNotifyReady" checked>
@@ -1558,7 +1558,7 @@
             Phiếu đã phát xong
           </label>
           <div id="newNotifyTypesHelp" class="notification-help">
-            Admin, Người phát và Người lĩnh đều có thể chọn loại thông báo tự động. Tin nhắn chủ động phụ thuộc khoa nhận và trạng thái push của thiết bị.
+            Admin và Người phát có thể tắt cả hai; Người lĩnh phải nhận ít nhất một loại.
           </div>
         </div>
 
@@ -1599,11 +1599,11 @@
     </div>
     <select id="editNotifyKhoa" class="department-source-select" tabindex="-1" aria-hidden="true"></select>
     <div id="editNotifyKhoaHelp" class="notification-help">
-      Mọi vai trò đều có thể nhận thông báo. Người lĩnh bắt buộc chọn khoa; Admin và Người phát có thể để trống hoặc chọn “Tất cả các khoa”.
+      Người lĩnh bắt buộc chọn khoa. Admin và người phát có thể để trống hoặc chọn “Tất cả các khoa”.
     </div>
 
 
-    <div id="editNotifyTypesWrap" class="automatic-notification-types" style="display:block;">
+    <div id="editNotifyTypesWrap" class="automatic-notification-types">
       <span class="automatic-notification-types-title">Loại thông báo tự động:</span>
       <label class="automatic-notification-type-row">
         <input type="checkbox" id="editNotifyReady">
@@ -1614,7 +1614,7 @@
         Phiếu đã phát xong
       </label>
       <div id="editNotifyTypesHelp" class="notification-help">
-        Admin, Người phát và Người lĩnh đều có thể chọn loại thông báo tự động. Tin nhắn chủ động phụ thuộc khoa nhận và trạng thái push của thiết bị.
+        Admin và Người phát có thể tắt cả hai; Người lĩnh phải nhận ít nhất một loại.
       </div>
     </div>
 
@@ -1666,8 +1666,8 @@
     <h3 style="color:#16856b; margin-top:0;">🔔 Thông báo theo tài khoản</h3>
 
     <div class="device-notify-note">
-      Khoa nhận thông báo áp dụng cho Admin, Người phát và Người lĩnh. Thiết bị này chỉ bật hoặc tắt nhận push.
-      Khi push đang bật, tin nhắn chủ động được gửi theo khoa đã gán, độc lập với hai lựa chọn thông báo tự động.
+      Khoa nhận thông báo do Admin gán cho tài khoản. Thiết bị này chỉ bật hoặc tắt nhận push.
+      Đăng nhập cùng tài khoản trên thiết bị mới sẽ tự nhận đúng khoa sau khi bật thông báo.
     </div>
 
     <div class="account-notify-summary">
@@ -10068,8 +10068,7 @@ let d = new Date(v.time);
       'new'
     );
   }
-
-  function updateAccountNotificationDepartmentRequirement(
+function updateAccountNotificationDepartmentRequirement(
     mode
   ) {
     const prefix =
@@ -10099,11 +10098,6 @@ let d = new Date(v.time);
         prefix + 'NotifyTypesWrap'
       );
 
-    const typesHelp =
-      document.getElementById(
-        prefix + 'NotifyTypesHelp'
-      );
-
     const readyInput =
       document.getElementById(
         prefix + 'NotifyReady'
@@ -10126,23 +10120,12 @@ let d = new Date(v.time);
             'Tài khoản Người lĩnh bắt buộc chọn đúng một khoa nhận thông báo.'
           )
         : (
-            'Admin và Người phát có thể chọn một khoa, “Tất cả các khoa”, hoặc để trống nếu không nhận thông báo.'
+            'Có thể để trống nếu tài khoản không cần nhận; chọn “Tất cả các khoa” nếu cần nhận toàn bộ.'
           );
 
     if (typesWrap) {
       typesWrap.style.display =
         'block';
-    }
-
-    if (typesHelp) {
-      typesHelp.innerText =
-        required
-          ? (
-              'Người lĩnh phải nhận ít nhất một loại; có thể chọn cả hai.'
-            )
-          : (
-              'Có thể bật một, cả hai hoặc tắt cả hai loại tự động. Tin nhắn chủ động vẫn nhận khi tài khoản đã gán khoa và thiết bị đang bật push.'
-            );
     }
 
     if (
@@ -10162,8 +10145,7 @@ let d = new Date(v.time);
       }
     }
   }
-
-  function readAccountNotificationTypes(
+function readAccountNotificationTypes(
     prefix,
     role
   ) {
