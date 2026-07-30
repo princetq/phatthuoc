@@ -14,7 +14,7 @@
   <meta name="apple-mobile-web-app-title" content="Phát thuốc">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="description" content="Ứng dụng quản lý phát thuốc và đối chiếu thuốc tại Khoa Dược">
-  <link rel="manifest" href="manifest.webmanifest?v=424">
+  <link rel="manifest" href="manifest.webmanifest?v=4251">
   <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
   <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
   <title>Phát thuốc thông minh</title>
@@ -264,6 +264,27 @@
       width: 19px;
       height: 19px;
       margin: 0;
+    }
+
+
+    /*
+     * Khoảng cách riêng cho dòng hướng dẫn loại thông báo.
+     * Ghi đè margin-top âm của .notification-help ở các vị trí khác.
+     */
+    .automatic-notification-types > .notification-help {
+      margin-top: 13px;
+      margin-bottom: 2px;
+      padding-top: 10px;
+      border-top: 1px solid #dce5e9;
+      line-height: 1.5;
+    }
+
+    @media (max-width: 600px) {
+      .automatic-notification-types > .notification-help {
+        margin-top: 15px;
+        padding-top: 12px;
+        line-height: 1.55;
+      }
     }
 
     .notification-type-badges {
