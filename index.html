@@ -14,7 +14,7 @@
   <meta name="apple-mobile-web-app-title" content="Phát thuốc">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="description" content="Ứng dụng quản lý phát thuốc và đối chiếu thuốc tại Khoa Dược">
-  <link rel="manifest" href="manifest.webmanifest?v=4251">
+  <link rel="manifest" href="manifest.webmanifest?v=4255">
   <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
   <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
   <title>Phát thuốc thông minh</title>
@@ -1080,6 +1080,282 @@
 
 .phat-badge { background: #fff; color: #333; padding: 4px 8px; border-radius: 12px; font-size: 14px; font-weight: bold; }
 
+
+
+    /* ===== CHẾ ĐỘ HỖ TRỢ MẮT KÉM TRÊN ĐIỆN THOẠI ===== */
+    .btn-low-vision {
+      background: #5b21b6;
+      color: #fff;
+      border: 1px solid #4c1d95;
+    }
+
+    .btn-low-vision.low-vision-enabled {
+      background: #2e1065;
+      box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.28);
+    }
+
+    .low-vision-settings-content {
+      max-width: 540px;
+      text-align: left;
+    }
+
+    .low-vision-toggle-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 14px;
+      border: 2px solid #d8ccf6;
+      border-radius: 12px;
+      background: #f7f3ff;
+      cursor: pointer;
+    }
+
+    .low-vision-toggle-row input {
+      width: 24px;
+      height: 24px;
+      margin: 1px 0 0;
+      flex: 0 0 auto;
+      accent-color: #5b21b6;
+    }
+
+    .low-vision-toggle-title {
+      display: block;
+      color: #2e1065;
+      font-size: 19px;
+      font-weight: 900;
+      line-height: 1.25;
+    }
+
+    .low-vision-toggle-description,
+    .low-vision-support-note {
+      display: block;
+      margin-top: 6px;
+      color: #4b5563;
+      font-size: 15px;
+      line-height: 1.45;
+    }
+
+    .low-vision-support-note {
+      padding: 10px 12px;
+      border-radius: 8px;
+      background: #fff8e1;
+      border: 1px solid #ffe082;
+      color: #6d4c00;
+    }
+
+    .low-vision-settings-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    body.low-vision-detail-active {
+      overflow: hidden !important;
+      padding: 0 !important;
+      background: #fff !important;
+    }
+
+    body.low-vision-detail-active #appHeader,
+    body.low-vision-detail-active .app-footer {
+      display: none !important;
+    }
+
+    body.low-vision-detail-active #view-detail {
+      position: fixed;
+      inset: 0;
+      z-index: 1800;
+      display: block !important;
+      width: 100vw;
+      height: 100vh;
+      max-width: none;
+      margin: 0;
+      padding: 0 !important;
+      overflow-x: hidden;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      background: #fff;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    body.low-vision-detail-active.low-vision-visual-landscape #view-detail {
+      width: 100vh;
+      height: 100vw;
+      transform: rotate(90deg) translateY(-100%);
+      transform-origin: top left;
+    }
+
+    body.low-vision-detail-active.low-vision-visual-landscape .modal-overlay,
+    body.low-vision-detail-active.low-vision-visual-landscape .loading-overlay {
+      width: 100vh;
+      height: 100vw;
+      transform: rotate(90deg) translateY(-100%);
+      transform-origin: top left;
+    }
+
+    body.low-vision-detail-active .dist-header {
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      min-height: 48px;
+      padding: 6px 8px;
+      border-radius: 0;
+      flex-wrap: nowrap;
+      gap: 5px;
+    }
+
+    body.low-vision-detail-active .dist-header > div:first-child {
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+
+    body.low-vision-detail-active .dist-header > div:last-child {
+      flex: 0 0 auto;
+      gap: 5px !important;
+      flex-wrap: nowrap;
+    }
+
+    body.low-vision-detail-active #detailKhoa {
+      display: block;
+      max-width: 48vw;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: clamp(20px, 3.2vw, 29px) !important;
+      line-height: 1.1;
+    }
+
+    body.low-vision-detail-active #detailModeText,
+    body.low-vision-detail-active .dist-header button[onclick="window.print()"] {
+      display: none !important;
+    }
+
+    body.low-vision-detail-active .dist-header button {
+      min-height: 42px;
+      padding: 7px 10px !important;
+      font-size: clamp(16px, 2.4vw, 21px) !important;
+      line-height: 1.05;
+      white-space: nowrap;
+    }
+
+    body.low-vision-detail-active .tab-header {
+      padding: 3px 5px 0;
+      gap: 4px;
+    }
+
+    body.low-vision-detail-active .tab-btn {
+      min-height: 38px;
+      padding: 7px 11px;
+      font-size: clamp(17px, 2.6vw, 23px);
+    }
+
+    body.low-vision-detail-active .tab-content {
+      padding: 6px;
+      border-radius: 0;
+    }
+
+    body.low-vision-detail-active .voucher-header {
+      padding: 8px 10px;
+      margin-bottom: 8px;
+      font-size: clamp(17px, 2.55vw, 23px);
+      line-height: 1.35;
+    }
+
+    body.low-vision-detail-active .tab-content > div {
+      margin-bottom: 10px !important;
+    }
+
+    body.low-vision-detail-active .tab-content > div > div:first-child {
+      padding: 7px !important;
+      font-size: clamp(18px, 2.7vw, 24px);
+      line-height: 1.15;
+    }
+
+    /* Luôn giữ đúng số cột và tỷ lệ như giao diện điện thoại dọc. */
+    body.low-vision-detail-active #view-detail table {
+      display: table;
+      width: 100%;
+      table-layout: fixed;
+      font-size: clamp(18px, 2.8vw, 25px);
+    }
+
+    body.low-vision-detail-active #view-detail th,
+    body.low-vision-detail-active #view-detail td {
+      display: table-cell !important;
+      padding: clamp(8px, 1.55vw, 15px) clamp(3px, 0.7vw, 8px) !important;
+      vertical-align: middle;
+      line-height: 1.18;
+    }
+
+    body.low-vision-detail-active #view-detail th.col-mabd,
+    body.low-vision-detail-active #view-detail td.col-mabd,
+    body.low-vision-detail-active #view-detail th.col-ghichu,
+    body.low-vision-detail-active #view-detail td.col-ghichu,
+    body.low-vision-detail-active #view-detail th:nth-child(7),
+    body.low-vision-detail-active #view-detail td:nth-child(7) {
+      display: none !important;
+    }
+
+    body.low-vision-detail-active #view-detail th {
+      font-size: clamp(17px, 2.55vw, 23px) !important;
+    }
+
+    body.low-vision-detail-active #view-detail th:nth-child(1),
+    body.low-vision-detail-active #view-detail td:nth-child(1) {
+      width: 10%;
+    }
+
+    body.low-vision-detail-active #view-detail td:nth-child(1) {
+      font-size: clamp(18px, 2.8vw, 25px);
+    }
+
+    body.low-vision-detail-active #view-detail th:nth-child(3) {
+      text-align: center !important;
+    }
+
+    body.low-vision-detail-active #view-detail td:nth-child(3) {
+      width: 56%;
+      text-align: left !important;
+      font-size: clamp(22px, 3.7vw, 34px);
+      word-break: break-word;
+      overflow-wrap: break-word;
+    }
+
+    body.low-vision-detail-active #view-detail th:nth-child(4),
+    body.low-vision-detail-active #view-detail td:nth-child(4) {
+      width: 19%;
+    }
+
+    body.low-vision-detail-active #view-detail td:nth-child(4) {
+      font-size: clamp(19px, 3vw, 27px);
+    }
+
+    body.low-vision-detail-active #view-detail th:nth-child(5),
+    body.low-vision-detail-active #view-detail td:nth-child(5) {
+      width: 15%;
+    }
+
+    body.low-vision-detail-active #view-detail td:nth-child(5) {
+      font-size: clamp(24px, 4vw, 36px);
+      font-weight: 900;
+    }
+
+    body.low-vision-detail-active .ten-thuoc-main {
+      font-size: clamp(25px, 4.2vw, 38px) !important;
+      line-height: 1.15;
+    }
+
+    body.low-vision-detail-active .v-num-mobile {
+      font-size: clamp(22px, 3.8vw, 34px) !important;
+    }
+
+    @media (max-width: 600px) {
+      .low-vision-settings-actions {
+        grid-template-columns: 1fr;
+      }
+    }
+
+
     @media print {
       body * { visibility: hidden !important; }
       #view-detail, #view-detail * { visibility: visible !important; }
@@ -1390,6 +1666,7 @@
     <button id="btnNavList" class="btn-success" onclick="switchView('list')">📋 Danh sách</button>
     <button id="btnNavHistory" class="btn-pink" onclick="switchView('history')">📜 Lịch sử</button>
     <button id="btnSendNotification" class="btn-warning" style="display:none;" onclick="openNotificationModal()">📣 Gửi thông báo</button>
+    <button id="btnLowVisionSettings" class="btn-low-vision" style="display:none;" aria-pressed="false" onclick="openLowVisionSettings()">👁️ Hỗ trợ mắt kém</button>
     <button id="btnPushSubscribe" class="notification-button-muted" onclick="enablePushNotifications()">🔕 Bật thông báo</button>
     <button id="btnInstallApp" class="btn-primary" style="display:none;" onclick="installWebApp()">📲 Cài ứng dụng</button>
     <button class="btn-indigo" onclick="openChangePassModal()">🔑 Đổi MK</button>
@@ -1689,6 +1966,33 @@
       <button class="btn-success" onclick="saveDeviceNotificationRegistration()">Đồng bộ thiết bị</button>
       <button class="btn-warning" onclick="disableDeviceNotifications()">Tắt trên thiết bị</button>
       <button class="btn-danger" onclick="closeDeviceNotificationModal()">Đóng</button>
+    </div>
+  </div>
+</div>
+
+
+
+<div id="lowVisionSettingsModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="lowVisionSettingsTitle">
+  <div class="modal-content low-vision-settings-content">
+    <h3 id="lowVisionSettingsTitle" style="color:#5b21b6; margin-top:0;">👁️ Hỗ trợ người mắt kém</h3>
+
+    <label class="low-vision-toggle-row" for="lowVisionEnabledCheckbox">
+      <input type="checkbox" id="lowVisionEnabledCheckbox">
+      <span>
+        <span class="low-vision-toggle-title">Bật chế độ phóng to phiếu</span>
+        <span class="low-vision-toggle-description">
+          Khi bấm mở phiếu trên điện thoại, ứng dụng tự chuyển sang màn hình ngang, phóng to chữ và vùng bấm nhưng vẫn giữ số cột giống giao diện dọc.
+        </span>
+      </span>
+    </label>
+
+    <div id="lowVisionSupportNote" class="low-vision-support-note">
+      Thiết lập được lưu riêng cho tài khoản này trên điện thoại đang dùng.
+    </div>
+
+    <div class="low-vision-settings-actions">
+      <button class="btn-success" type="button" onclick="saveLowVisionSettings()">Lưu thiết lập</button>
+      <button class="btn-danger" type="button" onclick="closeLowVisionSettings()">Hủy</button>
     </div>
   </div>
 </div>
@@ -2215,6 +2519,434 @@
   let detailActionInFlight = false;
   let detailPromptInFlight = false;
   let loadingWatchdogTimer = null;
+
+  /* ===== CHẾ ĐỘ HỖ TRỢ MẮT KÉM TRÊN ĐIỆN THOẠI ===== */
+  const LOW_VISION_STORAGE_PREFIX =
+    'phatthuoc_low_vision_v1_';
+
+  let lowVisionDetailActive = false;
+  let lowVisionFullscreenOwned = false;
+  let lowVisionOrientationLocked = false;
+  let lowVisionOrientationAttempt = 0;
+
+  function lowVisionStorageKey() {
+    const username =
+      currentUser && currentUser.username
+        ? String(currentUser.username)
+            .trim()
+            .toLowerCase()
+        : 'guest';
+
+    return LOW_VISION_STORAGE_PREFIX + username;
+  }
+
+  function isLowVisionRoleEligible() {
+    return Boolean(
+      currentUser &&
+      (
+        currentUser.role === 'phat' ||
+        currentUser.role === 'xem'
+      )
+    );
+  }
+
+  function isPhoneLikeDevice() {
+    const screenWidth = Number(
+      window.screen && window.screen.width ||
+      window.innerWidth ||
+      0
+    );
+
+    const screenHeight = Number(
+      window.screen && window.screen.height ||
+      window.innerHeight ||
+      0
+    );
+
+    const shortSide = Math.min(
+      screenWidth || window.innerWidth,
+      screenHeight || window.innerHeight
+    );
+
+    const coarsePointer =
+      window.matchMedia &&
+      window.matchMedia('(pointer: coarse)').matches;
+
+    return Boolean(
+      Math.min(
+        window.innerWidth || screenWidth,
+        window.innerHeight || screenHeight
+      ) <= 600 ||
+      (coarsePointer && shortSide <= 700)
+    );
+  }
+
+  function isLowVisionEnabled() {
+    if (!isLowVisionRoleEligible()) {
+      return false;
+    }
+
+    try {
+      return localStorage.getItem(
+        lowVisionStorageKey()
+      ) === '1';
+    } catch (error) {
+      return false;
+    }
+  }
+
+  function updateLowVisionSettingsButton() {
+    const button =
+      document.getElementById(
+        'btnLowVisionSettings'
+      );
+
+    if (!button) return;
+
+    const visible =
+      isLowVisionRoleEligible() &&
+      isPhoneLikeDevice();
+
+    const enabled =
+      visible && isLowVisionEnabled();
+
+    button.style.display =
+      visible ? 'inline-block' : 'none';
+
+    button.classList.toggle(
+      'low-vision-enabled',
+      enabled
+    );
+
+    button.setAttribute(
+      'aria-pressed',
+      enabled ? 'true' : 'false'
+    );
+
+    button.innerText = enabled
+      ? '👁️ Mắt kém: Bật'
+      : '👁️ Hỗ trợ mắt kém';
+  }
+
+  function openLowVisionSettings() {
+    if (!isLowVisionRoleEligible()) {
+      return;
+    }
+
+    const checkbox =
+      document.getElementById(
+        'lowVisionEnabledCheckbox'
+      );
+
+    const note =
+      document.getElementById(
+        'lowVisionSupportNote'
+      );
+
+    if (checkbox) {
+      checkbox.checked =
+        isLowVisionEnabled();
+    }
+
+    if (note) {
+      const hasOrientationLock = Boolean(
+        window.screen &&
+        window.screen.orientation &&
+        typeof window.screen.orientation.lock ===
+          'function'
+      );
+
+      note.innerText = hasOrientationLock
+        ? 'Điện thoại này hỗ trợ yêu cầu xoay ngang tự động. Nếu hệ điều hành từ chối, ứng dụng sẽ dùng chế độ xoay giao diện dự phòng.'
+        : 'Trình duyệt này không cho khóa hướng màn hình. Ứng dụng sẽ tự xoay phần phiếu bằng chế độ dự phòng; khi đó hãy cầm điện thoại theo chiều ngang.';
+    }
+
+    const modal =
+      document.getElementById(
+        'lowVisionSettingsModal'
+      );
+
+    if (modal) {
+      modal.style.display = 'flex';
+    }
+  }
+
+  function closeLowVisionSettings() {
+    const modal =
+      document.getElementById(
+        'lowVisionSettingsModal'
+      );
+
+    if (modal) {
+      modal.style.display = 'none';
+    }
+  }
+
+  function saveLowVisionSettings() {
+    const checkbox =
+      document.getElementById(
+        'lowVisionEnabledCheckbox'
+      );
+
+    const enabled = Boolean(
+      checkbox && checkbox.checked
+    );
+
+    try {
+      localStorage.setItem(
+        lowVisionStorageKey(),
+        enabled ? '1' : '0'
+      );
+    } catch (error) {
+      return showMsg(
+        'Trình duyệt không cho lưu thiết lập hiển thị trên thiết bị này.',
+        'Không lưu được thiết lập',
+        'warning'
+      );
+    }
+
+    closeLowVisionSettings();
+    updateLowVisionSettingsButton();
+
+    if (!enabled && lowVisionDetailActive) {
+      exitLowVisionDetailMode();
+    }
+
+    showMsg(
+      enabled
+        ? 'Đã bật hỗ trợ mắt kém. Khi mở phiếu, màn hình sẽ chuyển ngang và phóng to.'
+        : 'Đã tắt hỗ trợ mắt kém.',
+      'Thiết lập hiển thị',
+      'success'
+    );
+  }
+
+  function usesPortraitVoucherColumns() {
+    return Boolean(
+      lowVisionDetailActive ||
+      (
+        window.innerWidth <= 768 &&
+        window.innerHeight >
+          window.innerWidth
+      )
+    );
+  }
+
+  function updateLowVisionOrientationFallback() {
+    if (!lowVisionDetailActive) {
+      document.body.classList.remove(
+        'low-vision-visual-landscape'
+      );
+      return;
+    }
+
+    const isLandscape =
+      window.innerWidth > window.innerHeight;
+
+    document.body.classList.toggle(
+      'low-vision-visual-landscape',
+      !isLandscape &&
+      !lowVisionOrientationLocked
+    );
+  }
+
+  function requestLowVisionLandscape() {
+    const attempt =
+      ++lowVisionOrientationAttempt;
+
+    let fullscreenPromise =
+      Promise.resolve();
+
+    const root =
+      document.documentElement;
+
+    if (
+      !document.fullscreenElement &&
+      root &&
+      typeof root.requestFullscreen ===
+        'function'
+    ) {
+      try {
+        lowVisionFullscreenOwned = true;
+        fullscreenPromise =
+          Promise.resolve(
+            root.requestFullscreen()
+          );
+      } catch (error) {
+        lowVisionFullscreenOwned = false;
+        fullscreenPromise =
+          Promise.resolve();
+      }
+    }
+
+    fullscreenPromise
+      .catch(() => {
+        lowVisionFullscreenOwned = false;
+      })
+      .then(() => {
+        if (
+          attempt !==
+            lowVisionOrientationAttempt ||
+          !lowVisionDetailActive
+        ) {
+          return;
+        }
+
+        if (
+          window.screen &&
+          window.screen.orientation &&
+          typeof window.screen.orientation.lock ===
+            'function'
+        ) {
+          return Promise.resolve(
+            window.screen.orientation.lock(
+              'landscape'
+            )
+          )
+            .then(() => {
+              if (
+                attempt ===
+                lowVisionOrientationAttempt
+              ) {
+                lowVisionOrientationLocked =
+                  true;
+              }
+            })
+            .catch(() => {
+              lowVisionOrientationLocked =
+                false;
+            });
+        }
+      })
+      .finally(() => {
+        if (
+          attempt ===
+          lowVisionOrientationAttempt
+        ) {
+          setTimeout(
+            updateLowVisionOrientationFallback,
+            80
+          );
+        }
+      });
+
+    /*
+     * Cho trình duyệt một khoảng ngắn để khóa xoay thật.
+     * Nếu không hỗ trợ, mới kích hoạt xoay giao diện dự phòng.
+     */
+    setTimeout(() => {
+      if (
+        attempt ===
+          lowVisionOrientationAttempt &&
+        lowVisionDetailActive
+      ) {
+        updateLowVisionOrientationFallback();
+      }
+    }, 350);
+  }
+
+  function activateLowVisionDetailMode() {
+    if (
+      !isLowVisionEnabled() ||
+      !isPhoneLikeDevice()
+    ) {
+      return false;
+    }
+
+    if (lowVisionDetailActive) {
+      return true;
+    }
+
+    lowVisionDetailActive = true;
+    lowVisionOrientationLocked = false;
+
+    document.body.classList.add(
+      'low-vision-detail-active'
+    );
+
+    requestLowVisionLandscape();
+    return true;
+  }
+
+  function exitLowVisionDetailMode() {
+    lowVisionOrientationAttempt++;
+
+    const wasActive =
+      lowVisionDetailActive;
+
+    lowVisionDetailActive = false;
+
+    document.body.classList.remove(
+      'low-vision-detail-active',
+      'low-vision-visual-landscape'
+    );
+
+    if (
+      window.screen &&
+      window.screen.orientation &&
+      typeof window.screen.orientation.unlock ===
+        'function'
+    ) {
+      try {
+        window.screen.orientation.unlock();
+      } catch (error) {
+        // Trình duyệt có thể từ chối khi không ở fullscreen.
+      }
+    }
+
+    lowVisionOrientationLocked = false;
+
+    if (
+      wasActive &&
+      lowVisionFullscreenOwned &&
+      document.fullscreenElement &&
+      typeof document.exitFullscreen ===
+        'function'
+    ) {
+      Promise.resolve(
+        document.exitFullscreen()
+      ).catch(() => {});
+    }
+
+    lowVisionFullscreenOwned = false;
+  }
+
+  window.addEventListener(
+    'resize',
+    () => {
+      updateLowVisionSettingsButton();
+      updateLowVisionOrientationFallback();
+    }
+  );
+
+  window.addEventListener(
+    'orientationchange',
+    () => {
+      setTimeout(
+        updateLowVisionOrientationFallback,
+        80
+      );
+    }
+  );
+
+  document.addEventListener(
+    'fullscreenchange',
+    () => {
+      if (
+        lowVisionDetailActive &&
+        !document.fullscreenElement
+      ) {
+        lowVisionFullscreenOwned = false;
+        lowVisionOrientationLocked = false;
+        setTimeout(
+          updateLowVisionOrientationFallback,
+          80
+        );
+      }
+    }
+  );
+  /* ===== END CHẾ ĐỘ HỖ TRỢ MẮT KÉM ===== */
+
 
   /*
    * Cửa sổ 0,5 giây để người lĩnh chạm lại và hủy thao tác nhầm
@@ -4811,6 +5543,7 @@
   }
 
   function performLocalLogout() {
+    exitLowVisionDetailMode();
     stopAdminSessionValidation();
     logoutOneSignalUser();
 
@@ -5055,6 +5788,7 @@
     }
 
     updateInstallButton();
+    updateLowVisionSettingsButton();
     resetVoucherDepartmentFiltersForAccount();
     startAdminSessionValidation();
 
@@ -5074,6 +5808,7 @@
     if(syncInterval) clearInterval(syncInterval);
 
     if (viewName !== 'detail') {
+      exitLowVisionDetailMode();
       cancelPendingDetailOpen();
       detailRefreshing = false;
       syncInFlight = false;
@@ -7604,6 +8339,8 @@ let d = new Date(v.time);
 
     if (!id || detailActionInFlight) return;
 
+    activateLowVisionDetailMode();
+
     const requestSequence =
       ++detailOpenSequence;
 
@@ -7694,6 +8431,8 @@ let d = new Date(v.time);
         return;
       }
 
+      exitLowVisionDetailMode();
+
       showMsg(
         error.message || String(error),
         'Không mở được phiếu',
@@ -7777,7 +8516,7 @@ let d = new Date(v.time);
                let isChecked = it.checker && it.checker !== '';
                let sttDisplay = i + 1;
                
-               if(window.innerWidth <= 768 && window.innerHeight > window.innerWidth) { 
+               if(usesPortraitVoucherColumns()) { 
                    sttDisplay = isDone ? (isChecked ? '<span style="display:inline-block; background:#007bff; color:#fff; width:22px; height:22px; line-height:22px; border-radius:4px; text-align:center; font-size:14px;">✔</span>' : '✅') : i + 1; 
                }
                
@@ -7861,7 +8600,7 @@ let d = new Date(v.time);
     else if (isChecked) statusElem.innerHTML = `<span class="phat-badge" style="background:#87CEFA;color:#333;">✅ ${item.checker}</span>`;
     else statusElem.innerHTML = `<span class="phat-badge">✅ ${item.status}</span>`;
 
-    if (sttElem && window.innerWidth <= 768 && window.innerHeight > window.innerWidth) {
+    if (sttElem && usesPortraitVoucherColumns()) {
       const origStt = sttElem.getAttribute('data-stt') || '';
       sttElem.innerHTML = isDone
         ? (isChecked ? '<span style="display:inline-block;background:#007bff;color:#fff;width:22px;height:22px;line-height:22px;border-radius:4px;text-align:center;font-size:14px;">✔</span>' : '✅')
@@ -8079,10 +8818,7 @@ let d = new Date(v.time);
 
     trElem.classList.add('status-updating');
 
-    if (
-      window.innerWidth <= 768 &&
-      window.innerHeight > window.innerWidth
-    ) {
+    if (usesPortraitVoucherColumns()) {
       document.getElementById('stt_' + idx).innerHTML = '⏳';
     }
 
