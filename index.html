@@ -1178,21 +1178,6 @@
       -webkit-overflow-scrolling: touch;
     }
 
-    body.low-vision-detail-active.low-vision-visual-landscape #view-detail {
-      width: 100vh;
-      height: 100vw;
-      transform: rotate(90deg) translateY(-100%);
-      transform-origin: top left;
-    }
-
-    body.low-vision-detail-active.low-vision-visual-landscape .modal-overlay,
-    body.low-vision-detail-active.low-vision-visual-landscape .loading-overlay {
-      width: 100vh;
-      height: 100vw;
-      transform: rotate(90deg) translateY(-100%);
-      transform-origin: top left;
-    }
-
     body.low-vision-detail-active .dist-header {
       position: sticky;
       top: 0;
@@ -1463,6 +1448,62 @@
       .dist-header button { font-size: 14px; padding: 6px 12px; }
       .dist-header button[onclick="window.print()"] { display: none !important; }
 
+
+      /*
+       * Trên điện thoại, thanh điều khiển phiếu luôn bám phía trên khi cuộn.
+       * Nhờ vậy nút Chốt Đối Chiếu và Thoát luôn nhìn thấy ở màn hình dọc.
+       */
+      #view-detail .dist-header {
+        position: sticky;
+        top: 0;
+        z-index: 45;
+        padding: 8px 9px;
+        border-radius: 0;
+        gap: 6px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+      }
+
+      #view-detail .detail-header-title {
+        flex: 1 1 100%;
+        min-width: 0;
+      }
+
+      #view-detail #detailKhoa {
+        display: block;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: 19px !important;
+        line-height: 1.15;
+      }
+
+      #view-detail .detail-header-actions {
+        display: flex !important;
+        width: 100%;
+        align-items: center;
+        justify-content: flex-end;
+        flex-wrap: nowrap;
+        gap: 6px !important;
+      }
+
+      #view-detail #detailModeText {
+        display: none !important;
+      }
+
+      #view-detail #btnFinishVoucher,
+      #view-detail #btnFinishCheck,
+      #view-detail #btnCloseDetail {
+        min-height: 40px;
+        padding: 7px 9px !important;
+        font-size: 14px !important;
+        line-height: 1.05;
+        white-space: nowrap;
+      }
+
+      #view-detail #btnCloseDetail {
+        margin-left: auto;
+      }
+
       .tab-header {
         padding: 2px 6px 0;
         gap: 4px;
@@ -1666,7 +1707,7 @@
     <button id="btnNavList" class="btn-success" onclick="switchView('list')">📋 Danh sách</button>
     <button id="btnNavHistory" class="btn-pink" onclick="switchView('history')">📜 Lịch sử</button>
     <button id="btnSendNotification" class="btn-warning" style="display:none;" onclick="openNotificationModal()">📣 Gửi thông báo</button>
-    <button id="btnLowVisionSettings" class="btn-low-vision" style="display:none;" aria-pressed="false" onclick="openLowVisionSettings()">👁️ Hỗ trợ mắt kém</button>
+    <button id="btnLowVisionSettings" class="btn-low-vision" style="display:none;" aria-pressed="false" onclick="openLowVisionSettings()">👁️ Hỗ trợ mắt</button>
     <button id="btnPushSubscribe" class="notification-button-muted" onclick="enablePushNotifications()">🔕 Bật thông báo</button>
     <button id="btnInstallApp" class="btn-primary" style="display:none;" onclick="installWebApp()">📲 Cài ứng dụng</button>
     <button class="btn-indigo" onclick="openChangePassModal()">🔑 Đổi MK</button>
@@ -1780,8 +1821,8 @@
 
 <div id="view-detail" class="container" style="padding:0;">
   <div class="dist-header">
-    <div style="flex-grow:1;"><span id="detailKhoa" style="font-size:24px; font-weight:900;">Khoa: ...</span></div>
-    <div style="display:flex; align-items:center; gap:10px;">
+    <div class="detail-header-title" style="flex-grow:1;"><span id="detailKhoa" style="font-size:24px; font-weight:900;">Khoa: ...</span></div>
+    <div class="detail-header-actions" style="display:flex; align-items:center; gap:10px;">
       <span class="user-badge" id="detailModeText">👤 ...</span>
       <button class="btn-primary" onclick="window.print()">🖨️ In</button>
       <button id="btnFinishVoucher" class="btn-indigo" style="display:none;" onclick="finishDistribution()">✅ Chốt Phát</button>
@@ -1974,14 +2015,14 @@
 
 <div id="lowVisionSettingsModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="lowVisionSettingsTitle">
   <div class="modal-content low-vision-settings-content">
-    <h3 id="lowVisionSettingsTitle" style="color:#5b21b6; margin-top:0;">👁️ Hỗ trợ người mắt kém</h3>
+    <h3 id="lowVisionSettingsTitle" style="color:#5b21b6; margin-top:0;">👁️ Hỗ trợ mắt</h3>
 
     <label class="low-vision-toggle-row" for="lowVisionEnabledCheckbox">
       <input type="checkbox" id="lowVisionEnabledCheckbox">
       <span>
         <span class="low-vision-toggle-title">Bật chế độ phóng to phiếu</span>
         <span class="low-vision-toggle-description">
-          Khi bấm mở phiếu trên điện thoại, ứng dụng tự chuyển sang màn hình ngang, phóng to chữ và vùng bấm nhưng vẫn giữ số cột giống giao diện dọc.
+          Khi cầm điện thoại dọc, phiếu giữ nguyên giao diện dọc. Khi bạn tự xoay điện thoại sang ngang, ứng dụng mới phóng to chữ và vùng bấm nhưng vẫn giữ số cột giống giao diện dọc.
         </span>
       </span>
     </label>
@@ -2520,14 +2561,16 @@
   let detailPromptInFlight = false;
   let loadingWatchdogTimer = null;
 
-  /* ===== CHẾ ĐỘ HỖ TRỢ MẮT KÉM TRÊN ĐIỆN THOẠI ===== */
+  /* ===== CHẾ ĐỘ HỖ TRỢ MẮT TRÊN ĐIỆN THOẠI ===== */
   const LOW_VISION_STORAGE_PREFIX =
     'phatthuoc_low_vision_v1_';
 
+  /*
+   * lowVisionDetailActive chỉ cho biết chế độ đã được bật cho phiếu đang mở.
+   * Giao diện phóng to chỉ được áp dụng khi điện thoại thực sự ở chiều ngang.
+   * Ứng dụng không yêu cầu fullscreen, không khóa hướng và không tự xoay giao diện.
+   */
   let lowVisionDetailActive = false;
-  let lowVisionFullscreenOwned = false;
-  let lowVisionOrientationLocked = false;
-  let lowVisionOrientationAttempt = 0;
 
   function lowVisionStorageKey() {
     const username =
@@ -2624,8 +2667,8 @@
     );
 
     button.innerText = enabled
-      ? '👁️ Mắt kém: Bật'
-      : '👁️ Hỗ trợ mắt kém';
+      ? '👁️ Hỗ trợ mắt: Bật'
+      : '👁️ Hỗ trợ mắt';
   }
 
   function openLowVisionSettings() {
@@ -2649,16 +2692,8 @@
     }
 
     if (note) {
-      const hasOrientationLock = Boolean(
-        window.screen &&
-        window.screen.orientation &&
-        typeof window.screen.orientation.lock ===
-          'function'
-      );
-
-      note.innerText = hasOrientationLock
-        ? 'Điện thoại này hỗ trợ yêu cầu xoay ngang tự động. Nếu hệ điều hành từ chối, ứng dụng sẽ dùng chế độ xoay giao diện dự phòng.'
-        : 'Trình duyệt này không cho khóa hướng màn hình. Ứng dụng sẽ tự xoay phần phiếu bằng chế độ dự phòng; khi đó hãy cầm điện thoại theo chiều ngang.';
+      note.innerText =
+        'Khi cầm điện thoại dọc, phiếu vẫn giữ nguyên giao diện dọc. Chỉ khi bạn tự xoay điện thoại sang ngang, ứng dụng mới phóng to phiếu và vẫn giữ số cột như màn hình dọc. Thiết lập được lưu riêng trên điện thoại này.';
     }
 
     const modal =
@@ -2710,12 +2745,15 @@
 
     if (!enabled && lowVisionDetailActive) {
       exitLowVisionDetailMode();
+    } else if (enabled && activeVoucherId) {
+      lowVisionDetailActive = true;
+      syncLowVisionOrientationMode();
     }
 
     showMsg(
       enabled
-        ? 'Đã bật hỗ trợ mắt kém. Khi mở phiếu, màn hình sẽ chuyển ngang và phóng to.'
-        : 'Đã tắt hỗ trợ mắt kém.',
+        ? 'Đã bật Hỗ trợ mắt. Phiếu giữ giao diện dọc khi cầm dọc và chỉ phóng to khi bạn tự xoay điện thoại sang ngang.'
+        : 'Đã tắt Hỗ trợ mắt.',
       'Thiết lập hiển thị',
       'success'
     );
@@ -2732,117 +2770,46 @@
     );
   }
 
-  function updateLowVisionOrientationFallback() {
-    if (!lowVisionDetailActive) {
-      document.body.classList.remove(
-        'low-vision-visual-landscape'
-      );
-      return;
+  function isActualLandscapeOrientation() {
+    const orientationType =
+      window.screen &&
+      window.screen.orientation &&
+      String(
+        window.screen.orientation.type || ''
+      ).toLowerCase();
+
+    if (orientationType.indexOf('landscape') === 0) {
+      return true;
     }
 
-    const isLandscape =
-      window.innerWidth > window.innerHeight;
-
-    document.body.classList.toggle(
-      'low-vision-visual-landscape',
-      !isLandscape &&
-      !lowVisionOrientationLocked
-    );
-  }
-
-  function requestLowVisionLandscape() {
-    const attempt =
-      ++lowVisionOrientationAttempt;
-
-    let fullscreenPromise =
-      Promise.resolve();
-
-    const root =
-      document.documentElement;
+    if (orientationType.indexOf('portrait') === 0) {
+      return false;
+    }
 
     if (
-      !document.fullscreenElement &&
-      root &&
-      typeof root.requestFullscreen ===
-        'function'
+      window.matchMedia &&
+      window.matchMedia('(orientation: landscape)').matches
     ) {
-      try {
-        lowVisionFullscreenOwned = true;
-        fullscreenPromise =
-          Promise.resolve(
-            root.requestFullscreen()
-          );
-      } catch (error) {
-        lowVisionFullscreenOwned = false;
-        fullscreenPromise =
-          Promise.resolve();
-      }
+      return true;
     }
 
-    fullscreenPromise
-      .catch(() => {
-        lowVisionFullscreenOwned = false;
-      })
-      .then(() => {
-        if (
-          attempt !==
-            lowVisionOrientationAttempt ||
-          !lowVisionDetailActive
-        ) {
-          return;
-        }
+    return window.innerWidth > window.innerHeight;
+  }
 
-        if (
-          window.screen &&
-          window.screen.orientation &&
-          typeof window.screen.orientation.lock ===
-            'function'
-        ) {
-          return Promise.resolve(
-            window.screen.orientation.lock(
-              'landscape'
-            )
-          )
-            .then(() => {
-              if (
-                attempt ===
-                lowVisionOrientationAttempt
-              ) {
-                lowVisionOrientationLocked =
-                  true;
-              }
-            })
-            .catch(() => {
-              lowVisionOrientationLocked =
-                false;
-            });
-        }
-      })
-      .finally(() => {
-        if (
-          attempt ===
-          lowVisionOrientationAttempt
-        ) {
-          setTimeout(
-            updateLowVisionOrientationFallback,
-            80
-          );
-        }
-      });
+  function syncLowVisionOrientationMode() {
+    const shouldMagnify = Boolean(
+      lowVisionDetailActive &&
+      isLowVisionEnabled() &&
+      isPhoneLikeDevice() &&
+      isActualLandscapeOrientation()
+    );
 
-    /*
-     * Cho trình duyệt một khoảng ngắn để khóa xoay thật.
-     * Nếu không hỗ trợ, mới kích hoạt xoay giao diện dự phòng.
-     */
-    setTimeout(() => {
-      if (
-        attempt ===
-          lowVisionOrientationAttempt &&
-        lowVisionDetailActive
-      ) {
-        updateLowVisionOrientationFallback();
-      }
-    }, 350);
+    document.body.classList.toggle(
+      'low-vision-detail-active',
+      shouldMagnify
+    );
+
+    return shouldMagnify;
   }
 
   function activateLowVisionDetailMode() {
@@ -2850,72 +2817,32 @@
       !isLowVisionEnabled() ||
       !isPhoneLikeDevice()
     ) {
+      lowVisionDetailActive = false;
+      document.body.classList.remove(
+        'low-vision-detail-active'
+      );
       return false;
     }
 
-    if (lowVisionDetailActive) {
-      return true;
-    }
-
     lowVisionDetailActive = true;
-    lowVisionOrientationLocked = false;
-
-    document.body.classList.add(
-      'low-vision-detail-active'
-    );
-
-    requestLowVisionLandscape();
+    syncLowVisionOrientationMode();
     return true;
   }
 
   function exitLowVisionDetailMode() {
-    lowVisionOrientationAttempt++;
-
-    const wasActive =
-      lowVisionDetailActive;
-
     lowVisionDetailActive = false;
 
     document.body.classList.remove(
       'low-vision-detail-active',
       'low-vision-visual-landscape'
     );
-
-    if (
-      window.screen &&
-      window.screen.orientation &&
-      typeof window.screen.orientation.unlock ===
-        'function'
-    ) {
-      try {
-        window.screen.orientation.unlock();
-      } catch (error) {
-        // Trình duyệt có thể từ chối khi không ở fullscreen.
-      }
-    }
-
-    lowVisionOrientationLocked = false;
-
-    if (
-      wasActive &&
-      lowVisionFullscreenOwned &&
-      document.fullscreenElement &&
-      typeof document.exitFullscreen ===
-        'function'
-    ) {
-      Promise.resolve(
-        document.exitFullscreen()
-      ).catch(() => {});
-    }
-
-    lowVisionFullscreenOwned = false;
   }
 
   window.addEventListener(
     'resize',
     () => {
       updateLowVisionSettingsButton();
-      updateLowVisionOrientationFallback();
+      syncLowVisionOrientationMode();
     }
   );
 
@@ -2923,29 +2850,12 @@
     'orientationchange',
     () => {
       setTimeout(
-        updateLowVisionOrientationFallback,
-        80
+        syncLowVisionOrientationMode,
+        120
       );
     }
   );
-
-  document.addEventListener(
-    'fullscreenchange',
-    () => {
-      if (
-        lowVisionDetailActive &&
-        !document.fullscreenElement
-      ) {
-        lowVisionFullscreenOwned = false;
-        lowVisionOrientationLocked = false;
-        setTimeout(
-          updateLowVisionOrientationFallback,
-          80
-        );
-      }
-    }
-  );
-  /* ===== END CHẾ ĐỘ HỖ TRỢ MẮT KÉM ===== */
+  /* ===== END CHẾ ĐỘ HỖ TRỢ MẮT ===== */
 
 
   /*
