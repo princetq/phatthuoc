@@ -2706,10 +2706,13 @@
     return keys.map(key => {
       const palette = getWarehouseColorPalette(key);
       const displayName = getWarehouseDisplayNameByKey(key) || key;
+      const badgeName = String(displayName)
+        .replace(/^Kho\s+/i, '')
+        .trim() || displayName;
       return (
         '<span class="warehouse-badge" ' +
           'style="--warehouse-accent:' + palette.accent + '; --warehouse-soft:' + palette.soft + ';">' +
-          escapeHtmlText(displayName) +
+          escapeHtmlText(badgeName) +
         '</span>'
       );
     }).join('');
