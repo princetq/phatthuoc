@@ -773,6 +773,14 @@
       text-overflow: ellipsis;
     }
 
+    .weekly-login-note {
+      margin-top: 14px;
+      text-align: center;
+      color: #2e7d32;
+      font-size: 13px;
+      font-weight: 800;
+      line-height: 1.4;
+    }
     .container { max-width: 1200px; margin: 20px auto; padding: 0 15px; display: none; }
     .card { background: var(--card); padding: 25px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 20px; }
     .upload-area { border: 2px dashed var(--green); padding: 30px; text-align: center; background: #eefaf3; cursor: pointer; border-radius: 10px; margin-bottom: 20px; }
@@ -784,8 +792,14 @@
 
     .tracking-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 15px; }
     .tracking-card {
-      background: #fff;
-      border: 1px solid var(--line);
+      --voucher-border-start: var(--line);
+      --voucher-border-end: var(--line);
+      --voucher-border-gradient: linear-gradient(135deg, var(--voucher-border-start), var(--voucher-border-end));
+      --voucher-accent-shadow: rgba(0,0,0,0.08);
+      background:
+        linear-gradient(#fff, #fff) padding-box,
+        var(--voucher-border-gradient) border-box;
+      border: 2px solid transparent;
       border-radius: 10px;
       padding: 15px 15px 62px;
       cursor: pointer;
@@ -793,8 +807,57 @@
       position: relative;
       min-height: 255px;
       height: 100%;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05), 0 0 0 1px var(--voucher-accent-shadow);
     }
-    .tracking-card:hover { border-color: var(--green); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+    .tracking-card:hover { box-shadow: 0 5px 15px rgba(0,0,0,0.1), 0 0 0 2px var(--voucher-accent-shadow); }
+    .tracking-card-warehouse-row {
+      display: flex;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 6px;
+    }
+    .tracking-card-warehouse-label {
+      font-size: 16px;
+      color: var(--purple);
+      font-weight: 900;
+      line-height: 1.7;
+    }
+    .warehouse-badges {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 6px;
+      min-width: 0;
+    }
+    .warehouse-badge {
+      --warehouse-accent: #546e7a;
+      --warehouse-soft: #edf2f5;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--warehouse-accent);
+      background: var(--warehouse-soft);
+      color: var(--warehouse-accent);
+      font-size: 14px;
+      font-weight: 900;
+      line-height: 1.3;
+      white-space: nowrap;
+    }
+    .warehouse-badge::before {
+      content: '';
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: currentColor;
+      flex: 0 0 8px;
+    }
+    .warehouse-badge-default {
+      --warehouse-accent: #6c757d;
+      --warehouse-soft: #f1f3f5;
+    }
 
     .tracking-card.opening {
       pointer-events: none;
@@ -1684,6 +1747,7 @@
         <span class="button-text">ĐĂNG NHẬP</span>
         <div class="button-aura"></div>
       </button>
+      <div class="weekly-login-note">Người phát và Người lĩnh đăng nhập lại vào mỗi Thứ Hai.</div>
     </div>
     
     <div style="text-align: center; margin-top: 20px; color: #2e7d32; font-weight: bold; position: relative; z-index: 2;">
@@ -2535,6 +2599,141 @@
 
   const KHO_CONFIG = { "Dich_Truyen": "Kho Dịch Truyền", "Tiem_Vien": "Kho Tiêm/Viên Nội Trú", "Vat_Tu": "Kho Vật tư - Hóa chất", "Khac": "Khác" };
   const V_COLORS = ['#dc3545', '#007bff', '#28a745', '#fd7e14', '#6f42c1', '#e83e8c'];
+
+  const WAREHOUSE_COLOR_CONFIG = {
+    Tiem_Vien: {
+      accent: '#1976d2',
+      soft: '#eaf3ff'
+    },
+    Dich_Truyen: {
+      accent: '#ef6c00',
+      soft: '#fff1e6'
+    },
+    Vat_Tu: {
+      accent: '#8e24aa',
+      soft: '#f7e9fb'
+    },
+    Khac: {
+      accent: '#546e7a',
+      soft: '#edf2f5'
+    }
+  };
+
+  function getWarehouseDisplayNameByKey(key) {
+    return KHO_CONFIG[key] || String(key || '').trim();
+  }
+
+  function normalizeWarehouseColorKey(value) {
+    const raw = String(value || '').trim();
+    if (!raw) {
+      return 'Khac';
+    }
+
+    if (Object.prototype.hasOwnProperty.call(KHO_CONFIG, raw)) {
+      return raw;
+    }
+
+    const resolved = resolveClientWarehouse(raw, false);
+    if (resolved && resolved.key) {
+      return String(resolved.key);
+    }
+
+    const normalized = normalizeCatalogSearchText(raw);
+    const directKey = Object.keys(KHO_CONFIG).find(
+      key => normalizeCatalogSearchText(key) === normalized
+    );
+
+    if (directKey) {
+      return directKey;
+    }
+
+    const displayKey = Object.keys(KHO_CONFIG).find(
+      key => normalizeCatalogSearchText(KHO_CONFIG[key]) === normalized
+    );
+
+    return displayKey || 'Khac';
+  }
+
+  function getWarehouseColorPalette(value) {
+    const key = normalizeWarehouseColorKey(value);
+    return WAREHOUSE_COLOR_CONFIG[key] || WAREHOUSE_COLOR_CONFIG.Khac;
+  }
+
+  function hexToRgba(hex, alpha) {
+    const normalized = String(hex || '')
+      .replace('#', '')
+      .trim();
+
+    if (![3, 6].includes(normalized.length)) {
+      return 'rgba(84,110,122,' + alpha + ')';
+    }
+
+    const full = normalized.length === 3
+      ? normalized.split('').map(ch => ch + ch).join('')
+      : normalized;
+
+    const red = parseInt(full.slice(0, 2), 16);
+    const green = parseInt(full.slice(2, 4), 16);
+    const blue = parseInt(full.slice(4, 6), 16);
+
+    if ([red, green, blue].some(Number.isNaN)) {
+      return 'rgba(84,110,122,' + alpha + ')';
+    }
+
+    return 'rgba(' + red + ',' + green + ',' + blue + ',' + alpha + ')';
+  }
+
+  function uniqueWarehouseKeys(values) {
+    const seen = new Set();
+    const result = [];
+    (values || []).forEach(value => {
+      const key = normalizeWarehouseColorKey(value);
+      if (!seen.has(key)) {
+        seen.add(key);
+        result.push(key);
+      }
+    });
+    return result;
+  }
+
+  function buildWarehouseBadgesHtml(warehouseKeys) {
+    const keys = uniqueWarehouseKeys(warehouseKeys);
+
+    if (!keys.length) {
+      return '<span class="warehouse-badge warehouse-badge-default">Tất cả kho</span>';
+    }
+
+    return keys.map(key => {
+      const palette = getWarehouseColorPalette(key);
+      const displayName = getWarehouseDisplayNameByKey(key) || key;
+      return (
+        '<span class="warehouse-badge" ' +
+          'style="--warehouse-accent:' + palette.accent + '; --warehouse-soft:' + palette.soft + ';">' +
+          escapeHtmlText(displayName) +
+        '</span>'
+      );
+    }).join('');
+  }
+
+  function buildWarehouseCardStyle(warehouseKeys) {
+    const keys = uniqueWarehouseKeys(warehouseKeys);
+    const palettes = (keys.length ? keys : ['Khac']).map(getWarehouseColorPalette);
+    const gradientStops = palettes.map((palette, index) => {
+      if (palettes.length === 1) {
+        return palette.accent;
+      }
+      const ratio = Math.round((index / (palettes.length - 1)) * 100);
+      return palette.accent + ' ' + ratio + '%';
+    }).join(', ');
+    const firstAccent = palettes[0].accent;
+    return [
+      '--voucher-border-start:' + palettes[0].accent,
+      '--voucher-border-end:' + palettes[palettes.length - 1].accent,
+      '--voucher-border-gradient:linear-gradient(135deg, ' + gradientStops + ')',
+      '--voucher-accent-shadow:' + hexToRgba(firstAccent, 0.18)
+    ].join('; ');
+  }
+
 
   let currentUser = null;
   let parsedFileData = {};
@@ -6992,6 +7191,7 @@
     let allDates = new Set();
     let allVouchers = new Set();
     let khoNames = new Set();
+    let khoKeys = new Set();
 
     // Dữ liệu danh sách nhẹ V7.
     String(v.dateSummary || '')
@@ -7057,8 +7257,12 @@
           vc.dates.length > 0;
 
         if (hasData || !isLikelyOldFormat) {
-          if (KHO_CONFIG[kKey]) {
-            khoNames.add(KHO_CONFIG[kKey]);
+          const warehouseDisplayName =
+            getWarehouseDisplayNameByKey(kKey);
+
+          if (warehouseDisplayName) {
+            khoNames.add(warehouseDisplayName);
+            khoKeys.add(String(kKey));
           }
         }
 
@@ -7084,9 +7288,11 @@
     let phieuStr = formatVoucherColors(phieuArr.slice(0, 3)) + (phieuArr.length > 3 ? ` <i style="color:#777;">...và thêm ${phieuArr.length - 3} phiếu khác</i>` : "");
     if (!phieuStr) phieuStr = "Không có phiếu";
     
+    let khoKeyArr = Array.from(khoKeys);
     let khoStr = Array.from(khoNames).join(", ");
-    
-    
+    let khoBadgesHtml = buildWarehouseBadgesHtml(khoKeyArr);
+    let voucherCardStyle = buildWarehouseCardStyle(khoKeyArr);
+
     let dateStr = normalizeDateList(allDates).join(", ");
     if (!dateStr) dateStr = "Không có ngày";
 
@@ -7107,6 +7313,7 @@ let d = new Date(v.time);
     return `
       <div
         class="tracking-card"
+        style="${voucherCardStyle}"
         data-voucher-id="${id}"
         onmouseenter="prefetchVoucherDetail('${id}')"
         onpointerdown="prefetchVoucherDetail('${id}')"
@@ -7117,7 +7324,7 @@ let d = new Date(v.time);
           ${(currentUser.role === 'admin' || (currentUser.role === 'phat' && (v.state === 'waiting' || v.state === 'progress'))) ? `<button class="tracking-delete-btn" onclick="event.stopPropagation(); deleteVoucher('${id}')">Xóa</button>` : ''}
         </div>
         <div style="margin-top:2px;">${timeHtml}</div>
-        <div style="font-size:16px; color:var(--purple); margin-top:4px; font-weight:bold;">🏢 Kho: ${khoStr || "Tất cả kho"}</div>
+        <div class="tracking-card-warehouse-row"><span class="tracking-card-warehouse-label">🏢 Kho:</span><span class="warehouse-badges">${khoBadgesHtml}</span></div>
         <div style="font-size:18px; margin-top:0px;"><b>📅 Ngày:</b> <span style="color:var(--danger);">${dateStr}</span></div>
         <div style="font-size:18px; margin-top:10px; line-height:1.4;"><b>🧾 Phiếu:</b> <span style="color:#333; font-weight:bold;">${phieuStr}</span></div>
         <div class="tracking-card-status"><span class="status-badge ${bClass}"><span class="status-badge-text">${bText}</span></span></div>
