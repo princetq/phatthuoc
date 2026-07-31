@@ -7207,9 +7207,25 @@
       .split(',')
       .map(s => s.trim())
       .filter(Boolean)
-      .forEach(k => {
-        if (KHO_CONFIG[k]) {
-          khoNames.add(KHO_CONFIG[k]);
+      .forEach(rawWarehouseKey => {
+        const warehouseKey =
+          normalizeWarehouseColorKey(
+            rawWarehouseKey
+          );
+
+        const warehouseDisplayName =
+          getWarehouseDisplayNameByKey(
+            warehouseKey
+          ) || rawWarehouseKey;
+
+        if (warehouseKey) {
+          khoKeys.add(warehouseKey);
+        }
+
+        if (warehouseDisplayName) {
+          khoNames.add(
+            warehouseDisplayName
+          );
         }
       });
 
