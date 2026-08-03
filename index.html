@@ -266,6 +266,11 @@
       margin: 0;
     }
 
+    .automatic-notification-type-label {
+      display: inline;
+      min-width: 0;
+    }
+
 
     /*
      * Khoảng cách riêng cho dòng hướng dẫn loại thông báo.
@@ -1734,7 +1739,84 @@
       .search-container.active-search { flex-grow: 1; max-width: none; }
       .search-container.active-search + select { display: none !important; }
     }
-  </style>
+  
+
+    /* ===== FIX6: CHỐT PHÁT NỀN KHÔNG CHẶN NGƯỜI DÙNG ===== */
+    .background-finish-panel {
+      display: none;
+      margin: -4px 0 16px;
+      padding: 12px 14px;
+      border: 1px solid #9fc9b0;
+      border-radius: 12px;
+      background: #f2fbf5;
+      box-shadow: 0 2px 8px rgba(33, 109, 66, .08);
+      font-size: 15px;
+      line-height: 1.45;
+    }
+
+    .background-finish-panel.visible {
+      display: block;
+    }
+
+    .background-finish-panel.has-error {
+      border-color: #e5a5aa;
+      background: #fff4f5;
+    }
+
+    .background-finish-title {
+      font-weight: 900;
+      color: #17653a;
+      margin-bottom: 4px;
+    }
+
+    .background-finish-panel.has-error .background-finish-title {
+      color: #a52834;
+    }
+
+    .background-finish-items {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+      margin-top: 8px;
+    }
+
+    .background-finish-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 8px 10px;
+      border-radius: 9px;
+      background: rgba(255,255,255,.86);
+      border: 1px solid rgba(52, 125, 81, .18);
+    }
+
+    .background-finish-item-text {
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+
+    .background-finish-retry {
+      flex: 0 0 auto;
+      min-height: 34px;
+      padding: 6px 10px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 900;
+      background: #b02a37;
+      color: #fff;
+      border: 0;
+    }
+
+    @media (max-width: 640px) {
+      .background-finish-item {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+    }
+    /* ===== END FIX6 ===== */
+
+</style>
 </head>
 <body>
 
@@ -1901,6 +1983,7 @@
       </div>
     </div>
   </div>
+  <div id="backgroundFinishPanel" class="background-finish-panel" aria-live="polite"></div>
   <div class="tracking-list" id="trackingListContainer"></div>
 </div>
 
@@ -1982,11 +2065,11 @@
           <span class="automatic-notification-types-title">Loại thông báo tự động:</span>
           <label class="automatic-notification-type-row">
             <input type="checkbox" id="newNotifyReady" checked>
-            Phiếu sẵn sàng để phát
+            <span class="automatic-notification-type-label">Phiếu sẵn sàng để phát</span>
           </label>
           <label class="automatic-notification-type-row">
             <input type="checkbox" id="newNotifyDone" checked>
-            Phiếu đã phát xong
+            <span class="automatic-notification-type-label">Phiếu đã phát xong</span>
           </label>
           <div id="newNotifyTypesHelp" class="notification-help">
             Admin và Người phát có thể tắt cả hai; Người lĩnh phải nhận ít nhất một loại.
@@ -2038,11 +2121,11 @@
       <span class="automatic-notification-types-title">Loại thông báo tự động:</span>
       <label class="automatic-notification-type-row">
         <input type="checkbox" id="editNotifyReady">
-        Phiếu sẵn sàng để phát
+        <span class="automatic-notification-type-label">Phiếu sẵn sàng để phát</span>
       </label>
       <label class="automatic-notification-type-row">
         <input type="checkbox" id="editNotifyDone">
-        Phiếu đã phát xong
+        <span class="automatic-notification-type-label">Phiếu đã phát xong</span>
       </label>
       <div id="editNotifyTypesHelp" class="notification-help">
         Admin và Người phát có thể tắt cả hai; Người lĩnh phải nhận ít nhất một loại.
@@ -2097,8 +2180,7 @@
     <h3 style="color:#16856b; margin-top:0;">🔔 Thông báo theo tài khoản</h3>
 
     <div class="device-notify-note">
-      Khoa nhận thông báo do Admin gán cho tài khoản. Thiết bị này chỉ bật hoặc tắt nhận push.
-      Đăng nhập cùng tài khoản trên thiết bị mới sẽ tự nhận đúng khoa sau khi bật thông báo.
+      Chọn Cho phép trong hộp quyền của trình duyệt. Thiết bị sẽ nhận thông báo theo khoa Admin đã gán cho tài khoản.
     </div>
 
     <div class="account-notify-summary">
@@ -2554,7 +2636,7 @@
     else pending.reject(new Error(response.error || 'Apps Script trả về lỗi.'));
   });
 
-  async function gasCall(action, args = []) {
+  async function gasCall(action, args = [], timeoutMs = 30000) {
     if (!GAS_BRIDGE_URL || GAS_BRIDGE_URL.includes('PASTE_YOUR_')) {
       throw new Error(
         'Bạn chưa dán URL Apps Script Web App vào biến GAS_BRIDGE_URL và thuộc tính src của iframe.'
@@ -2571,7 +2653,7 @@
       const timeout = setTimeout(() => {
         gasPendingRequests.delete(id);
         reject(new Error('Yêu cầu máy chủ quá thời gian chờ.'));
-      }, 30000);
+      }, Math.max(5000, Number(timeoutMs || 30000)));
 
       gasPendingRequests.set(id, { resolve, reject, timeout });
 
@@ -2811,6 +2893,16 @@
   let detailActionInFlight = false;
   let detailPromptInFlight = false;
   let loadingWatchdogTimer = null;
+
+
+  /* ===== FIX6: HÀNG ĐỢI CHỐT PHÁT NỀN BỀN VỮNG ===== */
+  const BACKGROUND_FINISH_STORAGE_PREFIX =
+    'phatthuoc_background_finish_v1_';
+
+  let backgroundFinishWorkerRunning = false;
+  let backgroundFinishWakeTimer = null;
+  /* ===== END FIX6 STATE ===== */
+
 
   /* ===== CHẾ ĐỘ HỖ TRỢ MẮT TRÊN ĐIỆN THOẠI ===== */
   const LOW_VISION_STORAGE_PREFIX =
@@ -3527,8 +3619,49 @@
     syncModalPageScrollLock();
   }
 
+  function normalizeAutomaticNotificationTypeLabels() {
+    const expectedLabels = {
+      newNotifyReady: 'Phiếu sẵn sàng để phát',
+      newNotifyDone: 'Phiếu đã phát xong',
+      editNotifyReady: 'Phiếu sẵn sàng để phát',
+      editNotifyDone: 'Phiếu đã phát xong'
+    };
+
+    Object.entries(expectedLabels).forEach(([inputId, expectedText]) => {
+      const input = document.getElementById(inputId);
+      const row = input && input.closest('.automatic-notification-type-row');
+      if (!input || !row) return;
+
+      let label = row.querySelector('.automatic-notification-type-label');
+      if (!label) {
+        label = document.createElement('span');
+        label.className = 'automatic-notification-type-label';
+      }
+
+      label.textContent = expectedText;
+
+      Array.from(row.childNodes).forEach(node => {
+        if (node === input || node === label) return;
+
+        if (
+          node.nodeType === Node.TEXT_NODE ||
+          (
+            node.nodeType === Node.ELEMENT_NODE &&
+            node.classList &&
+            node.classList.contains('automatic-notification-type-label')
+          )
+        ) {
+          node.remove();
+        }
+      });
+
+      row.appendChild(label);
+    });
+  }
+
   window.onload = function() {
     initializeModalPageScrollLock();
+    normalizeAutomaticNotificationTypeLabels();
     populateAccountNotificationDepartmentSelects();
     initializeDepartmentSearchSelects();
 
@@ -4732,12 +4865,6 @@
         result.subscriptionId
       );
 
-      await showMsg(
-        'Thiết bị đã được liên kết với tài khoản và sẽ nhận thông báo của: ' +
-        result.khoaList.join(', '),
-        'Đồng bộ thành công',
-        'success'
-      );
     } catch (error) {
       showLoading(false);
 
@@ -4994,12 +5121,6 @@
             sdk
           );
 
-        await showMsg(
-          'Thiết bị này sẽ nhận thông báo của: ' +
-          result.khoaList.join(', '),
-          'Đã bật thông báo',
-          'success'
-        );
       }
 
       notificationDeviceSubscriptionId =
@@ -5965,6 +6086,7 @@
     updateLowVisionSettingsButton();
     resetVoucherDepartmentFiltersForAccount();
     startAdminSessionValidation();
+    resumeBackgroundFinishQueue();
 
     ensureOneSignalInitialized()
       .catch(error => {
@@ -7820,8 +7942,14 @@ let d = new Date(v.time);
   function renderTrackingList() {
     let bulkBtn = document.getElementById('btnBulkDelete');
     if (bulkBtn) bulkBtn.style.display = (currentUser && currentUser.role === 'admin') ? 'inline-block' : 'none';
+    renderBackgroundFinishPanel();
     let c = document.getElementById('trackingListContainer'); c.innerHTML = "";
-    let arr = Object.values(cloudWaitList);
+    let arr = Object.values(cloudWaitList)
+      .filter(v =>
+        !isVoucherFinishingInBackground(
+          v && v.id
+        )
+      );
     if (
       currentUser.role !== 'admin' &&
       currentUser.kho !== 'Tất cả'
@@ -8240,6 +8368,8 @@ let d = new Date(v.time);
         modeText.innerText = message;
       }
     }
+
+    updateBatchSaveIndicator();
   }
 
   function cancelPendingDetailOpen() {
@@ -8916,14 +9046,26 @@ let d = new Date(v.time);
       Math.random().toString(36).slice(2, 10);
   }
 
-  function hasPendingDistributionActions(voucherId = '') {
-    return Array.from(distributionIntentStates.values()).some(state =>
-      (!voucherId || state.voucherId === String(voucherId)) &&
+  function getPendingDistributionActionCount(voucherId = '') {
+    const targetVoucherId = String(voucherId || '');
+
+    return Array.from(distributionIntentStates.values()).filter(state =>
+      (!targetVoucherId || state.voucherId === targetVoucherId) &&
       (
         state.inFlight ||
         state.desiredDistributed !== state.confirmedDistributed
       )
-    ) || distributionBatchRunning;
+    ).length;
+  }
+
+  function hasPendingDistributionActions(voucherId = '') {
+    const targetVoucherId = String(voucherId || '');
+    const hasMatchingActions =
+      getPendingDistributionActionCount(targetVoucherId) > 0;
+
+    return targetVoucherId
+      ? hasMatchingActions
+      : (hasMatchingActions || distributionBatchRunning);
   }
 
   function updateBatchSaveIndicator() {
@@ -8954,6 +9096,25 @@ let d = new Date(v.time);
     indicator.innerText = count
       ? '⏳ Đang lưu ' + count + ' mục'
       : '';
+
+    const finishButton = document.getElementById('btnFinishVoucher');
+    if (finishButton) {
+      const blockFinish =
+        distributionCount > 0 || detailActionInFlight;
+
+      finishButton.disabled = blockFinish;
+      finishButton.classList.toggle(
+        'detail-action-busy',
+        blockFinish
+      );
+
+      if (distributionCount > 0) {
+        finishButton.title =
+          'Hãy chờ các thuốc lưu xong rồi mới chốt phát.';
+      } else if (!detailActionInFlight) {
+        finishButton.removeAttribute('title');
+      }
+    }
   }
 
   function persistDistributionIntentStates() {
@@ -9135,16 +9296,19 @@ let d = new Date(v.time);
 
     if (!batch.length) return;
 
+    distributionBatchRunning = true;
+    mutationInFlight = true;
+
     if (voucherId === String(activeVoucherId || '') && detailRefreshing) {
       const ready = await waitForDetailFresh(5000);
       if (!ready) {
+        distributionBatchRunning = false;
+        mutationInFlight = false;
         scheduleDistributionBatch(500);
+        updateBatchSaveIndicator();
         return;
       }
     }
-
-    distributionBatchRunning = true;
-    mutationInFlight = true;
 
     batch.forEach(state => {
       state.inFlight = true;
@@ -9165,7 +9329,8 @@ let d = new Date(v.time);
 
       const result = await gasCall(
         'saveItemActionsBatchServer',
-        [voucherId, 'distribute', actions]
+        [voucherId, 'distribute', actions],
+        12000
       );
 
       if (!result || result.success === false) {
@@ -9286,26 +9451,76 @@ let d = new Date(v.time);
     }
   }
 
-  async function flushPendingDistributionActions(timeoutMs = 20000) {
+  async function flushPendingDistributionActions(
+    timeoutMs = 6000,
+    voucherId = activeVoucherId
+  ) {
+    const targetVoucherId = String(voucherId || '');
+
+    if (!hasPendingDistributionActions(targetVoucherId)) {
+      return true;
+    }
+
     if (distributionBatchTimer) {
       clearTimeout(distributionBatchTimer);
       distributionBatchTimer = null;
     }
+
+    if (!distributionBatchRunning && !distributionRetryTimer) {
+      scheduleDistributionBatch(0);
+    }
+
+    const startedAt = Date.now();
+
+    while (hasPendingDistributionActions(targetVoucherId)) {
+      if (Date.now() - startedAt >= timeoutMs) {
+        return false;
+      }
+
+      if (
+        !distributionBatchRunning &&
+        !distributionBatchTimer &&
+        !distributionRetryTimer
+      ) {
+        scheduleDistributionBatch(0);
+      }
+
+      await new Promise(resolve => setTimeout(resolve, 250));
+    }
+
+    return true;
+  }
+
+  async function blockFinalActionWhileDistributionPending(
+    actionLabel = 'tiếp tục'
+  ) {
+    const voucherId = String(activeVoucherId || '');
+    const pendingCount =
+      getPendingDistributionActionCount(voucherId);
+
+    if (!hasPendingDistributionActions(voucherId)) {
+      return false;
+    }
+
     if (distributionRetryTimer) {
       clearTimeout(distributionRetryTimer);
       distributionRetryTimer = null;
     }
 
-    processDistributionBatch();
-    const startedAt = Date.now();
-
-    while (hasPendingDistributionActions()) {
-      if (Date.now() - startedAt >= timeoutMs) return false;
-      if (!distributionBatchRunning && !distributionBatchTimer) {
-        processDistributionBatch();
-      }
-      await new Promise(resolve => setTimeout(resolve, 60));
+    if (!distributionBatchRunning) {
+      scheduleDistributionBatch(0);
     }
+
+    updateBatchSaveIndicator();
+
+    await showMsg(
+      'Còn ' + Math.max(1, pendingCount) +
+        ' khoản thuốc chưa lưu xong. Hệ thống đang tiếp tục lưu nền. ' +
+        'Hãy chờ dòng “Đang lưu … mục” biến mất rồi bấm ' +
+        actionLabel + ' lại.',
+      'Đang lưu thuốc',
+      'warning'
+    );
 
     return true;
   }
@@ -10182,6 +10397,658 @@ let d = new Date(v.time);
     return output;
   }
 
+
+  /* ============================================================
+   * FIX6 - CHỐT PHÁT NỀN
+   *
+   * Người dùng được quay về danh sách ngay sau khi xác nhận.
+   * Yêu cầu chốt được lưu trong localStorage, tự thử lại khi mất
+   * mạng và an toàn khi nhiều thiết bị cùng chốt một phiếu vì
+   * finishVoucherServer là idempotent trong FIX5.
+   * ============================================================ */
+  function backgroundFinishStorageKey() {
+    const username =
+      currentUser && currentUser.username
+        ? String(currentUser.username)
+            .trim()
+            .toLowerCase()
+        : 'guest';
+
+    return (
+      BACKGROUND_FINISH_STORAGE_PREFIX +
+      username
+    );
+  }
+
+  function readBackgroundFinishQueue() {
+    try {
+      const raw = localStorage.getItem(
+        backgroundFinishStorageKey()
+      );
+
+      if (!raw) return {};
+
+      const parsed = JSON.parse(raw);
+      return parsed && typeof parsed === 'object'
+        ? parsed
+        : {};
+    } catch (error) {
+      console.warn(
+        'Không đọc được hàng đợi chốt nền:',
+        error
+      );
+      return {};
+    }
+  }
+
+  function writeBackgroundFinishQueue(queue) {
+    try {
+      const value =
+        queue && typeof queue === 'object'
+          ? queue
+          : {};
+
+      if (Object.keys(value).length) {
+        localStorage.setItem(
+          backgroundFinishStorageKey(),
+          JSON.stringify(value)
+        );
+      } else {
+        localStorage.removeItem(
+          backgroundFinishStorageKey()
+        );
+      }
+    } catch (error) {
+      throw new Error(
+        'Không lưu được hàng đợi chốt nền trên thiết bị. Vui lòng giải phóng dung lượng trình duyệt rồi thử lại.'
+      );
+    }
+  }
+
+  function compactVoucherSnapshotForBackgroundFinish(
+    voucherId,
+    voucher
+  ) {
+    const source = voucher || {};
+
+    return {
+      id: String(voucherId || source.id || ''),
+      khoa: String(source.khoa || ''),
+      time: source.time || new Date().toISOString(),
+      state: String(source.state || 'progress'),
+      finishTime: source.finishTime || '',
+      dateSummary: String(source.dateSummary || ''),
+      voucherSummary: String(source.voucherSummary || ''),
+      warehouseKeys: String(source.warehouseKeys || ''),
+      vouchers: source.vouchers || null
+    };
+  }
+
+  function isBackgroundFinishActiveStatus(status) {
+    return [
+      'pending',
+      'processing',
+      'retrying'
+    ].includes(String(status || ''));
+  }
+
+  function isVoucherFinishingInBackground(voucherId) {
+    const queue = readBackgroundFinishQueue();
+    const entry = queue[String(voucherId || '')];
+
+    return Boolean(
+      entry &&
+      isBackgroundFinishActiveStatus(
+        entry.status
+      )
+    );
+  }
+
+  function backgroundFinishRetryDelay(attempts) {
+    const steps = [
+      1200,
+      2200,
+      4000,
+      7000,
+      10000,
+      15000,
+      20000,
+      30000
+    ];
+
+    const index = Math.min(
+      Math.max(0, Number(attempts || 1) - 1),
+      steps.length - 1
+    );
+
+    return steps[index];
+  }
+
+  function renderBackgroundFinishPanel() {
+    const panel = document.getElementById(
+      'backgroundFinishPanel'
+    );
+
+    if (!panel || !currentUser) return;
+
+    const queue = readBackgroundFinishQueue();
+    const entries = Object.values(queue);
+    const active = entries.filter(entry =>
+      isBackgroundFinishActiveStatus(
+        entry.status
+      )
+    );
+    const failed = entries.filter(entry =>
+      String(entry.status || '') === 'failed'
+    );
+
+    panel.innerHTML = '';
+    panel.classList.toggle(
+      'visible',
+      active.length > 0 || failed.length > 0
+    );
+    panel.classList.toggle(
+      'has-error',
+      failed.length > 0
+    );
+
+    if (!active.length && !failed.length) {
+      return;
+    }
+
+    const title = document.createElement('div');
+    title.className = 'background-finish-title';
+
+    if (failed.length) {
+      title.textContent =
+        '⚠ Có phiếu chốt nền chưa thành công';
+    } else {
+      title.textContent =
+        '⏳ Đang chốt nền ' +
+        active.length +
+        ' phiếu';
+    }
+
+    panel.appendChild(title);
+
+    const note = document.createElement('div');
+    note.textContent = failed.length
+      ? 'Phiếu lỗi đã được trả lại danh sách. Kiểm tra rồi bấm Thử lại.'
+      : 'Bạn có thể tiếp tục mở và phát phiếu khác. Không cần đứng chờ.';
+    panel.appendChild(note);
+
+    const items = document.createElement('div');
+    items.className = 'background-finish-items';
+
+    entries
+      .sort((a, b) =>
+        Number(a.requestedAt || 0) -
+        Number(b.requestedAt || 0)
+      )
+      .forEach(entry => {
+        const row = document.createElement('div');
+        row.className = 'background-finish-item';
+
+        const text = document.createElement('div');
+        text.className =
+          'background-finish-item-text';
+
+        const label =
+          String(
+            entry.khoa ||
+            entry.voucherId ||
+            'Phiếu'
+          );
+
+        if (
+          String(entry.status || '') ===
+          'failed'
+        ) {
+          text.textContent =
+            label +
+            ': ' +
+            String(
+              entry.lastError ||
+              'Chốt nền chưa thành công.'
+            );
+
+          const retry = document.createElement('button');
+          retry.type = 'button';
+          retry.className = 'background-finish-retry';
+          retry.textContent = 'Thử lại';
+          retry.addEventListener('click', () => {
+            retryBackgroundFinish(
+              entry.voucherId
+            );
+          });
+
+          row.appendChild(text);
+          row.appendChild(retry);
+        } else {
+          const attempts = Number(
+            entry.attempts || 0
+          );
+
+          text.textContent =
+            label +
+            (
+              attempts > 1
+                ? ' — đang thử lại lần ' + attempts
+                : ' — đang xử lý'
+            );
+
+          row.appendChild(text);
+        }
+
+        items.appendChild(row);
+      });
+
+    panel.appendChild(items);
+  }
+
+  function queueVoucherFinishInBackground(
+    voucherId,
+    voucher
+  ) {
+    const id = String(voucherId || '').trim();
+    if (!id) {
+      throw new Error('Mã phiếu không hợp lệ.');
+    }
+
+    const queue = readBackgroundFinishQueue();
+    const previous = queue[id] || {};
+    const now = Date.now();
+
+    queue[id] = {
+      voucherId: id,
+      khoa: String(
+        voucher && voucher.khoa ||
+        previous.khoa ||
+        ''
+      ),
+      requestedAt: Number(
+        previous.requestedAt || now
+      ),
+      updatedAt: now,
+      attempts: 0,
+      nextAttemptAt: 0,
+      status: 'pending',
+      lastError: '',
+      snapshot:
+        previous.snapshot ||
+        compactVoucherSnapshotForBackgroundFinish(
+          id,
+          voucher
+        )
+    };
+
+    writeBackgroundFinishQueue(queue);
+    renderBackgroundFinishPanel();
+    scheduleBackgroundFinishWorker(40);
+    return true;
+  }
+
+  function restoreBackgroundFinishSnapshot(entry) {
+    if (
+      !entry ||
+      !entry.voucherId ||
+      !entry.snapshot
+    ) {
+      return;
+    }
+
+    const id = String(entry.voucherId);
+    if (!cloudWaitList[id]) {
+      cloudWaitList[id] = Object.assign(
+        {},
+        entry.snapshot,
+        {
+          id: id,
+          state:
+            entry.snapshot.state ||
+            'progress'
+        }
+      );
+    }
+
+    saveVoucherCardsLocalCache(
+      cloudWaitList
+    );
+  }
+
+  function markBackgroundFinishFailed(
+    queue,
+    entry,
+    message
+  ) {
+    const id = String(entry.voucherId || '');
+    entry.status = 'failed';
+    entry.updatedAt = Date.now();
+    entry.nextAttemptAt = 0;
+    entry.lastError = String(
+      message ||
+      'Không thể chốt phiếu ở chế độ nền.'
+    );
+    queue[id] = entry;
+    writeBackgroundFinishQueue(queue);
+    restoreBackgroundFinishSnapshot(entry);
+  }
+
+  function retryBackgroundFinish(voucherId) {
+    const id = String(voucherId || '').trim();
+    const queue = readBackgroundFinishQueue();
+    const entry = queue[id];
+
+    if (!entry) return;
+
+    entry.status = 'pending';
+    entry.attempts = 0;
+    entry.nextAttemptAt = 0;
+    entry.updatedAt = Date.now();
+    entry.lastError = '';
+    queue[id] = entry;
+
+    writeBackgroundFinishQueue(queue);
+
+    delete cloudWaitList[id];
+    saveVoucherCardsLocalCache(
+      cloudWaitList
+    );
+
+    renderTrackingList();
+    scheduleBackgroundFinishWorker(40);
+  }
+
+  function scheduleBackgroundFinishWorker(
+    delayMs = 100
+  ) {
+    if (!currentUser) return;
+
+    if (backgroundFinishWakeTimer) {
+      clearTimeout(
+        backgroundFinishWakeTimer
+      );
+    }
+
+    backgroundFinishWakeTimer = setTimeout(
+      () => {
+        backgroundFinishWakeTimer = null;
+        processBackgroundFinishQueue();
+      },
+      Math.max(25, Number(delayMs || 100))
+    );
+  }
+
+  function scheduleNextBackgroundFinishAttempt() {
+    const queue = readBackgroundFinishQueue();
+    const now = Date.now();
+    const times = Object.values(queue)
+      .filter(entry =>
+        isBackgroundFinishActiveStatus(
+          entry.status
+        )
+      )
+      .map(entry =>
+        Math.max(
+          now + 250,
+          Number(entry.nextAttemptAt || now)
+        )
+      );
+
+    if (!times.length) return;
+
+    scheduleBackgroundFinishWorker(
+      Math.max(
+        250,
+        Math.min(...times) - now
+      )
+    );
+  }
+
+  async function processBackgroundFinishQueue() {
+    if (
+      backgroundFinishWorkerRunning ||
+      !currentUser
+    ) {
+      return;
+    }
+
+    backgroundFinishWorkerRunning = true;
+    let shouldReloadList = false;
+    const workerUserKey =
+      backgroundFinishStorageKey();
+
+    try {
+      const snapshot = readBackgroundFinishQueue();
+      const now = Date.now();
+      const dueEntries = Object.values(snapshot)
+        .filter(entry =>
+          isBackgroundFinishActiveStatus(
+            entry.status
+          ) &&
+          Number(entry.nextAttemptAt || 0) <= now
+        )
+        .sort((a, b) =>
+          Number(a.requestedAt || 0) -
+          Number(b.requestedAt || 0)
+        );
+
+      for (const dueEntry of dueEntries) {
+        if (
+          !currentUser ||
+          backgroundFinishStorageKey() !==
+            workerUserKey
+        ) {
+          break;
+        }
+
+        const queue = readBackgroundFinishQueue();
+        const id = String(
+          dueEntry.voucherId || ''
+        );
+        const entry = queue[id];
+
+        if (
+          !entry ||
+          !isBackgroundFinishActiveStatus(
+            entry.status
+          )
+        ) {
+          continue;
+        }
+
+        entry.status = 'processing';
+        entry.attempts =
+          Number(entry.attempts || 0) + 1;
+        entry.updatedAt = Date.now();
+        entry.nextAttemptAt = 0;
+        queue[id] = entry;
+        writeBackgroundFinishQueue(queue);
+        renderBackgroundFinishPanel();
+
+        try {
+          const result = await gasCall(
+            'finishVoucherServer',
+            [id],
+            60000
+          );
+
+          if (
+            !currentUser ||
+            backgroundFinishStorageKey() !==
+              workerUserKey
+          ) {
+            return;
+          }
+
+          if (
+            result &&
+            result.success !== false
+          ) {
+            const latest = readBackgroundFinishQueue();
+            delete latest[id];
+            writeBackgroundFinishQueue(latest);
+
+            delete cloudWaitList[id];
+            removeVoucherDetailCache(id);
+            saveVoucherCardsLocalCache(
+              cloudWaitList
+            );
+            shouldReloadList = true;
+            continue;
+          }
+
+          const retryable = Boolean(
+            result &&
+            (
+              result.retryable ||
+              result.incomplete
+            )
+          );
+          const message =
+            result && result.msg
+              ? result.msg
+              : 'Không thể chốt phiếu.';
+
+          const latest = readBackgroundFinishQueue();
+          const current = latest[id] || entry;
+
+          if (
+            retryable &&
+            Number(current.attempts || 0) < 20
+          ) {
+            current.status = 'retrying';
+            current.lastError = String(message);
+            current.updatedAt = Date.now();
+            current.nextAttemptAt =
+              Date.now() +
+              backgroundFinishRetryDelay(
+                current.attempts
+              );
+            latest[id] = current;
+            writeBackgroundFinishQueue(latest);
+          } else {
+            markBackgroundFinishFailed(
+              latest,
+              current,
+              message
+            );
+          }
+        } catch (error) {
+          if (
+            !currentUser ||
+            backgroundFinishStorageKey() !==
+              workerUserKey
+          ) {
+            return;
+          }
+
+          const latest = readBackgroundFinishQueue();
+          const current = latest[id] || entry;
+          const message =
+            error && error.message
+              ? error.message
+              : String(error);
+
+          if (
+            Number(current.attempts || 0) < 20
+          ) {
+            current.status = 'retrying';
+            current.lastError = message;
+            current.updatedAt = Date.now();
+            current.nextAttemptAt =
+              Date.now() +
+              backgroundFinishRetryDelay(
+                current.attempts
+              );
+            latest[id] = current;
+            writeBackgroundFinishQueue(latest);
+          } else {
+            markBackgroundFinishFailed(
+              latest,
+              current,
+              message
+            );
+          }
+        }
+      }
+    } finally {
+      backgroundFinishWorkerRunning = false;
+
+      if (
+        currentUser &&
+        backgroundFinishStorageKey() ===
+          workerUserKey
+      ) {
+        renderBackgroundFinishPanel();
+
+        if (shouldReloadList) {
+          const listView = document.getElementById(
+            'view-list'
+          );
+
+          if (
+            listView &&
+            listView.style.display !== 'none'
+          ) {
+            loadWaitList();
+          }
+        } else {
+          renderTrackingList();
+        }
+
+        scheduleNextBackgroundFinishAttempt();
+      }
+    }
+  }
+
+  function resumeBackgroundFinishQueue() {
+    if (!currentUser) return;
+
+    const queue = readBackgroundFinishQueue();
+
+    Object.values(queue).forEach(entry => {
+      if (
+        isBackgroundFinishActiveStatus(
+          entry.status
+        )
+      ) {
+        delete cloudWaitList[
+          String(entry.voucherId || '')
+        ];
+      } else if (
+        String(entry.status || '') ===
+        'failed'
+      ) {
+        restoreBackgroundFinishSnapshot(
+          entry
+        );
+      }
+    });
+
+    saveVoucherCardsLocalCache(
+      cloudWaitList
+    );
+    renderBackgroundFinishPanel();
+    scheduleBackgroundFinishWorker(100);
+  }
+
+  window.addEventListener('online', () => {
+    scheduleBackgroundFinishWorker(50);
+  });
+
+  document.addEventListener(
+    'visibilitychange',
+    () => {
+      if (
+        document.visibilityState === 'visible'
+      ) {
+        scheduleBackgroundFinishWorker(50);
+      }
+    }
+  );
+  /* ===== END FIX6 BACKGROUND FINISH ===== */
+
   function notificationResultNote(results) {
     const list =
       flattenNotificationResults(
@@ -10259,18 +11126,12 @@ let d = new Date(v.time);
   async function processSplitAndExit(isFinish) {
     if (detailActionInFlight) return false;
 
-    if (hasPendingDistributionActions(activeVoucherId)) {
-      setDetailActionsBusy(true, '⏳ Đang lưu các thuốc đã đánh dấu...');
-      const flushed = await flushPendingDistributionActions();
-      setDetailActionsBusy(false);
-      if (!flushed) {
-        await showMsg(
-          'Một số thuốc chưa lưu xong. Ứng dụng vẫn giữ hàng đợi và sẽ tự thử lại.',
-          'Chưa lưu xong',
-          'warning'
-        );
-        return false;
-      }
+    if (
+      await blockFinalActionWhileDistributionPending(
+        isFinish ? 'Chốt phát' : 'Lưu và thoát'
+      )
+    ) {
+      return false;
     }
 
     const voucher =
@@ -10307,6 +11168,7 @@ let d = new Date(v.time);
       ];
 
       let notificationResults = [];
+      let backgroundFinishQueued = false;
 
       if (khoKeys.length > 1) {
         showLoading(
@@ -10417,36 +11279,35 @@ let d = new Date(v.time);
           );
         }
       } else if (isFinish) {
-        showLoading(
-          true,
-          "Đang chốt phiếu..."
+        /*
+         * FIX6: Phiếu đã tách kho được đưa vào hàng đợi chốt nền.
+         * Không chờ server trả về tại màn hình chi tiết.
+         */
+        queueVoucherFinishInBackground(
+          sourceVoucherId,
+          voucher
         );
-
-        const result = await gasCall(
-          'finishVoucherServer',
-          [sourceVoucherId]
-        );
-
-        if (
-          result &&
-          result.success === false
-        ) {
-          throw new Error(
-            result.msg ||
-            'Không thể chốt phiếu.'
-          );
-        }
-
-        notificationResults =
-          result &&
-          result.notificationResults
-            ? result.notificationResults
-            : [];
+        backgroundFinishQueued = true;
       }
 
       removeVoucherDetailCache(
         sourceVoucherId
       );
+
+      if (backgroundFinishQueued) {
+        delete cloudWaitList[
+          sourceVoucherId
+        ];
+        saveVoucherCardsLocalCache(
+          cloudWaitList
+        );
+        activeVoucherId = null;
+        skipNextListReload = true;
+        switchView('list');
+        renderBackgroundFinishPanel();
+        scheduleBackgroundFinishWorker(40);
+        return true;
+      }
 
       if (isFinish) {
         await showMsg(
@@ -10503,19 +11364,9 @@ let d = new Date(v.time);
 
     if (
       currentUser.role !== 'xem' &&
-      hasPendingDistributionActions(activeVoucherId)
+      await blockFinalActionWhileDistributionPending('Thoát phiếu')
     ) {
-      setDetailActionsBusy(true, '⏳ Đang lưu các thuốc đã đánh dấu...');
-      const flushed = await flushPendingDistributionActions();
-      setDetailActionsBusy(false);
-      if (!flushed) {
-        await showMsg(
-          'Một số thuốc chưa lưu xong. Vui lòng giữ ứng dụng mở và thử thoát lại.',
-          'Chưa lưu xong',
-          'warning'
-        );
-        return;
-      }
+      return;
     }
 
     if (currentUser.role === 'xem') {
@@ -10636,17 +11487,10 @@ let d = new Date(v.time);
 
     forceHideLoading();
 
-    if (hasPendingDistributionActions(activeVoucherId)) {
-      setDetailActionsBusy(true, '⏳ Đang lưu các thuốc đã đánh dấu...');
-      const flushed = await flushPendingDistributionActions();
-      setDetailActionsBusy(false);
-      if (!flushed) {
-        return showMsg(
-          'Một số thuốc chưa lưu xong. Vui lòng giữ ứng dụng mở và bấm chốt lại.',
-          'Chưa lưu xong',
-          'warning'
-        );
-      }
+    if (
+      await blockFinalActionWhileDistributionPending('Chốt phát')
+    ) {
+      return;
     }
 
     const voucher =
