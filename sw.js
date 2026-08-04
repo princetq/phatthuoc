@@ -1,93 +1,13619 @@
-const CACHE_NAME = 'phat-thuoc-pwa-v42-5-9-fix12';
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <link rel="preconnect" href="https://script.google.com">
+  <link rel="preconnect" href="https://script.googleusercontent.com" crossorigin>
+  <link rel="dns-prefetch" href="//script.google.com">
+  <link rel="dns-prefetch" href="//script.googleusercontent.com">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+  <meta name="theme-color" content="#e9ecef">
+  <meta name="application-name" content="Phát thuốc">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Phát thuốc">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="description" content="Ứng dụng quản lý phát thuốc và đối chiếu thuốc tại Khoa Dược">
+  <link rel="manifest" href="manifest.webmanifest?v=4255">
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
+  <title>Phát thuốc thông minh</title>
+  <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+  <link rel="preload" as="image" href="https://drive.google.com/thumbnail?id=1ZyertvO-WsXU5FYCcuqUHizfRUCSnRIb&sz=w512-h512">
+  <style>
+    :root {
+      --primary: #007bff; --primary-dark: #0056b3; --bg: #f4f9f5; --card: #fff; --text: #333; --line: #ccc;
+      --green: #28a745; --danger: #dc3545; --orange: #fd7e14; --purple: #6f42c1; --indigo: #6610f2;
+      --pink: #e83e8c; --yellow: #ffc107; --dark: #343a40;
+    }
+    * { font-family: 'Segoe UI', Roboto, Arial, sans-serif !important; box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--text); font-size: 18px; line-height: 1.5; overflow-y: auto; padding-bottom: 70px; }
+    
+    .glass-panel {
+      background: rgba(255, 255, 255, 0.65);
+      backdrop-filter: blur(15px);
+      -webkit-backdrop-filter: blur(15px);
+      border: 1px solid rgba(255, 255, 255, 0.4);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+      border-radius: 16px;
+    }
+    
+    .loading-overlay { position: fixed; inset: 0; background: rgba(255,255,255,0.9); display: none; justify-content: center; align-items: center; z-index: 99999; flex-direction: column; }
+    .spinner { border: 5px solid #f3f3f3; border-top: 5px solid var(--green); border-radius: 50%; width: 50px; height: 50px; animation: spin 0.8s linear infinite; }
+    @keyframes spin { 0% { transform: rotate(0); } 100% { transform: rotate(360deg); } }
 
-const APP_SHELL = [
-  '/',
-  '/index.html',
-  '/manifest.webmanifest',
-  '/icons/icon-192.png',
-  '/icons/icon-512.png',
-  '/icons/icon-maskable-512.png',
-  '/icons/apple-touch-icon.png',
-  '/icons/favicon-32.png'
-];
+    button { padding: 10px 15px; border: none; border-radius: 6px; color: #fff; font-weight: bold; cursor: pointer; transition: 0.2s; }
+    button:hover { opacity: 0.9; transform: translateY(-1px); }
+    .btn-primary { background: var(--primary); } .btn-success { background: var(--green); }
+    .btn-danger { background: var(--danger); } .btn-warning { background: var(--orange); }
+    .btn-admin { background: var(--dark); } .btn-indigo { background: var(--indigo); }
+    .btn-pink { background: var(--pink); }
+    
+    /* ======== PHONG CÁCH ECO WELLNESS LOGIN ======== */
+    #loginScreen { position: fixed; inset: 0; background: linear-gradient(135deg, #a8e6cf 0%, #dcedc8 50%, #f8f8f8 100%); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 10000; overflow: hidden; }
+    
+    .nature-background { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; overflow: hidden; }
+    .floating-leaf { position: absolute; width: 20px; height: 20px; background: radial-gradient(ellipse at center, #4caf50, #66bb6a); border-radius: 0 100% 0 100%; opacity: 0.6; animation: fallLeaf linear infinite; top: -50px; }
+    .leaf-1 { left: 10%; animation-duration: 5.5s; animation-delay: 0s; }
+    .leaf-2 { left: 85%; animation-duration: 6.5s; animation-delay: 1s; }
+    .leaf-3 { left: 25%; animation-duration: 6s; animation-delay: 2s; }
+    .leaf-4 { left: 75%; animation-duration: 5s; animation-delay: 0.5s; }
+    .leaf-5 { left: 40%; animation-duration: 5.7s; animation-delay: 1.5s; }
+    .leaf-6 { left: 60%; animation-duration: 7s; animation-delay: 0.2s; }
+    .leaf-7 { left: 5%; animation-duration: 6.3s; animation-delay: 2.5s; }
+    .leaf-8 { left: 95%; animation-duration: 5.3s; animation-delay: 1.2s; }
+    .leaf-9 { left: 30%; animation-duration: 6.7s; animation-delay: 3s; }
+    .leaf-10 { left: 70%; animation-duration: 5.6s; animation-delay: 2.2s; }
+    
+    @keyframes fallLeaf { 
+        0% { transform: translateY(-50px) rotate(0deg) translateX(0px); opacity: 0; } 
+        10% { opacity: 0.8; } 
+        90% { opacity: 0.8; } 
+        100% { transform: translateY(110vh) rotate(360deg) translateX(50px); opacity: 0; } 
+    }
 
-self.addEventListener('install', event => {
-  event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => cache.addAll(APP_SHELL))
-      .then(() => self.skipWaiting())
-  );
-});
+    .login-container { width: 100%; max-width: 540px; position: relative; z-index: 1; padding: 20px; }
+    .wellness-card { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(20px); border: 1px solid rgba(76, 175, 80, 0.2); border-radius: 32px; padding: 48px 40px; position: relative; overflow: hidden; box-shadow: 0 20px 40px rgba(76, 175, 80, 0.15); }
+    .organic-border { position: absolute; top: 0; left: 0; right: 0; height: 6px; background: linear-gradient(90deg, #4caf50, #8bc34a, #cddc39, #8bc34a, #4caf50); background-size: 200% 100%; animation: organicFlow 4s ease-in-out infinite; border-radius: 32px 32px 0 0; }
+    @keyframes organicFlow { 0%, 100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
 
-self.addEventListener('activate', event => {
-  event.waitUntil(
-    caches.keys()
-      .then(keys => Promise.all(
-        keys
-          .filter(key => key !== CACHE_NAME)
-          .map(key => caches.delete(key))
-      ))
-      .then(() => self.clients.claim())
-  );
-});
+    .mindful-header { text-align: center; margin-bottom: 35px; }
+    .zen-logo { position: relative; width: 80px; height: 80px; margin: 0 auto 15px; display: flex; align-items: center; justify-content: center; color: #4caf50; }
+    .zen-logo img { position: relative; z-index: 2; animation: zenBreath 4s ease-in-out infinite; image-rendering: high-quality; }
+    @keyframes zenBreath { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+    .zen-glow { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle, rgba(76, 175, 80, 0.2) 0%, transparent 70%); border-radius: 50%; animation: zenGlow 3s ease-in-out infinite; }
+    @keyframes zenGlow { 0%, 100% { transform: scale(1); opacity: 0.6; } 50% { transform: scale(1.2); opacity: 0.8; } }
+    .mindful-header h1 { color: #2e7d32; font-size: clamp(18px, 6vw, 26px); font-weight: 900; margin-bottom: 5px; text-transform: uppercase; white-space: nowrap; }
+    .mindful-header p { color: #66bb6a; font-size: 16px; font-weight: bold; margin: 0; }
 
-self.addEventListener('fetch', event => {
-  const request = event.request;
+    .organic-field { position: relative; margin-bottom: 25px; }
+    .field-nature { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(76, 175, 80, 0.05); border: 1.5px solid rgba(76, 175, 80, 0.2); border-radius: 20px; transition: all 0.3s ease; }
+    .organic-field input { width: 100%; background: transparent !important; border: none !important; padding: 18px 40px 18px 20px !important; margin: 0 !important; color: #2e7d32 !important; font-size: 16px; font-weight: bold; outline: none; position: relative; z-index: 2; box-shadow: none !important; }
+    .organic-field input::placeholder { color: transparent; }
+    .organic-field label { position: absolute; left: 20px; top: 50%; transform: translateY(-50%); color: #81c784; font-size: 16px; font-weight: bold; pointer-events: none; transition: all 0.3s ease; z-index: 3; background: rgba(255, 255, 255, 0.9); padding: 0 8px; margin: 0; }
+    .organic-field input:focus + label, .organic-field input:not(:placeholder-shown) + label { top: 0; font-size: 13px; font-weight: 900; color: #4caf50; transform: translateY(-50%); }
+    .organic-field input:focus ~ .field-nature { border-color: #4caf50; background: rgba(76, 175, 80, 0.1); box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2); }
+    
+    .growth-indicator { position: absolute; right: 20px; top: 50%; transform: translateY(-50%); width: 8px; height: 8px; z-index: 4; }
+    .leaf-sprout { width: 100%; height: 100%; background: #4caf50; border-radius: 0 100% 0 100%; opacity: 0; transform: scale(0) rotate(45deg); transition: all 0.3s ease; }
+    .organic-field input:focus ~ .growth-indicator .leaf-sprout, .organic-field input:valid ~ .growth-indicator .leaf-sprout { opacity: 1; transform: scale(1) rotate(45deg); }
+    
+    .organic-field:focus-within .field-nature { animation: gentleBreath 3s ease-in-out infinite; }
+    @keyframes gentleBreath { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.01); } }
 
-  if (request.method !== 'GET') {
-    return;
+    .harmony-button { width: 100%; background: transparent; color: #ffffff; border: none; border-radius: 20px; padding: 0; cursor: pointer; font-size: 18px; font-weight: 900; text-transform: uppercase; position: relative; overflow: hidden; min-height: 54px; display: flex; align-items: center; justify-content: center; margin-top: 10px; }
+    .button-earth { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(135deg, #4caf50, #66bb6a, #8bc34a); border-radius: 20px; transition: all 0.3s ease; }
+    .harmony-button:hover .button-earth { background: linear-gradient(135deg, #388e3c, #4caf50, #66bb6a); transform: scale(1.02); }
+    .harmony-button:active .button-earth { transform: scale(0.98); }
+    .button-text { position: relative; z-index: 2; letter-spacing: 1px; }
+    .button-aura { position: absolute; top: -3px; left: -3px; right: -3px; bottom: -3px; background: linear-gradient(135deg, #4caf50, #8bc34a); border-radius: 23px; opacity: 0; filter: blur(12px); transition: opacity 0.3s ease; z-index: -1; }
+    .harmony-button:hover .button-aura { opacity: 0.6; }
+    /* ================================================ */
+
+    /* ======== PHONG CÁCH NÚT CHỌN KHOA VÀ HỘP TÌM KIẾM ======== */
+    .search-container {
+        display: flex; align-items: center; height: 42px; border-radius: 21px; background: transparent; transition: width 0.3s ease, background 0.3s ease, border-color 0.3s ease; overflow: hidden; width: 42px; cursor: pointer; border: 2px solid transparent; box-shadow: none;
+    }
+    .search-container.active-search {
+        width: 250px; cursor: default; background: #fff; box-shadow: none;
+    }
+    .search-green.active-search { border-color: var(--green); }
+    .search-pink.active-search { border-color: var(--pink); }
+
+    .s-icon {
+        width: 42px; height: 42px; display: flex; justify-content: center; align-items: center; flex-shrink: 0; transition: color 0.3s; cursor: pointer; background: transparent !important;
+    }
+    
+    .search-green .s-icon.main-icon { color: var(--green); }
+    .search-pink .s-icon.main-icon { color: var(--pink); }
+
+    .search-container.active-search .s-icon.main-icon { cursor: default; }
+
+    .s-input {
+        border: none; outline: none; background: transparent; font-weight: bold; font-size: 16px; opacity: 0; width: 0; transition: opacity 0.3s, width 0.3s; padding: 0; flex-grow: 1; -webkit-appearance: none; height: 100%; margin: 0;
+    }
+    .search-green .s-input { color: var(--green); }
+    .search-pink .s-input { color: var(--pink); }
+
+    .search-container.active-search .s-input {
+        opacity: 1; width: 100%; padding: 0 5px 0 10px;
+    }
+    
+    .s-input::-webkit-calendar-picker-indicator {
+        opacity: 0 !important; cursor: pointer !important; width: 100% !important; height: 100% !important; position: absolute; left: 0; top: 0; padding: 0 !important; margin: 0 !important;
+    }
+    .s-input::-webkit-search-cancel-button {
+        display: none !important;
+    }
+
+    .s-icon.clear-icon {
+        background: transparent; width: 0; opacity: 0; pointer-events: none; transform: scale(0.5); transition: all 0.3s ease;
+    }
+    .search-green .s-icon.clear-icon { color: var(--green); }
+    .search-pink .s-icon.clear-icon { color: var(--pink); }
+    
+    .search-container.active-search .s-icon.clear-icon.show {
+        width: 42px; opacity: 1; pointer-events: auto; transform: scale(1);
+    }
+    /* ========================================================== */
+
+    input, select { width: 100%; padding: 12px; margin: 8px 0 15px; border: 1px solid #ccc; border-radius: 8px; font-size: 16px; }
+    select[multiple] { height: 100px; }
+    html.modal-page-locked,
+    body.modal-page-locked {
+      overflow: hidden !important;
+      overscroll-behavior: none;
+    }
+
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      padding: 15px;
+      overflow: hidden;
+      overscroll-behavior: contain;
+      touch-action: none;
+    }
+
+    .modal-content {
+      background: #fff;
+      padding: 25px;
+      border-radius: 10px;
+      width: 100%;
+      max-width: 450px;
+      text-align: center;
+      max-height: calc(100dvh - 30px);
+      overflow-x: hidden;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
+      touch-action: pan-y;
+    }
+
+    .modal-content label {
+      text-align: left;
+      display: block;
+      font-weight: bold;
+      margin-bottom: -5px;
+    }
+
+
+    /* ======== POPUP THÔNG BÁO / XÁC NHẬN DÙNG CHUNG ======== */
+    #appPopupModal { z-index: 100000; padding: 15px; }
+    .app-popup-content {
+      max-width: 520px;
+      padding: 28px;
+      border-radius: 18px;
+      box-shadow: 0 18px 55px rgba(0,0,0,0.24);
+      animation: popupAppear 0.18s ease-out;
+    }
+    @keyframes popupAppear {
+      from { opacity: 0; transform: translateY(10px) scale(0.97); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    .app-popup-icon {
+      width: 58px; height: 58px; margin: 0 auto 12px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 30px; font-weight: 900;
+      background: #e8f5e9; color: var(--green);
+    }
+    .app-popup-title { margin: 0 0 12px; color: var(--dark); font-size: 24px; }
+    .app-popup-message {
+      color: #444; font-size: 17px; line-height: 1.55;
+      white-space: pre-line; overflow-wrap: anywhere; text-align: left;
+      max-height: 52vh; overflow-y: auto; padding: 2px 4px;
+    }
+    .app-popup-actions { display: flex; gap: 10px; justify-content: center; margin-top: 22px; }
+    .app-popup-actions button { min-width: 120px; font-size: 16px; padding: 11px 18px; }
+    #appPopupModal.popup-warning .app-popup-icon { background: #fff3cd; color: #d39e00; }
+    #appPopupModal.popup-danger .app-popup-icon { background: #ffebee; color: var(--danger); }
+    #appPopupModal.popup-success .app-popup-icon { background: #e8f5e9; color: var(--green); }
+
+
+    .automatic-notification-types {
+      margin-top: 10px;
+      padding: 11px 12px;
+      border: 1px solid #cfd8dc;
+      border-radius: 8px;
+      background: #f8fbfc;
+    }
+
+    .automatic-notification-types-title {
+      display: block;
+      margin-bottom: 7px;
+      font-size: 14px;
+      font-weight: 900;
+      color: #263238;
+    }
+
+    .automatic-notification-type-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 7px 0;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .automatic-notification-type-row input {
+      width: 19px;
+      height: 19px;
+      margin: 0;
+    }
+
+    .automatic-notification-type-label {
+      display: inline;
+      min-width: 0;
+    }
+
+
+    /*
+     * Khoảng cách riêng cho dòng hướng dẫn loại thông báo.
+     * Ghi đè margin-top âm của .notification-help ở các vị trí khác.
+     */
+    .automatic-notification-types > .notification-help {
+      margin-top: 13px;
+      margin-bottom: 2px;
+      padding-top: 10px;
+      border-top: 1px solid #dce5e9;
+      line-height: 1.5;
+    }
+
+    @media (max-width: 600px) {
+      .automatic-notification-types > .notification-help {
+        margin-top: 15px;
+        padding-top: 12px;
+        line-height: 1.55;
+      }
+    }
+
+    .notification-type-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+    }
+
+    .notification-type-badge {
+      display: inline-block;
+      padding: 4px 7px;
+      border-radius: 999px;
+      background: #e3f2fd;
+      color: #0d47a1;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .admin-logout-content {
+      max-width: 520px;
+      text-align: left;
+    }
+
+    .admin-logout-note {
+      margin: 0 0 18px;
+      padding: 13px;
+      border: 1px solid #f0c36d;
+      border-radius: 8px;
+      background: #fff8e8;
+      color: #5f4a20;
+      font-size: 16px;
+      line-height: 1.5;
+    }
+
+    .admin-logout-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .admin-logout-actions button {
+      width: 100%;
+      min-height: 44px;
+      padding: 10px 12px !important;
+      font-family: 'Segoe UI', Roboto, Arial, sans-serif !important;
+      font-size: 16px !important;
+      font-weight: 700 !important;
+      line-height: 1.2;
+    }
+
+    .admin-logout-actions .admin-logout-cancel {
+      grid-column: 1 / -1;
+    }
+
+    @media (max-width: 480px) {
+      .admin-logout-actions {
+        grid-template-columns: 1fr;
+      }
+
+      .admin-logout-actions .admin-logout-cancel {
+        grid-column: auto;
+      }
+    }
+    @media (max-width: 480px) {
+      .app-popup-content { padding: 22px 18px; }
+      .app-popup-title { font-size: 21px; }
+      .app-popup-message { font-size: 16px; }
+      .app-popup-actions { flex-direction: column-reverse; }
+      .app-popup-actions button { width: 100%; }
+    }
+    /* ======================================================== */
+
+
+    .app-brand-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(22,133,107,0.25);
+      flex-shrink: 0;
+    }
+
+    .app-brand-main {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .app-title {
+      margin: 0;
+      color: var(--green);
+      font-size: 26px;
+      line-height: 1.08;
+      font-weight: 700;
+      overflow-wrap: normal;
+      word-break: normal;
+    }
+
+    .app-user-summary {
+      font-size: 18px;
+      border-left: 2px solid #ccc;
+      padding-left: 15px;
+      min-width: 0;
+    }
+
+    .account-notify-summary {
+      display: grid;
+      gap: 10px;
+      margin: 14px 0;
+      padding: 14px;
+      border: 1px solid #d7e5df;
+      border-radius: 12px;
+      background: #f7fcf9;
+    }
+
+    .account-notify-row {
+      display: grid;
+      grid-template-columns: 130px minmax(0, 1fr);
+      align-items: start;
+      gap: 12px;
+      font-size: 16px;
+      line-height: 1.4;
+    }
+
+    .account-notify-row span {
+      color: #66756e;
+      font-weight: 700;
+    }
+
+    .account-notify-row strong {
+      color: #154d3d;
+      overflow-wrap: anywhere;
+    }
+
+    .notification-button-active {
+      background: #16856b !important;
+    }
+
+    .notification-button-muted {
+      background: #6c757d !important;
+    }
+
+    .notification-modal-content {
+      max-width: 620px;
+      text-align: left;
+    }
+
+    .department-search-select {
+      position: relative;
+      width: 100%;
+      margin: 8px 0 15px;
+      z-index: 30;
+    }
+
+    .department-search-input {
+      width: 100%;
+      min-height: 44px;
+      margin: 0 !important;
+      padding: 11px 42px 11px 12px !important;
+      border: 1px solid #c8d4cf !important;
+      border-radius: 8px !important;
+      background: #fff !important;
+      color: #222;
+      font-family: 'Segoe UI', Roboto, Arial, sans-serif !important;
+      font-size: 16px !important;
+      font-weight: 400 !important;
+      box-sizing: border-box;
+    }
+
+    .department-search-input:focus {
+      outline: none;
+      border-color: #16856b !important;
+      box-shadow: 0 0 0 3px rgba(22,133,107,0.14);
+    }
+
+    .department-search-input:disabled {
+      background: #f1f3f2 !important;
+      color: #7a8580;
+      cursor: not-allowed;
+    }
+
+    .department-search-arrow {
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 42px;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #51635b;
+      pointer-events: none;
+      font-size: 14px;
+    }
+
+    .department-search-menu {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: calc(100% + 4px);
+      display: none;
+      max-height: 300px;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
+      padding: 5px;
+      border: 1px solid #c8d4cf;
+      border-radius: 8px;
+      background: #fff;
+      box-shadow: 0 12px 28px rgba(0,0,0,0.18);
+      z-index: 5000;
+    }
+
+    .department-search-menu.open {
+      display: block;
+    }
+
+    .department-search-option {
+      width: 100%;
+      min-height: 40px;
+      display: block;
+      padding: 9px 11px;
+      border: 0;
+      border-radius: 6px;
+      background: #fff;
+      color: #202824;
+      font-family: 'Segoe UI', Roboto, Arial, sans-serif;
+      font-size: 16px;
+      font-weight: 400;
+      line-height: 1.3;
+      text-align: left;
+      cursor: pointer;
+      white-space: normal;
+      overflow-wrap: anywhere;
+    }
+
+    .department-search-option:hover,
+    .department-search-option:focus {
+      background: #e9f7f2;
+      color: #125d4b;
+      outline: none;
+    }
+
+    .department-search-option.selected {
+      background: #dff3eb;
+      color: #125d4b;
+      font-weight: 700;
+    }
+
+    .department-search-empty {
+      padding: 12px;
+      color: #6c757d;
+      text-align: center;
+      font-size: 15px;
+    }
+
+    .department-source-select {
+      display: none !important;
+    }
+
+    .department-search-select.open {
+      z-index: 5100;
+    }
+
+    .notification-modal-content textarea {
+      width: 100%;
+      min-height: 130px;
+      resize: vertical;
+      padding: 12px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 16px;
+      font-family: inherit;
+      box-sizing: border-box;
+    }
+
+    .notification-preview {
+      background: #eefaf6;
+      border: 1px solid #b7e3d6;
+      border-left: 5px solid #16856b;
+      border-radius: 8px;
+      padding: 12px;
+      margin: 10px 0 15px;
+      color: #205c4e;
+      font-weight: 700;
+      white-space: pre-wrap;
+    }
+
+    .notification-help {
+      font-size: 14px;
+      color: #666;
+      margin-top: -8px;
+      margin-bottom: 10px;
+    }
+
+    .install-hint {
+      font-size: 15px;
+      line-height: 1.55;
+      color: #444;
+      text-align: left;
+    }
+
+    .device-notify-list {
+      max-height: 310px;
+      overflow-y: auto;
+      border: 1px solid #d7e5df;
+      border-radius: 10px;
+      padding: 8px;
+      background: #f8fcfa;
+      margin: 8px 0 14px;
+    }
+
+    .device-notify-option {
+      display: grid;
+      grid-template-columns: 24px minmax(0, 1fr);
+      align-items: center;
+      column-gap: 15px;
+      min-height: 48px;
+      padding: 11px 10px;
+      border-bottom: 1px solid #e4eee9;
+      cursor: pointer;
+      font-size: 17px;
+      line-height: 1.35;
+      font-weight: 700;
+      box-sizing: border-box;
+    }
+
+    .device-notify-option:last-child {
+      border-bottom: 0;
+    }
+
+    .device-notify-option input {
+      width: 22px;
+      height: 22px;
+      margin: 0;
+      align-self: center;
+      justify-self: center;
+      flex-shrink: 0;
+      accent-color: #16856b;
+    }
+
+    .device-notify-option span {
+      display: block;
+      min-width: 0;
+      margin: 0;
+      padding: 0;
+      line-height: 1.35;
+      align-self: center;
+    }
+
+    .notification-device-actions {
+      display: grid !important;
+      grid-template-columns:
+        minmax(135px, 1.25fr)
+        minmax(125px, 1fr)
+        minmax(78px, 0.62fr);
+      gap: 8px !important;
+      align-items: stretch;
+    }
+
+    .notification-device-actions button {
+      width: 100%;
+      min-width: 0 !important;
+      min-height: 39px;
+      padding: 8px 10px !important;
+      border-radius: 7px;
+      font-size: 15px;
+      line-height: 1.18;
+      font-weight: 700;
+      letter-spacing: 0;
+      white-space: normal;
+      box-shadow: none;
+    }
+
+    .notification-device-actions button:active {
+      transform: translateY(1px);
+    }
+
+    .notification-send-actions {
+      display: grid;
+      grid-template-columns: minmax(160px, 1.4fr) minmax(110px, 0.9fr);
+      gap: 10px;
+      align-items: stretch;
+    }
+
+    .notification-send-actions button {
+      width: 100%;
+      min-height: 42px;
+      padding: 10px 14px !important;
+      border-radius: 7px;
+      font-family: 'Segoe UI', Roboto, Arial, sans-serif !important;
+      font-size: 17px !important;
+      font-weight: 700 !important;
+      line-height: 1.15;
+      white-space: nowrap;
+    }
+
+    @media (max-width: 480px) {
+      .notification-device-actions {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .notification-device-actions button:first-child {
+        grid-column: 1 / -1;
+      }
+
+      .notification-device-actions button {
+        min-height: 38px;
+        font-size: 14.5px;
+        padding: 7px 9px !important;
+      }
+    }
+
+    .device-notify-note {
+      background: #fff8db;
+      border: 1px solid #f1d36b;
+      border-radius: 8px;
+      padding: 10px;
+      color: #6d5700;
+      font-size: 14px;
+      line-height: 1.45;
+      margin-bottom: 10px;
+    }
+
+
+    /*
+     * Các phần bổ sung từ hệ thống PWA/OneSignal dùng đúng font
+     * gốc của ứng dụng; không dùng kiểu chữ riêng.
+     */
+    .app-title,
+    .app-user-summary,
+    .account-notify-summary,
+    .account-notify-row,
+    .notification-modal-content,
+    .notification-preview,
+    .notification-help,
+    .install-hint,
+    .device-notify-note,
+    .notification-device-actions,
+    .notification-device-actions button {
+      font-family: 'Segoe UI', Roboto, Arial, sans-serif !important;
+      font-style: normal;
+      letter-spacing: normal;
+    }
+
+    .app-title {
+      font-weight: 700;
+    }
+
+    .app-user-summary,
+    .account-notify-summary,
+    .notification-modal-content,
+    .notification-help,
+    .install-hint,
+    .device-notify-note {
+      font-weight: 400;
+    }
+
+    .account-notify-row span,
+    .account-notify-row strong {
+      font-weight: 700;
+    }
+
+    #appHeader { padding: 12px 20px; display: none; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; position: relative; margin: 15px auto; max-width: 1200px; width: calc(100% - 30px); z-index: 100; }
+    .app-footer { position: relative; margin: 20px auto 15px auto; width: calc(100% - 30px); max-width: 1200px; padding: 10px; text-align: center; font-weight: 900; color: var(--green); z-index: 99; }
+    
+    .header-actions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 10px; margin-left: auto; }
+    .header-actions button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      min-height: 44px;
+      padding: 10px 15px !important;
+      border-radius: 6px;
+      font-family: 'Segoe UI', Roboto, Arial, sans-serif !important;
+      font-size: 18px !important;
+      font-weight: 700 !important;
+      font-style: normal;
+      line-height: 1.15;
+      letter-spacing: normal;
+      white-space: nowrap;
+      text-transform: none;
+      box-shadow: none;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .weekly-login-note {
+      margin-top: 14px;
+      text-align: center;
+      color: #2e7d32;
+      font-size: 13px;
+      font-weight: 800;
+      line-height: 1.4;
+    }
+    .container { max-width: 1200px; margin: 20px auto; padding: 0 15px; display: none; }
+    .card { background: var(--card); padding: 25px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 20px; }
+    .upload-area { border: 2px dashed var(--green); padding: 30px; text-align: center; background: #eefaf3; cursor: pointer; border-radius: 10px; margin-bottom: 20px; }
+    .upload-area.drag-active {
+      background: #dff4e8;
+      border-style: solid;
+      box-shadow: 0 0 0 4px rgba(22,133,107,0.12);
+    }
+
+    .tracking-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 15px; }
+    .tracking-card {
+      --voucher-border-start: var(--line);
+      --voucher-border-end: var(--line);
+      --voucher-border-gradient: linear-gradient(135deg, var(--voucher-border-start), var(--voucher-border-end));
+      --voucher-accent-shadow: rgba(0,0,0,0.08);
+      background:
+        linear-gradient(#fff, #fff) padding-box,
+        var(--voucher-border-gradient) border-box;
+      border: 2px solid transparent;
+      border-radius: 10px;
+      padding: 15px 15px 62px;
+      cursor: pointer;
+      transition: 0.2s;
+      position: relative;
+      min-height: 255px;
+      height: 100%;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05), 0 0 0 1px var(--voucher-accent-shadow);
+    }
+    .tracking-card:hover { box-shadow: 0 5px 15px rgba(0,0,0,0.1), 0 0 0 2px var(--voucher-accent-shadow); }
+    .tracking-card-warehouse-row {
+      display: flex;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 6px;
+    }
+    .tracking-card-warehouse-label {
+      font-size: 16px;
+      color: var(--purple);
+      font-weight: 900;
+      line-height: 1.7;
+    }
+    .warehouse-badges {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 6px;
+      min-width: 0;
+    }
+    .warehouse-badge {
+      --warehouse-accent: #546e7a;
+      --warehouse-soft: #edf2f5;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--warehouse-accent);
+      background: var(--warehouse-soft);
+      color: var(--warehouse-accent);
+      font-size: 14px;
+      font-weight: 900;
+      line-height: 1.3;
+      white-space: nowrap;
+    }
+    .warehouse-badge::before {
+      content: '';
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: currentColor;
+      flex: 0 0 8px;
+    }
+    .warehouse-badge-default {
+      --warehouse-accent: #6c757d;
+      --warehouse-soft: #f1f3f5;
+    }
+
+    .tracking-card.opening {
+      pointer-events: none;
+      opacity: 0.78;
+    }
+    .tracking-card.opening::after {
+      content: "⏳ Đang mở phiếu...";
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 10px;
+      background: rgba(255,255,255,0.9);
+      color: var(--green);
+      font-weight: 900;
+      font-size: 18px;
+      z-index: 8;
+    }
+    .detail-action-busy {
+      opacity: 0.65 !important;
+      cursor: wait !important;
+    }
+
+    /* Ô chọn, tên khoa và nút Xóa luôn cùng một hàng, căn giữa theo chiều dọc */
+    .tracking-card-title-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+    }
+    .tracking-card-title-row .bulk-voucher-chk {
+      width: 22px !important;
+      height: 22px !important;
+      min-width: 22px;
+      flex: 0 0 22px;
+      margin: 0 !important;
+      cursor: pointer;
+      align-self: center;
+    }
+    .tracking-card-title-text {
+      flex: 1 1 auto;
+      min-width: 0;
+      font-weight: 900;
+      color: var(--primary);
+      font-size: 24px;
+      line-height: 1.25;
+    }
+    .tracking-delete-btn {
+      flex: 0 0 auto;
+      align-self: center;
+      margin: 0 0 0 auto !important;
+      padding: 2px 0 2px 8px !important;
+      min-height: 28px;
+      background: transparent !important;
+      border: none !important;
+      color: var(--danger) !important;
+      font-weight: 900;
+      font-size: 18px;
+      line-height: 1.2;
+      white-space: nowrap;
+    }
+    .tracking-delete-btn:hover {
+      transform: none !important;
+      opacity: 0.75;
+    }
+
+    /* Nhãn trạng thái cố định ở góc dưới bên trái, không chạy theo độ dài nội dung */
+    .tracking-card-status {
+      position: absolute;
+      left: 15px;
+      bottom: 15px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      min-height: 30px;
+      margin: 0;
+      line-height: 1;
+    }
+
+    .compact-khoa-select { width:108px !important; max-width:108px; min-width:108px; margin:0 !important; padding:8px 7px !important; font-size:14px !important; line-height:1.2; font-weight:900; color:#fff; border:none; border-radius:18px; cursor:pointer; -webkit-appearance:none; appearance:none; text-align:center; text-align-last:center; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .compact-khoa-select.active-khoa { background:var(--green); }
+    .compact-khoa-select.history-khoa { background:var(--pink); }
+
+    /* Đồng bộ kích thước các nút trong thanh công cụ danh sách theo nút “Tất cả” */
+    .list-toolbar-controls { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+    .list-toolbar-top-row,
+    .list-toolbar-bottom-row { display:contents; }
+    .list-toolbar-controls .compact-khoa-select,
+    .list-toolbar-controls .status-filter-button,
+    .list-toolbar-controls .list-toolbar-top-row > button,
+    .list-toolbar-controls .list-toolbar-bottom-row > button,
+    .list-toolbar-controls .search-container {
+      height:36px !important;
+      min-height:36px !important;
+      border-radius:18px !important;
+      font-size:14px !important;
+      line-height:1.2 !important;
+      box-sizing:border-box !important;
+    }
+    .list-toolbar-controls .list-toolbar-top-row > button,
+    .list-toolbar-controls .list-toolbar-bottom-row > button {
+      padding:7px 11px !important;
+      display:inline-flex;
+      align-items:center !important;
+      justify-content:center !important;
+      white-space:nowrap !important;
+    }
+    .list-toolbar-controls .search-container { width:36px; }
+    .list-toolbar-controls .search-container.active-search { width:250px; }
+    .list-toolbar-controls .s-icon { width:36px; height:36px; }
+    .list-toolbar-controls .s-icon svg { width:21px; height:21px; }
+    .list-toolbar-controls .search-container.active-search .s-icon.clear-icon.show { width:36px; }
+    .list-toolbar-controls .status-filter-button { padding:7px 11px !important; }
+
+    /* FIX11: bộ chọn ngày trong Lịch sử */
+    .history-date-select {
+      width: 148px !important;
+      max-width: 148px;
+      min-width: 148px;
+      height: 36px !important;
+      min-height: 36px !important;
+      margin: 0 !important;
+      padding: 7px 30px 7px 11px !important;
+      border: 1px solid #f2b8c6;
+      border-radius: 18px;
+      background-color: #fff7fa;
+      color: #8f2440;
+      font-size: 14px !important;
+      font-weight: 900;
+      line-height: 1.2;
+      text-align: center;
+      text-align-last: center;
+      cursor: pointer;
+      box-sizing: border-box;
+      appearance: none;
+      -webkit-appearance: none;
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+      background-size: 10px 6px;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath fill='%238f2440' d='M5 6 .67.75h8.66z'/%3E%3C/svg%3E");
+      box-shadow: 0 1px 3px rgba(143, 36, 64, .08);
+    }
+
+    .history-date-select:hover,
+    .history-date-select:focus {
+      border-color: #d97891;
+      background-color: #fff0f5;
+      box-shadow: 0 3px 10px rgba(143, 36, 64, .12);
+      outline: none;
+    }
+
+    /* FIX11: bốn nút Làm mới/Xóa đã chọn ở Danh sách và Lịch sử dùng đúng cùng kích thước */
+    .toolbar-standard-action {
+      height:36px !important;
+      min-height:36px !important;
+      padding:7px 11px !important;
+      border-radius:18px !important;
+      font-size:14px !important;
+      line-height:1.2 !important;
+      box-sizing:border-box !important;
+      display:inline-flex !important;
+      align-items:center !important;
+      justify-content:center !important;
+      white-space:nowrap !important;
+      margin:0 !important;
+    }
+
+    .status-filter-wrap { position:relative; }
+    .status-filter-button { min-height:36px; padding:7px 11px; border-radius:18px; background:#f3faf5; color:#24633b; border:1px solid #9dccab; box-shadow:0 1px 3px rgba(40,167,69,.08); font-size:14px; font-weight:900; display:flex; align-items:center; gap:5px; white-space:nowrap; }
+    .status-filter-button:hover { transform:none; opacity:1; background:#eaf6ed; border-color:#67b77d; }
+    .status-filter-caret { color:#52705c; font-size:12px; margin-left:2px; }
+    .status-filter-menu { position:absolute; top:calc(100% + 6px); right:0; z-index:600; min-width:190px; background:#fff; border:1px solid #b9d8c2; border-radius:12px; box-shadow:0 10px 28px rgba(31,91,48,.16); padding:7px; display:none; }
+    .status-filter-wrap.open .status-filter-menu { display:block; }
+    .status-filter-option { display:flex; align-items:center; gap:8px; padding:9px 10px; margin:2px 0; border:1px solid transparent; border-radius:8px; font-weight:900; font-size:14px; cursor:pointer; white-space:nowrap; transition:.15s ease; }
+    .status-filter-option input { width:18px !important; height:18px !important; margin:0 !important; flex:0 0 18px; }
+    .status-filter-option .status-dot { width:9px; height:9px; border-radius:50%; flex:0 0 9px; }
+    .status-filter-option.waiting { background:#fff4f5; color:#a52d3b; border-color:#f3d1d6; }
+    .status-filter-option.waiting:hover { background:#ffe9ec; }
+    .status-filter-option.waiting input { accent-color:#dc3545; }
+    .status-filter-option.waiting .status-dot { background:#dc3545; }
+    .status-filter-option.progress { background:#fff9e8; color:#8a6500; border-color:#f0dfaa; }
+    .status-filter-option.progress:hover { background:#fff2c9; }
+    .status-filter-option.progress input { accent-color:#e0a800; }
+    .status-filter-option.progress .status-dot { background:#e0a800; }
+    .status-filter-option.done { background:#eef9f1; color:#23733a; border-color:#c9e8d1; }
+    .status-filter-option.done:hover { background:#dff3e5; }
+    .status-filter-option.done input { accent-color:#28a745; }
+    .status-filter-option.done .status-dot { background:#28a745; }
+    
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 92px;
+      height: 30px;
+      padding: 0 12px;
+      box-sizing: border-box;
+      border-radius: 20px;
+      font-size: 15px;
+      font-weight: 900;
+      line-height: 1;
+      margin: 0;
+      text-align: center;
+      vertical-align: middle;
+      text-transform: uppercase;
+      white-space: nowrap;
+      border: 1px solid rgba(0,0,0,0.1);
+    }
+    .status-badge-text {
+      display: block;
+      line-height: 1;
+      transform: translateY(0);
+      pointer-events: none;
+    }
+    .status-waiting { background: var(--danger); color: #fff; } 
+    .status-progress { background: var(--yellow); color: #000; } 
+    .status-done { background: var(--green); color: #fff; }
+    .status-checked { background: #007bff; color: #fff; }
+
+    .group-title { grid-column: 1 / -1; margin-top: 20px; font-weight: 900; font-size: 22px; border-bottom: 3px solid var(--line); padding-bottom: 5px; text-transform: uppercase; }
+    .group-waiting { color: var(--danger); border-color: var(--danger); }
+    .group-progress { color: #d39e00; border-color: var(--yellow); }
+    .group-done { color: var(--green); border-color: var(--green); }
+    .group-checked { color: #007bff; border-color: #007bff; }
+
+    .dist-header { background: var(--green); color: #fff; padding: 15px 20px; border-radius: 8px 8px 0 0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+    .user-badge { background: rgba(255,255,255,0.25); padding: 8px 16px; border-radius: 20px; font-weight: 700; font-size: 18px; margin-right: 10px; }
+    .dist-header button { font-size: 20px; padding: 10px 20px; }
+    
+    /* Nhãn tên kho thấp gọn, chỉ cuộn ngang khi có nhiều kho */
+    .tab-header {
+      display: flex;
+      align-items: flex-end;
+      gap: 5px;
+      border-bottom: 2px solid #ccc;
+      overflow-x: auto;
+      overflow-y: hidden;
+      background: #eee;
+      padding: 4px 8px 0;
+      line-height: 1;
+      min-height: 0;
+      scrollbar-width: thin;
+    }
+    .tab-btn {
+      flex: 0 0 auto;
+      min-height: 38px;
+      margin: 0;
+      padding: 8px 14px;
+      background: #e6e6e6;
+      border: 1px solid #bdbdbd;
+      border-bottom: none;
+      cursor: pointer;
+      border-radius: 8px 8px 0 0;
+      font-weight: 900;
+      font-size: 17px;
+      line-height: 1.15;
+      color: #111;
+      opacity: 1;
+      white-space: nowrap;
+    }
+    .tab-btn.active {
+      background: #fff;
+      color: var(--green);
+      border-top: 3px solid var(--green);
+      border-color: #ccc;
+      border-bottom: 1px solid #fff;
+      margin-bottom: -2px;
+    }
+    
+    .tab-content { border: 1px solid #ccc; border-top: none; background: #fff; display: none; border-radius: 0 0 8px 8px; padding: 15px; }
+    .tab-content.active { display: block; }
+    
+    .voucher-header { background: #fff3cd; border: 1px solid #ffeeba; padding: 15px; margin-bottom: 15px; border-radius: 6px; color: #856404; }
+    .voucher-header b { font-weight: 900; color: #000; }
+    
+    .table-wrap { width: 100%; overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 18px; }
+    th, td { border: 1px solid var(--line); padding: 12px 14px; }
+    th { background: #f2f2f2; position: sticky; top: 0; font-weight: 900; text-align: center !important; }
+    .text-center { text-align: center !important; }
+    
+    th.col-ghichu, td.col-ghichu { display: none; }
+
+    tr.item-row { cursor: pointer; }
+    tr.distributed { background: var(--green) !important; color: #fff; }
+    tr.distributed td { border-color: rgba(255,255,255,0.4); }
+    tr.negative-row { background: #ffebee !important; color: #d32f2f; }
+    
+    /* CSS Bôi đỏ đậm nghiêm ngặt, đè cả các màu nền khác */
+    tr.missed-item td { background-color: #dc3545 !important; color: #ffffff !important; font-weight: 900 !important; border-color: #ffffff !important; }
+    
+    tr.status-updating { background-color: #fff9c4 !important; transition: 0.2s; pointer-events: none; }
+    tr.status-updating td { color: #856404 !important; border-color: #ffeeba !important; }
+
+    
+    /*
+     * Đối chiếu được tô màu ngay trên máy.
+     * Trong lúc chờ server chỉ khóa đúng dòng đó, không đổi lại màu vàng.
+     */
+    tr.check-pending,
+    tr.check-saving {
+      cursor: pointer;
+    }
+
+    tr.check-pending td,
+    tr.check-saving td {
+      transition:
+        background-color 0.12s ease,
+        color 0.12s ease;
+    }
+
+    tr.check-pending .phat-badge {
+      box-shadow:
+        0 0 0 2px rgba(255, 193, 7, 0.55);
+    }
+
+    tr.check-saving .phat-badge {
+      box-shadow:
+        0 0 0 2px rgba(0, 123, 255, 0.35);
+    }
+
+    .check-undo-hint {
+      display: block;
+      margin-top: 3px;
+      font-size: 11px;
+      line-height: 1.15;
+      font-weight: 800;
+      color: #7a4f00;
+      white-space: normal;
+    }
+
+    tr.check-saving .check-undo-hint {
+      color: #075985;
+    }
+
+
+    /* Phát nhanh: phản hồi ngay, lưu nền theo lô. */
+    tr.distribution-pending,
+    tr.distribution-saving,
+    tr.distribution-error {
+      cursor: pointer;
+    }
+
+    tr.distribution-pending .phat-badge {
+      box-shadow: 0 0 0 2px rgba(255, 193, 7, 0.55);
+    }
+
+    tr.distribution-saving .phat-badge {
+      box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.38);
+    }
+
+    tr.distribution-error .phat-badge {
+      box-shadow: 0 0 0 2px rgba(220, 53, 69, 0.55);
+    }
+
+    .batch-sync-hint {
+      display: block;
+      margin-top: 3px;
+      font-size: 11px;
+      line-height: 1.15;
+      font-weight: 800;
+      color: #075985;
+      white-space: normal;
+    }
+
+    tr.distribution-error .batch-sync-hint {
+      color: #b42318;
+    }
+
+    .batch-save-indicator {
+      display: none;
+      align-items: center;
+      min-height: 28px;
+      padding: 4px 9px;
+      border-radius: 999px;
+      background: #fff8db;
+      color: #7a4f00;
+      border: 1px solid #e7bd32;
+      font-size: 12px;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+.phat-badge { background: #fff; color: #333; padding: 4px 8px; border-radius: 12px; font-size: 14px; font-weight: bold; }
+
+
+
+    /* ===== CHẾ ĐỘ HỖ TRỢ MẮT KÉM TRÊN ĐIỆN THOẠI ===== */
+    .btn-low-vision {
+      background: #5b21b6;
+      color: #fff;
+      border: 1px solid #4c1d95;
+    }
+
+    .btn-low-vision.low-vision-enabled {
+      background: #2e1065;
+      box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.28);
+    }
+
+    .low-vision-settings-content {
+      max-width: 540px;
+      text-align: left;
+    }
+
+    .low-vision-toggle-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 14px;
+      border: 2px solid #d8ccf6;
+      border-radius: 12px;
+      background: #f7f3ff;
+      cursor: pointer;
+    }
+
+    .low-vision-toggle-row input {
+      width: 24px;
+      height: 24px;
+      margin: 1px 0 0;
+      flex: 0 0 auto;
+      accent-color: #5b21b6;
+    }
+
+    .low-vision-toggle-title {
+      display: block;
+      color: #2e1065;
+      font-size: 19px;
+      font-weight: 900;
+      line-height: 1.25;
+    }
+
+    .low-vision-toggle-description,
+    .low-vision-support-note {
+      display: block;
+      margin-top: 6px;
+      color: #4b5563;
+      font-size: 15px;
+      line-height: 1.45;
+    }
+
+    .low-vision-support-note {
+      padding: 10px 12px;
+      border-radius: 8px;
+      background: #fff8e1;
+      border: 1px solid #ffe082;
+      color: #6d4c00;
+    }
+
+    .low-vision-settings-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    body.low-vision-detail-active {
+      overflow: hidden !important;
+      padding: 0 !important;
+      background: #fff !important;
+    }
+
+    body.low-vision-detail-active #appHeader,
+    body.low-vision-detail-active .app-footer {
+      display: none !important;
+    }
+
+    body.low-vision-detail-active #view-detail {
+      position: fixed;
+      inset: 0;
+      z-index: 1800;
+      display: block !important;
+      width: 100vw;
+      height: 100vh;
+      max-width: none;
+      margin: 0;
+      padding: 0 !important;
+      overflow-x: hidden;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      background: #fff;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    body.low-vision-detail-active .dist-header {
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      min-height: 48px;
+      padding: 6px 8px;
+      border-radius: 0;
+      flex-wrap: nowrap;
+      gap: 5px;
+    }
+
+    body.low-vision-detail-active .dist-header > div:first-child {
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+
+    body.low-vision-detail-active .dist-header > div:last-child {
+      flex: 0 0 auto;
+      gap: 5px !important;
+      flex-wrap: nowrap;
+    }
+
+    body.low-vision-detail-active #detailKhoa {
+      display: block;
+      max-width: 48vw;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: clamp(20px, 3.2vw, 29px) !important;
+      line-height: 1.1;
+    }
+
+    body.low-vision-detail-active #detailModeText,
+    body.low-vision-detail-active .dist-header button[onclick="window.print()"] {
+      display: none !important;
+    }
+
+    body.low-vision-detail-active .dist-header button {
+      min-height: 42px;
+      padding: 7px 10px !important;
+      font-size: clamp(16px, 2.4vw, 21px) !important;
+      line-height: 1.05;
+      white-space: nowrap;
+    }
+
+    body.low-vision-detail-active .tab-header {
+      padding: 3px 5px 0;
+      gap: 4px;
+    }
+
+    body.low-vision-detail-active .tab-btn {
+      min-height: 38px;
+      padding: 7px 11px;
+      font-size: clamp(17px, 2.6vw, 23px);
+    }
+
+    body.low-vision-detail-active .tab-content {
+      padding: 6px;
+      border-radius: 0;
+    }
+
+    body.low-vision-detail-active .voucher-header {
+      padding: 8px 10px;
+      margin-bottom: 8px;
+      font-size: clamp(17px, 2.55vw, 23px);
+      line-height: 1.35;
+    }
+
+    body.low-vision-detail-active .tab-content > div {
+      margin-bottom: 10px !important;
+    }
+
+    body.low-vision-detail-active .tab-content > div > div:first-child {
+      padding: 7px !important;
+      font-size: clamp(18px, 2.7vw, 24px);
+      line-height: 1.15;
+    }
+
+    /* Luôn giữ đúng số cột và tỷ lệ như giao diện điện thoại dọc. */
+    body.low-vision-detail-active #view-detail table {
+      display: table;
+      width: 100%;
+      table-layout: fixed;
+      font-size: clamp(18px, 2.8vw, 25px);
+    }
+
+    body.low-vision-detail-active #view-detail th,
+    body.low-vision-detail-active #view-detail td {
+      display: table-cell !important;
+      padding: clamp(8px, 1.55vw, 15px) clamp(3px, 0.7vw, 8px) !important;
+      vertical-align: middle;
+      line-height: 1.18;
+    }
+
+    body.low-vision-detail-active #view-detail th.col-mabd,
+    body.low-vision-detail-active #view-detail td.col-mabd,
+    body.low-vision-detail-active #view-detail th.col-ghichu,
+    body.low-vision-detail-active #view-detail td.col-ghichu,
+    body.low-vision-detail-active #view-detail th:nth-child(7),
+    body.low-vision-detail-active #view-detail td:nth-child(7) {
+      display: none !important;
+    }
+
+    body.low-vision-detail-active #view-detail th {
+      font-size: clamp(17px, 2.55vw, 23px) !important;
+    }
+
+    body.low-vision-detail-active #view-detail th:nth-child(1),
+    body.low-vision-detail-active #view-detail td:nth-child(1) {
+      width: 10%;
+    }
+
+    body.low-vision-detail-active #view-detail td:nth-child(1) {
+      font-size: clamp(18px, 2.8vw, 25px);
+    }
+
+    body.low-vision-detail-active #view-detail th:nth-child(3) {
+      text-align: center !important;
+    }
+
+    body.low-vision-detail-active #view-detail td:nth-child(3) {
+      width: 56%;
+      text-align: left !important;
+      font-size: clamp(22px, 3.7vw, 34px);
+      word-break: break-word;
+      overflow-wrap: break-word;
+    }
+
+    body.low-vision-detail-active #view-detail th:nth-child(4),
+    body.low-vision-detail-active #view-detail td:nth-child(4) {
+      width: 19%;
+    }
+
+    body.low-vision-detail-active #view-detail td:nth-child(4) {
+      font-size: clamp(19px, 3vw, 27px);
+    }
+
+    body.low-vision-detail-active #view-detail th:nth-child(5),
+    body.low-vision-detail-active #view-detail td:nth-child(5) {
+      width: 15%;
+    }
+
+    body.low-vision-detail-active #view-detail td:nth-child(5) {
+      font-size: clamp(24px, 4vw, 36px);
+      font-weight: 900;
+    }
+
+    body.low-vision-detail-active .ten-thuoc-main {
+      font-size: clamp(25px, 4.2vw, 38px) !important;
+      line-height: 1.15;
+    }
+
+    body.low-vision-detail-active .v-num-mobile {
+      font-size: clamp(22px, 3.8vw, 34px) !important;
+    }
+
+    @media (max-width: 600px) {
+      .low-vision-settings-actions {
+        grid-template-columns: 1fr;
+      }
+    }
+
+
+    @media print {
+      body * { visibility: hidden !important; }
+      #view-detail, #view-detail * { visibility: visible !important; }
+      #view-detail { position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 0; }
+      .dist-header button, .tab-header, .app-footer { display: none !important; }
+      .tab-content { display: none !important; border: none !important; padding: 0 !important; }
+      .tab-content.active { display: block !important; }
+      .dist-header { background: #fff !important; color: #000 !important; padding: 0 !important; border-bottom: 2px solid #000; margin-bottom: 10px; }
+      .user-badge { color: #000 !important; background: transparent !important; }
+      tr.distributed td, tr.negative-row td { background: transparent !important; color: #000 !important; }
+      .phat-badge { color: #000 !important; border: 1px solid #000; }
+      th.col-ghichu, td.col-ghichu { display: table-cell !important; }
+      th:nth-child(7), td:nth-child(7) { display: none !important; }
+    }
+
+    @media (max-width: 768px) {
+      body { font-size: 16px; padding-bottom: 50px; }
+      .container { padding: 10px; margin: 10px auto; }
+      .card { padding: 15px; }
+
+      .wellness-card { padding: 30px 20px; }
+
+      #appHeader {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 15px;
+        gap: 12px;
+      }
+
+      .app-brand-main {
+        width: 100%;
+        display: grid;
+        grid-template-columns: 46px minmax(0, 1fr);
+        align-items: center;
+        column-gap: 10px;
+        row-gap: 4px;
+      }
+
+      .app-brand-icon {
+        width: 44px;
+        height: 44px;
+      }
+
+      .app-title {
+        max-width: 100%;
+        font-size: 23px !important;
+        line-height: 1.02 !important;
+        letter-spacing: -0.25px;
+        margin: 0 !important;
+      }
+
+      .app-user-summary {
+        grid-column: 1 / -1;
+        width: auto;
+        max-width: 100%;
+        margin-top: 2px;
+        margin-left: auto;
+        padding-left: 0;
+        padding-right: 2px;
+        border-left: 0;
+        font-size: 16px !important;
+        line-height: 1.3;
+        text-align: right;
+        justify-self: end;
+      }
+
+
+      .app-user-summary #displayRoleBadge {
+        display: inline-block;
+        margin-left: 5px !important;
+        white-space: nowrap;
+      }
+
+      .account-notify-row {
+        grid-template-columns: 1fr;
+        gap: 2px;
+      }
+      
+      .header-actions { width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-left: 0 !important; }
+      .header-actions button {
+        width: 100%;
+        min-height: 40px;
+        padding: 8px 10px !important;
+        font-size: 15px !important;
+        font-family: 'Segoe UI', Roboto, Arial, sans-serif !important;
+        font-weight: 700 !important;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .header-actions .btn-danger { grid-column: 2; } /* Ép nút Đăng xuất sang cột phải */
+
+      .notification-send-actions {
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+      }
+
+      .notification-send-actions button {
+        min-height: 40px;
+        font-size: 15px !important;
+        padding: 8px 10px !important;
+      }
+      
+      .user-badge { font-size: 12px; padding: 4px 10px; flex-grow: 1; text-align: center; }
+      .dist-header button { font-size: 14px; padding: 6px 12px; }
+      .dist-header button[onclick="window.print()"] { display: none !important; }
+
+
+      /*
+       * Trên điện thoại, thanh điều khiển phiếu luôn bám phía trên khi cuộn.
+       * Nhờ vậy nút Chốt Đối Chiếu và Thoát luôn nhìn thấy ở màn hình dọc.
+       */
+      #view-detail .dist-header {
+        position: sticky;
+        top: 0;
+        z-index: 45;
+        padding: 8px 9px;
+        border-radius: 0;
+        gap: 6px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+      }
+
+      #view-detail .detail-header-title {
+        flex: 1 1 100%;
+        min-width: 0;
+      }
+
+      #view-detail #detailKhoa {
+        display: block;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: 19px !important;
+        line-height: 1.15;
+      }
+
+      #view-detail .detail-header-actions {
+        display: flex !important;
+        width: 100%;
+        align-items: center;
+        justify-content: flex-end;
+        flex-wrap: nowrap;
+        gap: 6px !important;
+      }
+
+      #view-detail #detailModeText {
+        display: none !important;
+      }
+
+      #view-detail #btnFinishVoucher,
+      #view-detail #btnFinishCheck,
+      #view-detail #btnCloseDetail {
+        min-height: 40px;
+        padding: 7px 9px !important;
+        font-size: 14px !important;
+        line-height: 1.05;
+        white-space: nowrap;
+      }
+
+      #view-detail #btnCloseDetail {
+        margin-left: auto;
+      }
+
+      .tab-header {
+        padding: 2px 6px 0;
+        gap: 4px;
+      }
+      .tab-btn {
+        min-height: 34px;
+        padding: 7px 10px;
+        font-size: 15px;
+      }
+      
+      /* Loại bỏ hoàn toàn nút Nạp Phiếu trên Mobile */
+      #btnUpload { display: none !important; }
+
+      .tracking-list { grid-template-columns: 1fr; }
+      .tracking-card {
+        min-height: 245px;
+        padding-bottom: 60px;
+      }
+      .tracking-card-title-text {
+        font-size: 22px;
+      }
+
+      /*
+       * Font mobile có baseline chữ in hoa có dấu hơi cao.
+       * Chỉ hạ phần chữ, không di chuyển thân nhãn.
+       */
+      .status-badge-text {
+        transform: translateY(1px);
+      }
+
+      .check-undo-hint {
+        font-size: 10px;
+        margin-top: 2px;
+      }
+      .tracking-delete-btn {
+        font-size: 17px;
+      }
+      
+      #view-admin table, #view-admin thead, #view-admin tbody, #view-admin th, #view-admin td, #view-admin tr { display: block; }
+      #view-admin thead tr { position: absolute; top: -9999px; left: -9999px; }
+      #view-admin tr { border: 1px solid #ccc; margin-bottom: 10px; border-radius: 8px; background: #fff; padding: 10px; }
+      #view-admin td { border: none; border-bottom: 1px solid #eee; position: relative; padding-left: 50% !important; text-align: right !important; }
+      #view-admin td:before { position: absolute; left: 10px; width: 45%; padding-right: 10px; white-space: nowrap; content: attr(data-label); font-weight: bold; text-align: left; }
+      #view-admin td:last-child { border-bottom: 0; }
+
+      #view-detail table { display: table; width: 100%; font-size: 14px; table-layout: fixed; }
+      #view-detail th, #view-detail td { display: table-cell !important; padding: 6px 2px !important; vertical-align: middle; }
+      #view-detail th.col-mabd, #view-detail td.col-mabd { display: none !important; }
+      #view-detail th:nth-child(7), #view-detail td:nth-child(7), #view-detail th.col-ghichu, #view-detail td.col-ghichu { display: none !important; }
+      
+      #view-detail th { font-size: 15px !important; }
+      #view-detail th:nth-child(1), #view-detail td:nth-child(1) { width: 10%; } 
+      #view-detail td:nth-child(1) { font-size: 16px; } 
+      #view-detail th:nth-child(3) { text-align: center !important; } 
+      #view-detail td:nth-child(3) { width: 56%; text-align: left !important; font-size: 17px; word-break: break-word; overflow-wrap: break-word; } 
+      #view-detail th:nth-child(4), #view-detail td:nth-child(4) { width: 19%; } 
+      #view-detail td:nth-child(4) { font-size: 14px; } 
+      #view-detail th:nth-child(5), #view-detail td:nth-child(5) { width: 15%; } 
+      #view-detail td:nth-child(5) { font-size: 18px; } 
+      
+      .ten-thuoc-main { font-size: 19px; }
+      .v-num-mobile { font-size: 18px; }
+
+      /* Thanh công cụ Danh sách trên mobile: hai hàng, cùng canh sát bên phải */
+      #view-list > div:first-child { align-items:flex-start !important; }
+      #view-list .list-toolbar-controls {
+        width:100%;
+        margin-left:auto;
+        display:flex;
+        flex-direction:column;
+        align-items:flex-end;
+        gap:7px !important;
+        flex-wrap:nowrap;
+      }
+      #view-list .list-toolbar-top-row,
+      #view-list .list-toolbar-bottom-row {
+        width:100%;
+        display:flex;
+        align-items:center;
+        justify-content:flex-end;
+        gap:6px;
+        flex-wrap:nowrap;
+      }
+      #view-list .list-toolbar-top-row { min-width:0; }
+      #view-list .list-toolbar-top-row > button,
+      #view-list .list-toolbar-bottom-row > button {
+        flex:0 0 auto;
+        margin:0 !important;
+      }
+      #view-list .toolbar-refresh-button {
+        padding-left:10px !important;
+        padding-right:10px !important;
+      }
+      #view-list #scActive {
+        width:36px !important;
+        min-width:36px;
+        flex:0 0 36px;
+      }
+      #view-list #filterKhoa {
+        width:86px !important;
+        min-width:86px !important;
+        max-width:86px !important;
+      }
+      #view-list .status-filter-button {
+        min-width:108px;
+        justify-content:center;
+      }
+      #view-list #scActive.active-search {
+        width:auto !important;
+        min-width:0;
+        max-width:none;
+        flex:1 1 auto;
+      }
+      #view-list #scActive.active-search + #filterKhoa { display:none !important; }
+      #view-list #scActive.active-search .s-input { min-width:0; }
+
+      .search-container.active-search { flex-grow: 1; max-width: none; }
+      .search-container.active-search + select { display: none !important; }
+    }
+  
+
+    /* ===== FIX6: CHỐT PHÁT NỀN KHÔNG CHẶN NGƯỜI DÙNG ===== */
+    .background-finish-panel {
+      display: none;
+      margin: -4px 0 16px;
+      padding: 12px 14px;
+      border: 1px solid #9fc9b0;
+      border-radius: 12px;
+      background: #f2fbf5;
+      box-shadow: 0 2px 8px rgba(33, 109, 66, .08);
+      font-size: 15px;
+      line-height: 1.45;
+    }
+
+    .background-finish-panel.visible {
+      display: block;
+    }
+
+    .background-finish-panel.has-error {
+      border-color: #e5a5aa;
+      background: #fff4f5;
+    }
+
+    .background-finish-title {
+      font-weight: 900;
+      color: #17653a;
+      margin-bottom: 4px;
+    }
+
+    .background-finish-panel.has-error .background-finish-title {
+      color: #a52834;
+    }
+
+    .background-finish-items {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+      margin-top: 8px;
+    }
+
+    .background-finish-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 8px 10px;
+      border-radius: 9px;
+      background: rgba(255,255,255,.86);
+      border: 1px solid rgba(52, 125, 81, .18);
+    }
+
+    .background-finish-item-text {
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+
+    .background-finish-retry {
+      flex: 0 0 auto;
+      min-height: 34px;
+      padding: 6px 10px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 900;
+      background: #b02a37;
+      color: #fff;
+      border: 0;
+    }
+
+    @media (max-width: 640px) {
+      .background-finish-item {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+    }
+    /* ===== END FIX6 ===== */
+
+
+
+  /* ===== FIX11: TÌM KIẾM TÀI KHOẢN RÕ HƠN + LỌC KHO CHO ADMIN ===== */
+  .admin-user-searchbar {
+    display: grid;
+    grid-template-columns: minmax(260px, 1fr) auto auto;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 14px;
   }
 
-  const url = new URL(request.url);
-
-  if (url.origin !== self.location.origin) {
-    return;
+  .admin-user-searchbar input {
+    margin: 0;
+    min-height: 48px;
+    padding: 11px 14px;
+    border: 2px solid #5c7c68;
+    border-radius: 10px;
+    background: #fff;
+    color: #1f2d24;
+    font-size: 17px !important;
+    font-weight: 700;
+    line-height: 1.35;
   }
 
-  if (request.mode === 'navigate') {
-    event.respondWith(
-      fetch(request)
-        .then(response => {
-          const copy = response.clone();
+  .admin-user-searchbar input::placeholder {
+    color: #607d6a;
+    font-size: 16px;
+    opacity: 1;
+  }
 
-          caches.open(CACHE_NAME)
-            .then(cache =>
-              cache.put('/index.html', copy)
-            );
+  .admin-user-searchbar input:focus {
+    border-color: var(--green);
+    box-shadow: 0 0 0 3px rgba(40, 167, 69, .16);
+    outline: none;
+  }
 
-          return response;
-        })
-        .catch(() =>
-          caches.match('/index.html')
+  .admin-user-search-clear {
+    min-height: 48px;
+    padding: 10px 16px;
+    border: 2px solid #8f1f2c;
+    border-radius: 10px;
+    background: #b02a37;
+    color: #fff;
+    font-size: 16px;
+    font-weight: 900;
+    line-height: 1.2;
+    white-space: nowrap;
+    box-shadow: 0 2px 6px rgba(176, 42, 55, .22);
+  }
+
+  .admin-user-search-clear:hover,
+  .admin-user-search-clear:focus {
+    background: #8f1f2c;
+    color: #fff;
+    opacity: 1;
+    transform: none;
+    outline: 3px solid rgba(176, 42, 55, .18);
+  }
+
+  .admin-user-search-count {
+    min-width: 110px;
+    text-align: right;
+    font-size: 15px;
+    font-weight: 900;
+    color: #37474f;
+  }
+
+  /* FIX13: thêm wrapper và mũi tên giả ổn định cho nút chọn kho */
+  .warehouse-select-wrap {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    flex: 0 0 auto;
+    max-width: 220px;
+  }
+
+  .warehouse-select-wrap::after {
+    content: "";
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    width: 8px;
+    height: 8px;
+    margin-top: -6px;
+    border-right: 2px solid #5b6b79;
+    border-bottom: 2px solid #5b6b79;
+    transform: rotate(45deg);
+    pointer-events: none;
+    opacity: .95;
+  }
+
+  .compact-warehouse-select {
+    width: 116px;
+    max-width: 220px;
+    min-width: 112px;
+    min-height: 38px;
+    margin: 0 !important;
+    padding: 8px 30px 8px 13px !important;
+    border: 1px solid #cfd8dc;
+    border-radius: 14px;
+    background: linear-gradient(180deg, #ffffff 0%, #f5f8fb 100%);
+    color: #1f2937;
+    font-size: 14px !important;
+    font-weight: 800;
+    line-height: 1.2;
+    cursor: pointer;
+    text-align: left;
+    text-align-last: left;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    box-sizing: border-box;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, .08);
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: none;
+    padding-right: 34px !important;
+    transition: width .14s ease, background .18s ease, border-color .18s ease, box-shadow .18s ease;
+  }
+
+  .compact-warehouse-select:hover,
+  .compact-warehouse-select:focus {
+    border-color: #90a4ae;
+    box-shadow: 0 3px 10px rgba(15, 23, 42, .12);
+    outline: none;
+  }
+
+  .compact-warehouse-select.active-warehouse {
+    border-color: #90caf9;
+    background: linear-gradient(180deg, #eff7ff 0%, #dbeafe 100%);
+    color: #0f3d75;
+  }
+
+  .compact-warehouse-select.history-warehouse {
+    border-color: #a7f3d0;
+    background: linear-gradient(180deg, #eefcf6 0%, #d1fae5 100%);
+    color: #065f46;
+  }
+
+  .list-toolbar-controls .compact-warehouse-select {
+    height: 36px !important;
+    min-height: 36px !important;
+  }
+
+  .list-toolbar-bottom-row .warehouse-select-wrap,
+  #view-history .warehouse-select-wrap {
+    align-self: center;
+  }
+
+  @media (max-width: 700px) {
+    .admin-user-searchbar {
+      grid-template-columns: minmax(0, 1fr) auto;
+    }
+
+    .admin-user-searchbar input {
+      font-size: 17px !important;
+    }
+
+    .admin-user-search-clear {
+      padding-left: 13px;
+      padding-right: 13px;
+    }
+
+    .admin-user-search-count {
+      grid-column: 1 / -1;
+      text-align: left;
+      font-size: 15px;
+    }
+
+    #view-list #filterWarehouse {
+      width: 150px !important;
+      min-width: 150px !important;
+      max-width: 150px !important;
+    }
+  }
+  /* ===== END FIX11 ===== */
+</style>
+</head>
+<body>
+
+<div class="loading-overlay" id="loadingSpinner">
+  <div class="spinner"></div>
+  <div id="loadingText" style="margin-top:10px; font-weight:900; color:var(--green);">Đang xử lý...</div>
+</div>
+
+<div id="loginScreen">
+  <div class="nature-background">
+    <div class="floating-leaf leaf-1"></div>
+    <div class="floating-leaf leaf-2"></div>
+    <div class="floating-leaf leaf-3"></div>
+    <div class="floating-leaf leaf-4"></div>
+    <div class="floating-leaf leaf-5"></div>
+    <div class="floating-leaf leaf-6"></div>
+    <div class="floating-leaf leaf-7"></div>
+    <div class="floating-leaf leaf-8"></div>
+    <div class="floating-leaf leaf-9"></div>
+    <div class="floating-leaf leaf-10"></div>
+  </div>
+
+  <div class="login-container">
+    <div class="wellness-card">
+      <div class="organic-border"></div>
+      
+      <div class="mindful-header">
+        <div class="zen-logo">
+          <img src="https://drive.google.com/thumbnail?id=1ZyertvO-WsXU5FYCcuqUHizfRUCSnRIb&sz=w512-h512" width="64" height="64" style="object-fit: contain; border-radius: 50%;" alt="Logo Bệnh Viện" fetchpriority="high">
+          <div class="zen-glow"></div>
+        </div>
+        <h1>Phát thuốc thông minh</h1>
+        <p>Khoa Dược - BVĐK Tuyên Quang</p>
+      </div>
+      
+      <div id="loginError" style="color:#ff7043; margin-bottom:15px; display:none; font-weight:bold; text-align:center; font-size:14px;"></div>
+
+      <div class="organic-field">
+        <div class="field-nature"></div>
+        <input type="text" id="loginUsername" placeholder=" " required onkeypress="if(event.key === 'Enter') handleLogin()">
+        <label for="loginUsername">Tên đăng nhập</label>
+        <div class="growth-indicator">
+          <div class="leaf-sprout"></div>
+        </div>
+      </div>
+
+      <div class="organic-field">
+        <div class="field-nature"></div>
+        <input type="password" id="loginPassword" placeholder=" " required onkeypress="if(event.key === 'Enter') handleLogin()">
+        <label for="loginPassword">Mật khẩu</label>
+        <div class="growth-indicator">
+          <div class="leaf-sprout"></div>
+        </div>
+      </div>
+
+      <button class="harmony-button" onclick="handleLogin()">
+        <div class="button-earth"></div>
+        <span class="button-text">ĐĂNG NHẬP</span>
+        <div class="button-aura"></div>
+      </button>
+      <div class="weekly-login-note">Người phát và Người lĩnh đăng nhập lại vào mỗi Thứ Hai.</div>
+    </div>
+    
+    <div style="text-align: center; margin-top: 20px; color: #2e7d32; font-weight: bold; position: relative; z-index: 2;">
+      <span style="font-size: 14px; font-weight: normal; opacity: 0.9;">Xây dựng và phát triển bởi DS. Ngọc Anh</span>
+    </div>
+  </div>
+</div>
+
+<div id="appHeader" class="glass-panel">
+  <div class="app-brand-main">
+    <img class="app-brand-icon" src="icons/icon-192.png" alt="Icon Phát thuốc">
+    <h2 class="app-title">Phát thuốc thông minh</h2>
+    <div class="app-user-summary">
+      Xin chào, <b id="displayFullName" style="color: var(--primary-dark);"></b>
+      <span id="displayRoleBadge" style="font-size: 15px; background: #fff; padding: 3px 8px; border-radius: 10px; border: 1px solid #ddd; margin-left: 5px;"></span>
+    </div>
+  </div>
+  <div class="header-actions">
+    <button id="btnAdmin" class="btn-admin" style="display:none;" onclick="switchView('admin')">🛠️ Quản trị</button>
+    <button id="btnUpload" class="btn-primary" style="display:none;" onclick="switchView('upload')">📤 Nạp phiếu</button>
+    <button id="btnNavList" class="btn-success" onclick="switchView('list')">📋 Danh sách</button>
+    <button id="btnNavHistory" class="btn-pink" onclick="switchView('history')">📜 Lịch sử</button>
+    <button id="btnSendNotification" class="btn-warning" style="display:none;" onclick="openNotificationModal()">📣 Gửi thông báo</button>
+    <button id="btnLowVisionSettings" class="btn-low-vision" style="display:none;" aria-pressed="false" onclick="openLowVisionSettings()">👁️ Hỗ trợ mắt</button>
+    <button id="btnPushSubscribe" class="notification-button-muted" onclick="enablePushNotifications()">🔕 Bật thông báo</button>
+    <button id="btnInstallApp" class="btn-primary" style="display:none;" onclick="installWebApp()">📲 Cài ứng dụng</button>
+    <button class="btn-indigo" onclick="openChangePassModal()">🔑 Đổi MK</button>
+    <button class="btn-danger" onclick="handleLogout()">🚪 Đăng xuất</button>
+  </div>
+</div>
+
+<div id="view-upload" class="container">
+  <div class="card">
+    <h1 style="color:var(--green); text-align:center; margin-top:0;">NẠP FILE EXCEL VÀO HỆ THỐNG</h1>
+    
+    <div id="singleFileDropArea" class="upload-area"
+         onclick="isFolderAutoLoad = false; document.getElementById('fileInput').click()"
+         ondragover="handleSingleFileDragOver(event)"
+         ondragleave="handleSingleFileDragLeave(event)"
+         ondrop="handleSingleFileDrop(event)">
+      <h3 style="color:var(--green);">+ Kéo thả hoặc Chọn File Excel từ máy tính</h3>
+      <input type="file" id="fileInput" accept=".xlsx, .xls, .csv" multiple style="display:none" onchange="isFolderAutoLoad = false; handleFiles(this.files)">
+    </div>
+
+    <div style="margin-top: 20px; border-top: 2px dashed var(--line); padding-top: 20px;">
+       <h3 style="color:var(--primary); margin-top:0;">💻 Nạp File Từ Thư Mục Máy Tính</h3>
+       <input type="text" id="localFolderLink" placeholder="Nhập đường dẫn thư mục trên máy tính (VD: D:\PhieuPhat)..." style="margin-bottom: 10px; border-radius: 6px;">
+       <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+         <button class="btn-indigo" onclick="saveLocalFolder()">💾 Lưu Đường Dẫn</button>
+         <button class="btn-warning" onclick="copyLocalFolder()">📋 Copy Đường Dẫn</button>
+         <button class="btn-primary" onclick="loadFromLocalFolder()">💻 Mở & Nạp File Trong Thư Mục Này</button>
+       </div>
+       <input type="file" id="folderInput" webkitdirectory directory multiple style="display:none" onchange="isFolderAutoLoad = true; handleFiles(this.files)">
+       <div id="folderImportSummary" style="display:none; margin-top:12px; padding:11px 13px; border:1px solid #90caf9; border-radius:8px; background:#e3f2fd; color:#0d47a1; font-weight:700; line-height:1.5;"></div>
+    </div>
+
+    <div id="uploadResultArea" style="display:none; margin-top: 20px;">
+      <div id="deptListContainer"></div>
+      <div style="display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap;">
+        <button class="btn-danger" style="flex: 1; min-width: 150px; font-size: 18px; padding:15px;" onclick="clearAllUploads()">🗑️ HỦY TOÀN BỘ</button>
+        <button class="btn-success" style="flex: 2; min-width: 200px; font-size: 18px; padding:15px;" onclick="pushToWaitList()">🚀 ĐƯA VÀO DANH SÁCH</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="view-list" class="container">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+    <h2 style="color:var(--green); margin:0;">DANH SÁCH PHIẾU PHÁT</h2>
+    <div class="list-toolbar-controls">
+      <div class="list-toolbar-top-row">
+        <div class="search-container search-green" id="scActive">
+            <span class="s-icon main-icon" onclick="openSearch('active')">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            </span>
+            <input type="search" list="dlKhoaSearch" id="searchKhoa" class="s-input" oninput="handleSearchInput('active')" placeholder="Tìm kiếm khoa...">
+            <span class="s-icon clear-icon" id="sIconActiveClear" onclick="clearSearch('active')">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </span>
+            <datalist id="dlKhoaSearch"></datalist>
+        </div>
+
+        <select id="filterKhoa" class="compact-khoa-select active-khoa" onchange="handleSelectChange('active')" title="Tất cả các khoa">
+          <option value="Tất cả các khoa">Tất cả</option>
+        </select>
+
+        <div class="status-filter-wrap" id="statusFilterWrap" onclick="event.stopPropagation()">
+          <button type="button" class="status-filter-button" onclick="toggleStatusFilter(event)">
+            <span id="statusFilterLabel">3 loại phiếu</span><span class="status-filter-caret">▾</span>
+          </button>
+          <div class="status-filter-menu" id="statusFilterMenu">
+            <label class="status-filter-option waiting"><input type="checkbox" class="voucher-state-filter" value="waiting" checked onchange="handleStatusFilterChange(this)"><span class="status-dot"></span>Chưa phát</label>
+            <label class="status-filter-option progress"><input type="checkbox" class="voucher-state-filter" value="progress" checked onchange="handleStatusFilterChange(this)"><span class="status-dot"></span>Đang phát</label>
+            <label class="status-filter-option done"><input type="checkbox" class="voucher-state-filter" value="done" checked onchange="handleStatusFilterChange(this)"><span class="status-dot"></span>Đã phát</label>
+          </div>
+        </div>
+
+        <button class="btn-success toolbar-refresh-button toolbar-standard-action" onclick="loadWaitList()">🔄 Làm mới</button>
+      </div>
+
+      <div class="list-toolbar-bottom-row">
+        <span class="warehouse-select-wrap" style="display:none;" id="filterWarehouseWrap">
+          <select
+            id="filterWarehouse"
+            class="compact-warehouse-select active-warehouse"
+            onchange="handleAdminWarehouseFilterChange('active')"
+            title="Tất cả kho"
+            aria-label="Lọc danh sách phiếu theo kho"
+          >
+            <option value="__all__">Tất cả kho</option>
+          </select>
+        </span>
+        <button id="btnBulkDelete" class="btn-danger toolbar-standard-action" style="display:none;" onclick="deleteSelectedVouchers()">🗑️ Xóa đã chọn</button>
+      </div>
+    </div>
+  </div>
+  <div id="backgroundFinishPanel" class="background-finish-panel" aria-live="polite"></div>
+  <div class="tracking-list" id="trackingListContainer"></div>
+</div>
+
+<div id="view-history" class="container">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+    <h2 style="color:var(--pink); margin:0;">LỊCH SỬ PHIẾU ĐÃ CHỐT (3 Ngày)</h2>
+    <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+      
+      <div class="search-container search-pink" id="scHistory">
+          <span class="s-icon main-icon" onclick="openSearch('history')">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+          </span>
+          <input type="search" list="dlHistoryKhoaSearch" id="searchHistoryKhoa" class="s-input" oninput="handleSearchInput('history')" placeholder="Tìm kiếm khoa...">
+          <span class="s-icon clear-icon" id="sIconHistoryClear" onclick="clearSearch('history')">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          </span>
+          <datalist id="dlHistoryKhoaSearch"></datalist>
+      </div>
+
+      <select id="filterHistoryKhoa" class="compact-khoa-select history-khoa" onchange="handleSelectChange('history')" title="Tất cả các khoa">
+        <option value="Tất cả các khoa">Tất cả</option>
+      </select>
+
+      <span class="warehouse-select-wrap" style="display:none;" id="filterHistoryWarehouseWrap">
+        <select
+          id="filterHistoryWarehouse"
+          class="compact-warehouse-select history-warehouse"
+          onchange="handleAdminWarehouseFilterChange('history')"
+          title="Tất cả kho"
+          aria-label="Lọc lịch sử phiếu theo kho"
+        >
+          <option value="__all__">Tất cả kho</option>
+        </select>
+      </span>
+
+      <select
+        id="filterHistoryDate"
+        class="history-date-select"
+        onchange="handleHistoryDateFilterChange()"
+        title="Tất cả ngày"
+        aria-label="Lọc lịch sử phiếu theo ngày"
+      >
+        <option value="__all__">📅 Tất cả ngày</option>
+      </select>
+
+      <button class="btn-pink toolbar-standard-action" onclick="loadHistoryList()" title="Tải lại lịch sử">🔄 Làm mới</button>
+      <button id="btnBulkDeleteHistory" class="btn-danger toolbar-standard-action" style="display:none;" onclick="deleteSelectedVouchers()">🗑️ Xóa đã chọn</button>
+    </div>
+  </div>
+  <div id="historyListContainer"></div>
+</div>
+
+<div id="view-detail" class="container" style="padding:0;">
+  <div class="dist-header">
+    <div class="detail-header-title" style="flex-grow:1;"><span id="detailKhoa" style="font-size:24px; font-weight:900;">Khoa: ...</span></div>
+    <div class="detail-header-actions" style="display:flex; align-items:center; gap:10px;">
+      <span class="user-badge" id="detailModeText">👤 ...</span>
+      <span id="batchSaveIndicator" class="batch-save-indicator"></span>
+      <button class="btn-primary" onclick="window.print()">🖨️ In</button>
+      <button id="btnFinishVoucher" class="btn-indigo" style="display:none;" onclick="finishDistribution()">✅ Chốt Phát</button>
+      <button id="btnFinishCheck" class="btn-primary" style="display:none; background: #007bff;" onclick="finishCheck()">✅ Chốt Đối Chiếu</button>
+      <button id="btnCloseDetail" class="btn-warning" onclick="closeDetail()">⬅ Thoát</button>
+    </div>
+  </div>
+  <div id="distTabsHeader" class="tab-header"></div>
+  <div id="distTabsBody"></div>
+</div>
+
+<div id="view-admin" class="container">
+  <div class="card">
+    <h3 style="color:var(--green); margin-top:0;">➕ Tạo Tài Khoản</h3>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+      <div>
+        <input type="text" id="newFullName" placeholder="Tên hiển thị (VD: DS. Ngọc Anh)">
+        <input type="text" id="newUsername" placeholder="Tên đăng nhập">
+        <input type="text" id="newPassword" placeholder="Mật khẩu">
+      </div>
+      <div>
+        <select id="newRole" onchange="updateAccountNotificationDepartmentRequirement('new')"><option value="phat">Phát thuốc</option><option value="xem">Người Lĩnh (Chỉ Xem)</option><option value="admin">Admin</option></select>
+        <label style="font-size:14px; font-weight:bold;">Kho (Giữ Ctrl để chọn nhiều):</label>
+        <select id="newKho" multiple>
+          <option value="Kho Tiêm/Viên Nội Trú">Kho Tiêm/Viên Nội Trú</option>
+          <option value="Kho Dịch Truyền">Kho Dịch Truyền</option>
+          <option value="Kho Vật tư - Hóa chất">Kho Vật tư - Hóa chất</option>
+          <option value="Tất cả">Tất cả</option>
+        </select>
+
+        <label style="font-size:14px; font-weight:bold;">Khoa nhận thông báo:</label>
+        <div class="department-search-select" data-select-id="newNotifyKhoa">
+          <input type="text" class="department-search-input" placeholder="Gõ tên khoa để tìm..." autocomplete="off" aria-label="Tìm khoa nhận thông báo">
+          <span class="department-search-arrow">▼</span>
+          <div class="department-search-menu" role="listbox"></div>
+        </div>
+        <select id="newNotifyKhoa" class="department-source-select" tabindex="-1" aria-hidden="true"></select>
+        <div id="newNotifyKhoaHelp" class="notification-help">
+          Người lĩnh bắt buộc chọn khoa. Admin và người phát có thể để trống hoặc chọn “Tất cả các khoa”.
+        </div>
+
+
+        <div id="newNotifyTypesWrap" class="automatic-notification-types">
+          <span class="automatic-notification-types-title">Loại thông báo tự động:</span>
+          <label class="automatic-notification-type-row">
+            <input type="checkbox" id="newNotifyReady" checked>
+            <span class="automatic-notification-type-label">Phiếu sẵn sàng để phát</span>
+          </label>
+          <label class="automatic-notification-type-row">
+            <input type="checkbox" id="newNotifyDone" checked>
+            <span class="automatic-notification-type-label">Phiếu đã phát xong</span>
+          </label>
+          <div id="newNotifyTypesHelp" class="notification-help">
+            Admin và Người phát có thể tắt cả hai; Người lĩnh phải nhận ít nhất một loại.
+          </div>
+        </div>
+
+        <button class="btn-success" style="width: 100%; padding:10px;" onclick="createUser()">Tạo tài khoản</button>
+      </div>
+    </div>
+  </div>
+  <div class="card table-wrap">
+    <div class="admin-user-searchbar">
+      <input
+        type="search"
+        id="adminUserSearch"
+        placeholder="Tìm tên, username, vai trò, kho hoặc khoa..."
+        autocomplete="off"
+        oninput="filterAdminUsers()"
+        aria-label="Tìm kiếm tài khoản"
+      >
+      <button
+        type="button"
+        class="admin-user-search-clear"
+        onclick="clearAdminUserSearch()"
+        aria-label="Xóa nội dung tìm kiếm tài khoản"
+      >✕ Xóa tìm kiếm</button>
+      <span id="adminUserSearchCount" class="admin-user-search-count"></span>
+    </div>
+    <table style="margin-top:0;">
+      <thead><tr><th>Tên hiển thị</th><th>Username</th><th>Quyền</th><th>Kho</th><th>Khoa nhận TB</th><th>Loại thông báo</th><th>Hành động</th></tr></thead>
+      <tbody id="userTableBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<div id="editUserModal" class="modal-overlay">
+  <div class="modal-content">
+    <h3 style="color: var(--green); margin-top:0;">Sửa Thông Tin Tài Khoản</h3>
+    <input type="hidden" id="editOldUsername">
+    <label>Tên hiển thị:</label><input type="text" id="editFullName">
+    <label>Tên đăng nhập:</label><input type="text" id="editUsername">
+    <label>Mật khẩu:</label><input type="text" id="editPassword">
+    <label>Quyền:</label>
+    <select id="editRole" onchange="updateAccountNotificationDepartmentRequirement('edit')"><option value="phat">Phát thuốc</option><option value="xem">Người Lĩnh (Chỉ Xem)</option><option value="admin">Admin</option></select>
+    <label>Kho quản lý (Giữ Ctrl để chọn nhiều):</label>
+    <select id="editKho" multiple>
+      <option value="Kho Tiêm/Viên Nội Trú">Kho Tiêm/Viên Nội Trú</option>
+      <option value="Kho Dịch Truyền">Kho Dịch Truyền</option>
+      <option value="Kho Vật tư - Hóa chất">Kho Vật tư - Hóa chất</option>
+      <option value="Tất cả">Tất cả</option>
+    </select>
+
+    <label>Khoa nhận thông báo:</label>
+    <div class="department-search-select" data-select-id="editNotifyKhoa">
+      <input type="text" class="department-search-input" placeholder="Gõ tên khoa để tìm..." autocomplete="off" aria-label="Tìm khoa nhận thông báo">
+      <span class="department-search-arrow">▼</span>
+      <div class="department-search-menu" role="listbox"></div>
+    </div>
+    <select id="editNotifyKhoa" class="department-source-select" tabindex="-1" aria-hidden="true"></select>
+    <div id="editNotifyKhoaHelp" class="notification-help">
+      Người lĩnh bắt buộc chọn khoa. Admin và người phát có thể để trống hoặc chọn “Tất cả các khoa”.
+    </div>
+
+
+    <div id="editNotifyTypesWrap" class="automatic-notification-types">
+      <span class="automatic-notification-types-title">Loại thông báo tự động:</span>
+      <label class="automatic-notification-type-row">
+        <input type="checkbox" id="editNotifyReady">
+        <span class="automatic-notification-type-label">Phiếu sẵn sàng để phát</span>
+      </label>
+      <label class="automatic-notification-type-row">
+        <input type="checkbox" id="editNotifyDone">
+        <span class="automatic-notification-type-label">Phiếu đã phát xong</span>
+      </label>
+      <div id="editNotifyTypesHelp" class="notification-help">
+        Admin và Người phát có thể tắt cả hai; Người lĩnh phải nhận ít nhất một loại.
+      </div>
+    </div>
+
+    <button class="btn-success" style="width: 100%; margin-bottom:10px; margin-top:10px;" onclick="submitEditUser()">Lưu thay đổi</button>
+    <button class="btn-danger" style="width: 100%;" onclick="document.getElementById('editUserModal').style.display='none'">Hủy</button>
+  </div>
+</div>
+
+
+<div id="notificationSendModal" class="modal-overlay">
+  <div class="modal-content notification-modal-content">
+    <h3 style="color:#16856b; margin-top:0;">📣 Gửi thông báo đến khoa</h3>
+
+    <label>Khoa nhận thông báo:</label>
+    <div class="department-search-select" data-select-id="notifyTargetKhoa">
+      <input type="text" class="department-search-input" placeholder="Gõ tên khoa để tìm..." autocomplete="off" aria-label="Tìm khoa nhận thông báo">
+      <span class="department-search-arrow">▼</span>
+      <div class="department-search-menu" role="listbox"></div>
+    </div>
+    <select id="notifyTargetKhoa" class="department-source-select" tabindex="-1" aria-hidden="true"></select>
+
+    <label>Kho gửi:</label>
+    <select id="notifyWarehouse" onchange="handleNotificationWarehouseChange()"></select>
+
+    <label id="notifyCustomWarehouseLabel" style="display:none;">Tên kho gửi:</label>
+    <input type="text" id="notifyCustomWarehouseName" style="display:none;" maxlength="120" placeholder="Ví dụ: Kho Đông Y" oninput="updateNotificationPreview()">
+
+    <label>Nội dung:</label>
+    <textarea id="notifyMessage" maxlength="500" placeholder="Nhập nội dung cần thông báo..." oninput="updateNotificationPreview()"></textarea>
+
+    <div class="notification-help">
+      Hệ thống tự thêm tên kho gửi ở đầu nội dung. Tối đa 500 ký tự.
+    </div>
+
+    <div id="notificationPreview" class="notification-preview">
+      Nội dung xem trước sẽ hiển thị tại đây.
+    </div>
+
+    <div class="notification-send-actions">
+      <button id="btnManualNotifySend" class="btn-success" onclick="sendManualNotification()">Gửi thông báo</button>
+      <button id="btnManualNotifyCancel" class="btn-danger" onclick="closeNotificationModal()">Hủy</button>
+    </div>
+  </div>
+</div>
+
+
+<div id="notificationDeviceModal" class="modal-overlay">
+  <div class="modal-content notification-modal-content">
+    <h3 style="color:#16856b; margin-top:0;">🔔 Thông báo theo tài khoản</h3>
+
+    <div class="device-notify-note">
+      Chọn Cho phép trong hộp quyền của trình duyệt. Thiết bị sẽ nhận thông báo theo khoa Admin đã gán cho tài khoản.
+    </div>
+
+    <div class="account-notify-summary">
+      <div class="account-notify-row">
+        <span>Tài khoản</span>
+        <strong id="deviceNotifyAccount">—</strong>
+      </div>
+      <div class="account-notify-row">
+        <span>Khoa nhận</span>
+        <strong id="deviceNotifyAccountKhoa">—</strong>
+      </div>
+      <div class="account-notify-row">
+        <span>Thiết bị này</span>
+        <strong id="deviceNotifyStatus">—</strong>
+      </div>
+    </div>
+
+    <div class="notification-device-actions">
+      <button class="btn-success" onclick="saveDeviceNotificationRegistration()">Đồng bộ thiết bị</button>
+      <button class="btn-warning" onclick="disableDeviceNotifications()">Tắt trên thiết bị</button>
+      <button class="btn-danger" onclick="closeDeviceNotificationModal()">Đóng</button>
+    </div>
+  </div>
+</div>
+
+
+
+<div id="lowVisionSettingsModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="lowVisionSettingsTitle">
+  <div class="modal-content low-vision-settings-content">
+    <h3 id="lowVisionSettingsTitle" style="color:#5b21b6; margin-top:0;">👁️ Hỗ trợ mắt</h3>
+
+    <label class="low-vision-toggle-row" for="lowVisionEnabledCheckbox">
+      <input type="checkbox" id="lowVisionEnabledCheckbox">
+      <span>
+        <span class="low-vision-toggle-title">Bật chế độ phóng to phiếu</span>
+        <span class="low-vision-toggle-description">
+          Khi cầm điện thoại dọc, phiếu giữ nguyên giao diện dọc. Khi bạn tự xoay điện thoại sang ngang, ứng dụng mới phóng to chữ và vùng bấm nhưng vẫn giữ số cột giống giao diện dọc.
+        </span>
+      </span>
+    </label>
+
+    <div id="lowVisionSupportNote" class="low-vision-support-note">
+      Thiết lập được lưu riêng cho tài khoản này trên điện thoại đang dùng.
+    </div>
+
+    <div class="low-vision-settings-actions">
+      <button class="btn-success" type="button" onclick="saveLowVisionSettings()">Lưu thiết lập</button>
+      <button class="btn-danger" type="button" onclick="closeLowVisionSettings()">Hủy</button>
+    </div>
+  </div>
+</div>
+
+<div id="installHelpModal" class="modal-overlay">
+  <div class="modal-content">
+    <img src="icons/icon-192.png" alt="Icon ứng dụng" style="width:84px;height:84px;border-radius:20px;">
+    <h3 style="color:#16856b;">Cài ứng dụng Phát thuốc</h3>
+    <div id="installHelpText" class="install-hint"></div>
+    <button class="btn-primary" style="width:100%;margin-top:12px;" onclick="document.getElementById('installHelpModal').style.display='none'">Đã hiểu</button>
+  </div>
+</div>
+
+
+<div id="adminLogoutModal" class="modal-overlay">
+  <div class="modal-content admin-logout-content">
+    <h3 style="color:var(--danger); margin-top:0;">🚪 Đăng xuất tài khoản Admin</h3>
+
+    <div class="admin-logout-note">
+      Chọn phạm vi đăng xuất. “Tất cả thiết bị” sẽ làm mất hiệu lực phiên Admin đang mở trên các máy khác.
+    </div>
+
+    <div class="admin-logout-actions">
+      <button class="btn-warning" type="button" onclick="logoutCurrentDevice()">
+        Thiết bị này
+      </button>
+
+      <button class="btn-danger" type="button" onclick="logoutAllDevices()">
+        Tất cả thiết bị
+      </button>
+
+      <button class="btn-primary admin-logout-cancel" type="button" onclick="closeAdminLogoutModal()">
+        Hủy
+      </button>
+    </div>
+  </div>
+</div>
+
+<div id="changePassModal" class="modal-overlay">
+  <div class="modal-content">
+    <h3 style="color: var(--orange); margin-top:0;">Đổi Mật Khẩu</h3>
+    <label>Mật khẩu cũ:</label><input type="password" id="oldPass" placeholder="Nhập mật khẩu hiện tại">
+    <label>Mật khẩu mới:</label><input type="password" id="newPass" placeholder="Mật khẩu mới">
+    <label>Xác nhận MK mới:</label><input type="password" id="confirmPass" placeholder="Nhập lại mật khẩu mới">
+    <button class="btn-primary" style="width: 100%; margin-bottom:10px;" onclick="submitChangePass()">Xác nhận đổi</button>
+    <button class="btn-danger" style="width: 100%;" onclick="document.getElementById('changePassModal').style.display='none'">Hủy</button>
+  </div>
+</div>
+
+
+<div id="appPopupModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="appPopupTitle">
+  <div class="modal-content app-popup-content">
+    <div id="appPopupIcon" class="app-popup-icon">ℹ️</div>
+    <h3 id="appPopupTitle" class="app-popup-title">Thông báo</h3>
+    <div id="appPopupMessage" class="app-popup-message"></div>
+    <div class="app-popup-actions">
+      <button id="appPopupCancel" class="btn-admin" type="button" onclick="closeAppPopup(false)">Hủy</button>
+      <button id="appPopupConfirm" class="btn-primary" type="button" onclick="closeAppPopup(true)">Đồng ý</button>
+    </div>
+  </div>
+</div>
+
+<div class="app-footer glass-panel">
+  Khoa Dược - BVĐK Tuyên Quang<br>
+  <span style="font-size: 13px; font-weight: normal; color: #555;">Xây dựng và phát triển bởi DS. Ngọc Anh</span>
+</div>
+
+<iframe id="gasBridgeFrame"
+  src="https://script.google.com/macros/s/AKfycbzhDWWBV13NuxpVfYqaOe3BIzuAQYGE8obpn6Yr76qW4wa7v7bfk5WJU-IAxWaHiJiYJA/exec"
+  loading="eager"
+  title="Apps Script Bridge"
+  aria-hidden="true"
+  tabindex="-1"
+  style="position:fixed;width:1px;height:1px;opacity:0;pointer-events:none;border:0;left:-9999px;top:-9999px;"></iframe>
+
+<script>
+  /* ===== GITHUB PAGES ↔ APPS SCRIPT BRIDGE V2 ===== */
+  const GAS_BRIDGE_URL = 'https://script.google.com/macros/s/AKfycbzhDWWBV13NuxpVfYqaOe3BIzuAQYGE8obpn6Yr76qW4wa7v7bfk5WJU-IAxWaHiJiYJA/exec';
+  let gasBridgeReady = false;
+  let gasBridgeWindow = null;
+  let gasBridgeOrigin = '';
+  let gasRequestCounter = 0;
+  const gasPendingRequests = new Map();
+  let backendWarmPromise = null;
+
+
+  const AUTH_STORAGE_KEY =
+    'phat_thuoc_auth_v36';
+
+  function decodeSessionTokenPayload(
+    token
+  ) {
+    try {
+      const body =
+        String(token || '')
+          .split('.')[0];
+
+      if (!body) {
+        return null;
+      }
+
+      const normalized =
+        body
+          .replace(/-/g, '+')
+          .replace(/_/g, '/');
+
+      const padded =
+        normalized +
+        '='.repeat(
+          (
+            4 -
+            normalized.length % 4
+          ) % 4
+        );
+
+      return JSON.parse(
+        decodeURIComponent(
+          Array.from(
+            atob(padded)
+          )
+            .map(character =>
+              '%' +
+              character
+                .charCodeAt(0)
+                .toString(16)
+                .padStart(2, '0')
+            )
+            .join('')
         )
+      );
+    } catch (error) {
+      return null;
+    }
+  }
+
+  function clearPersistedAuthSession() {
+    localStorage.removeItem(
+      AUTH_STORAGE_KEY
     );
 
-    return;
+    sessionStorage.removeItem(
+      'logged_user'
+    );
+
+    sessionStorage.removeItem(
+      'session_token'
+    );
   }
 
-  event.respondWith(
-    caches.match(request)
-      .then(cached => {
-        const network = fetch(request)
-          .then(response => {
-            if (
-              response &&
-              response.ok
-            ) {
-              const copy =
-                response.clone();
+  function persistAuthSession(
+    user,
+    token,
+    expiresAt = null
+  ) {
+    const payload =
+      decodeSessionTokenPayload(
+        token
+      );
 
-              caches.open(CACHE_NAME)
-                .then(cache =>
-                  cache.put(request, copy)
+    const normalizedExpiresAt =
+      Number(
+        expiresAt !== null
+          ? expiresAt
+          : (
+              payload &&
+              payload.exp
+                ? payload.exp
+                : 0
+            )
+      );
+
+    localStorage.setItem(
+      AUTH_STORAGE_KEY,
+      JSON.stringify({
+        user: user || null,
+        token:
+          String(token || ''),
+        expiresAt:
+          normalizedExpiresAt,
+        savedAt:
+          Date.now()
+      })
+    );
+
+    sessionStorage.removeItem(
+      'logged_user'
+    );
+
+    sessionStorage.removeItem(
+      'session_token'
+    );
+  }
+
+  function readPersistedAuthSession() {
+    let raw =
+      localStorage.getItem(
+        AUTH_STORAGE_KEY
+      );
+
+    if (!raw) {
+      const legacyUser =
+        sessionStorage.getItem(
+          'logged_user'
+        );
+
+      const legacyToken =
+        sessionStorage.getItem(
+          'session_token'
+        );
+
+      if (
+        legacyUser &&
+        legacyToken
+      ) {
+        try {
+          const user =
+            JSON.parse(
+              legacyUser
+            );
+
+          const payload =
+            decodeSessionTokenPayload(
+              legacyToken
+            );
+
+          persistAuthSession(
+            user,
+            legacyToken,
+            payload
+              ? Number(
+                  payload.exp || 0
+                )
+              : 0
+          );
+
+          raw =
+            localStorage.getItem(
+              AUTH_STORAGE_KEY
+            );
+        } catch (error) {
+          clearPersistedAuthSession();
+          return null;
+        }
+      }
+    }
+
+    if (!raw) {
+      return null;
+    }
+
+    try {
+      const state =
+        JSON.parse(raw);
+
+      if (
+        !state ||
+        !state.user ||
+        !state.token
+      ) {
+        clearPersistedAuthSession();
+        return null;
+      }
+
+      const expiresAt =
+        Number(
+          state.expiresAt || 0
+        );
+
+      if (
+        expiresAt > 0 &&
+        expiresAt <= Date.now()
+      ) {
+        clearPersistedAuthSession();
+        return null;
+      }
+
+      return state;
+    } catch (error) {
+      clearPersistedAuthSession();
+      return null;
+    }
+  }
+
+  function getPersistedSessionToken() {
+    const state =
+      readPersistedAuthSession();
+
+    return state
+      ? String(
+          state.token || ''
+        )
+      : '';
+  }
+
+  function updatePersistedUser(
+    user
+  ) {
+    const state =
+      readPersistedAuthSession();
+
+    if (!state) {
+      return;
+    }
+
+    persistAuthSession(
+      user,
+      state.token,
+      state.expiresAt
+    );
+  }
+
+  function prewarmBackend() {
+    if (backendWarmPromise) {
+      return backendWarmPromise;
+    }
+
+    backendWarmPromise = gasCall(
+      'warmupServer',
+      []
+    )
+      .then(result => {
+        console.log('Backend warmed:', result);
+        return result;
+      })
+      .catch(error => {
+        console.warn(
+          'Không prewarm được backend:',
+          error.message || String(error)
+        );
+
+        // Cho phép thử lại khi người dùng focus ô đăng nhập.
+        backendWarmPromise = null;
+        return null;
+      });
+
+    return backendWarmPromise;
+  }
+
+  function getGasBridgeFrame() {
+    return document.getElementById('gasBridgeFrame');
+  }
+
+  function isTrustedAppsScriptBridgeOrigin(origin) {
+    try {
+      const url = new URL(origin);
+      const host = url.hostname.toLowerCase();
+      return host === 'script.google.com'
+        || host === 'script.googleusercontent.com'
+        || host.endsWith('.script.googleusercontent.com')
+        || host.endsWith('.googleusercontent.com');
+    } catch (error) {
+      return false;
+    }
+  }
+
+  function waitForGasBridge(timeoutMs = 20000) {
+    if (gasBridgeReady && gasBridgeWindow) return Promise.resolve();
+
+    return new Promise((resolve, reject) => {
+      const started = Date.now();
+      const timer = setInterval(() => {
+        if (gasBridgeReady && gasBridgeWindow) {
+          clearInterval(timer);
+          resolve();
+        } else if (Date.now() - started > timeoutMs) {
+          clearInterval(timer);
+          reject(new Error(
+            'Không kết nối được Apps Script. Hãy mở trực tiếp URL /exec để kiểm tra quyền triển khai và chắc chắn deployment đã dùng phiên bản mới có Bridge.html.'
+          ));
+        }
+      }, 100);
+    });
+  }
+
+  window.addEventListener('message', (event) => {
+    const message = event.data || {};
+
+    if (message.type === 'GAS_BRIDGE_READY') {
+      if (!isTrustedAppsScriptBridgeOrigin(event.origin)) {
+        console.warn('Bỏ qua Bridge từ origin không tin cậy:', event.origin);
+        return;
+      }
+
+      gasBridgeWindow = event.source;
+      gasBridgeOrigin = event.origin;
+      gasBridgeReady = true;
+
+      // Đánh thức Apps Script và nạp cache trước khi người dùng bấm đăng nhập.
+      setTimeout(prewarmBackend, 0);
+      return;
+    }
+
+    if (message.type !== 'GAS_RESPONSE' || !message.id) return;
+    if (!gasBridgeWindow || event.source !== gasBridgeWindow) return;
+    if (gasBridgeOrigin && event.origin !== gasBridgeOrigin) return;
+
+    const pending = gasPendingRequests.get(message.id);
+    if (!pending) return;
+
+    gasPendingRequests.delete(message.id);
+    clearTimeout(pending.timeout);
+
+    const response = message.response || {};
+    if (response.ok) pending.resolve(response.data);
+    else pending.reject(new Error(response.error || 'Apps Script trả về lỗi.'));
+  });
+
+  async function gasCall(action, args = [], timeoutMs = 30000) {
+    if (!GAS_BRIDGE_URL || GAS_BRIDGE_URL.includes('PASTE_YOUR_')) {
+      throw new Error(
+        'Bạn chưa dán URL Apps Script Web App vào biến GAS_BRIDGE_URL và thuộc tính src của iframe.'
+      );
+    }
+
+    await waitForGasBridge();
+
+    const id = 'REQ_' + Date.now() + '_' + (++gasRequestCounter);
+    const token =
+      getPersistedSessionToken();
+
+    return new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        gasPendingRequests.delete(id);
+        reject(new Error('Yêu cầu máy chủ quá thời gian chờ.'));
+      }, Math.max(5000, Number(timeoutMs || 30000)));
+
+      gasPendingRequests.set(id, { resolve, reject, timeout });
+
+      gasBridgeWindow.postMessage({
+        type: 'GAS_REQUEST',
+        id,
+        action,
+        args,
+        token
+      }, gasBridgeOrigin);
+    });
+  }
+
+  function createGoogleScriptRunProxy(successHandler = null, failureHandler = null) {
+    const chain = {
+      withSuccessHandler(fn) {
+        return createGoogleScriptRunProxy(fn, failureHandler);
+      },
+      withFailureHandler(fn) {
+        return createGoogleScriptRunProxy(successHandler, fn);
+      }
+    };
+
+    return new Proxy(chain, {
+      get(target, prop) {
+        if (prop in target) return target[prop].bind(target);
+        if (typeof prop !== 'string') return undefined;
+
+        return (...args) => {
+          gasCall(prop, args)
+            .then(data => {
+              if (successHandler) successHandler(data);
+            })
+            .catch(error => {
+              if (failureHandler) {
+                failureHandler(error);
+                return;
+              }
+
+              console.error(error);
+              if (typeof showMsg === 'function') {
+                showMsg(
+                  error.message || String(error),
+                  'Lỗi kết nối',
+                  'danger'
                 );
+              }
+
+              if (
+                isInvalidSessionError(
+                  error
+                )
+              ) {
+                forceLogoutForInvalidSession(
+                  error
+                );
+              }
+            });
+        };
+      }
+    });
+  }
+
+  window.google = window.google || {};
+  window.google.script = window.google.script || {};
+
+  Object.defineProperty(window.google.script, 'run', {
+    configurable: false,
+    get() {
+      return createGoogleScriptRunProxy();
+    }
+  });
+  /* ===== END BRIDGE V2 ===== */
+
+  const KHO_CONFIG = { "Dich_Truyen": "Kho Dịch Truyền", "Tiem_Vien": "Kho Tiêm/Viên Nội Trú", "Vat_Tu": "Kho Vật tư - Hóa chất", "Khac": "Khác" };
+  const V_COLORS = ['#dc3545', '#007bff', '#28a745', '#fd7e14', '#6f42c1', '#e83e8c'];
+
+  const WAREHOUSE_COLOR_CONFIG = {
+    Tiem_Vien: {
+      accent: '#1976d2',
+      soft: '#eaf3ff'
+    },
+    Dich_Truyen: {
+      accent: '#ef6c00',
+      soft: '#fff1e6'
+    },
+    Vat_Tu: {
+      accent: '#8e24aa',
+      soft: '#f7e9fb'
+    },
+    Khac: {
+      accent: '#546e7a',
+      soft: '#edf2f5'
+    }
+  };
+
+  function getWarehouseDisplayNameByKey(key) {
+    return KHO_CONFIG[key] || String(key || '').trim();
+  }
+
+  function normalizeWarehouseColorKey(value) {
+    const raw = String(value || '').trim();
+    if (!raw) {
+      return 'Khac';
+    }
+
+    if (Object.prototype.hasOwnProperty.call(KHO_CONFIG, raw)) {
+      return raw;
+    }
+
+    const resolved = resolveClientWarehouse(raw, false);
+    if (resolved && resolved.key) {
+      return String(resolved.key);
+    }
+
+    const normalized = normalizeCatalogSearchText(raw);
+    const directKey = Object.keys(KHO_CONFIG).find(
+      key => normalizeCatalogSearchText(key) === normalized
+    );
+
+    if (directKey) {
+      return directKey;
+    }
+
+    const displayKey = Object.keys(KHO_CONFIG).find(
+      key => normalizeCatalogSearchText(KHO_CONFIG[key]) === normalized
+    );
+
+    return displayKey || 'Khac';
+  }
+
+  function getWarehouseColorPalette(value) {
+    const key = normalizeWarehouseColorKey(value);
+    return WAREHOUSE_COLOR_CONFIG[key] || WAREHOUSE_COLOR_CONFIG.Khac;
+  }
+
+  function hexToRgba(hex, alpha) {
+    const normalized = String(hex || '')
+      .replace('#', '')
+      .trim();
+
+    if (![3, 6].includes(normalized.length)) {
+      return 'rgba(84,110,122,' + alpha + ')';
+    }
+
+    const full = normalized.length === 3
+      ? normalized.split('').map(ch => ch + ch).join('')
+      : normalized;
+
+    const red = parseInt(full.slice(0, 2), 16);
+    const green = parseInt(full.slice(2, 4), 16);
+    const blue = parseInt(full.slice(4, 6), 16);
+
+    if ([red, green, blue].some(Number.isNaN)) {
+      return 'rgba(84,110,122,' + alpha + ')';
+    }
+
+    return 'rgba(' + red + ',' + green + ',' + blue + ',' + alpha + ')';
+  }
+
+  function uniqueWarehouseKeys(values) {
+    const seen = new Set();
+    const result = [];
+    (values || []).forEach(value => {
+      const key = normalizeWarehouseColorKey(value);
+      if (!seen.has(key)) {
+        seen.add(key);
+        result.push(key);
+      }
+    });
+    return result;
+  }
+
+  function buildWarehouseBadgesHtml(warehouseKeys) {
+    const keys = uniqueWarehouseKeys(warehouseKeys);
+
+    if (!keys.length) {
+      return '<span class="warehouse-badge warehouse-badge-default">Tất cả kho</span>';
+    }
+
+    return keys.map(key => {
+      const palette = getWarehouseColorPalette(key);
+      const displayName = getWarehouseDisplayNameByKey(key) || key;
+      const badgeName = String(displayName)
+        .replace(/^Kho\s+/i, '')
+        .trim() || displayName;
+      return (
+        '<span class="warehouse-badge" ' +
+          'style="--warehouse-accent:' + palette.accent + '; --warehouse-soft:' + palette.soft + ';">' +
+          escapeHtmlText(badgeName) +
+        '</span>'
+      );
+    }).join('');
+  }
+
+  function buildWarehouseCardStyle(warehouseKeys) {
+    const keys = uniqueWarehouseKeys(warehouseKeys);
+    const palettes = (keys.length ? keys : ['Khac']).map(getWarehouseColorPalette);
+    const gradientStops = palettes.map((palette, index) => {
+      if (palettes.length === 1) {
+        return palette.accent;
+      }
+      const ratio = Math.round((index / (palettes.length - 1)) * 100);
+      return palette.accent + ' ' + ratio + '%';
+    }).join(', ');
+    const firstAccent = palettes[0].accent;
+    return [
+      '--voucher-border-start:' + palettes[0].accent,
+      '--voucher-border-end:' + palettes[palettes.length - 1].accent,
+      '--voucher-border-gradient:linear-gradient(135deg, ' + gradientStops + ')',
+      '--voucher-accent-shadow:' + hexToRgba(firstAccent, 0.18)
+    ].join('; ');
+  }
+
+
+  /* ===== FIX11: BỘ LỌC KHO RIÊNG CHO ADMIN ===== */
+  function getVoucherWarehouseKeysForFilter(voucher) {
+    const rawKeys = String(
+      voucher && voucher.warehouseKeys
+        ? voucher.warehouseKeys
+        : ''
+    )
+      .split(',')
+      .map(item => item.trim())
+      .filter(Boolean);
+
+    if (rawKeys.length) {
+      return uniqueWarehouseKeys(rawKeys);
+    }
+
+    const legacyVouchers =
+      voucher && voucher.vouchers &&
+      typeof voucher.vouchers === 'object'
+        ? voucher.vouchers
+        : null;
+
+    if (!legacyVouchers) {
+      return [];
+    }
+
+    const keys = [];
+
+    Object.keys(legacyVouchers).forEach(key => {
+      const data = legacyVouchers[key] || {};
+      const hasData =
+        ['TQ', 'BT', 'HT', 'dates'].some(field =>
+          Array.isArray(data[field]) &&
+          data[field].length > 0
+        );
+
+      if (hasData) {
+        keys.push(key);
+      }
+    });
+
+    return uniqueWarehouseKeys(keys);
+  }
+
+  function voucherMatchesAdminWarehouseFilter(
+    voucher,
+    warehouseKey
+  ) {
+    if (!warehouseKey) return true;
+
+    return getVoucherWarehouseKeysForFilter(
+      voucher
+    ).includes(warehouseKey);
+  }
+
+  /* FIX13: co chiều rộng nút theo đúng lựa chọn hiện tại */
+  function resizeAdminWarehouseSelect(select) {
+    if (!select) return;
+
+    const selectedOption =
+      select.options && select.selectedIndex >= 0
+        ? select.options[select.selectedIndex]
+        : null;
+
+    const label = String(
+      selectedOption ? selectedOption.text : 'Tất cả kho'
+    ).trim() || 'Tất cả kho';
+
+    let measuredWidth = label.length * 8;
+
+    try {
+      const canvas =
+        resizeAdminWarehouseSelect._canvas ||
+        (resizeAdminWarehouseSelect._canvas = document.createElement('canvas'));
+      const context = canvas.getContext('2d');
+      const style = window.getComputedStyle(select);
+
+      if (context) {
+        context.font = [
+          style.fontStyle || 'normal',
+          style.fontWeight || '800',
+          style.fontSize || '14px',
+          style.fontFamily || 'Arial'
+        ].join(' ');
+        measuredWidth = context.measureText(label).width;
+      }
+    } catch (error) {
+      // Dùng phép ước lượng ở trên nếu trình duyệt không hỗ trợ canvas.
+    }
+
+    const targetWidth = Math.max(
+      112,
+      Math.min(220, Math.ceil(measuredWidth + 49))
+    );
+
+    select.style.width = targetWidth + 'px';
+    select.style.minWidth = targetWidth + 'px';
+    select.style.maxWidth = targetWidth + 'px';
+  }
+
+  function updateAdminWarehouseFilterOptions(
+    type,
+    vouchers
+  ) {
+    const selectId =
+      type === 'history'
+        ? 'filterHistoryWarehouse'
+        : 'filterWarehouse';
+
+    const select =
+      document.getElementById(selectId);
+
+    if (!select) return '';
+
+    const isAdmin =
+      currentUser &&
+      currentUser.role === 'admin';
+
+    select.style.display =
+      isAdmin
+        ? 'inline-block'
+        : 'none';
+
+    if (!isAdmin) {
+      select.value = '__all__';
+      return '';
+    }
+
+    const warehouseKeys =
+      uniqueWarehouseKeys(
+        (vouchers || []).flatMap(
+          getVoucherWarehouseKeysForFilter
+        )
+      )
+        .sort((a, b) =>
+          getWarehouseDisplayNameByKey(a)
+            .localeCompare(
+              getWarehouseDisplayNameByKey(b),
+              'vi'
+            )
+        );
+
+    const previous =
+      String(select.value || '__all__');
+
+    const optionsHtml =
+      '<option value="__all__">Tất cả kho</option>' +
+      warehouseKeys
+        .map(key => {
+          const label =
+            getWarehouseDisplayNameByKey(key) ||
+            key;
+
+          return (
+            '<option value="' +
+            escapeHtmlText(key) +
+            '">' +
+            escapeHtmlText(label) +
+            '</option>'
+          );
+        })
+        .join('');
+
+    if (select.innerHTML !== optionsHtml) {
+      select.innerHTML = optionsHtml;
+    }
+
+    select.value =
+      previous === '__all__' ||
+      warehouseKeys.includes(previous)
+        ? previous
+        : '__all__';
+
+    select.title =
+      select.options[select.selectedIndex]
+        ? select.options[select.selectedIndex].text
+        : 'Tất cả kho';
+
+    resizeAdminWarehouseSelect(select);
+
+    return select.value === '__all__'
+      ? ''
+      : select.value;
+  }
+
+  function handleAdminWarehouseFilterChange(type) {
+    const select = document.getElementById(
+      type === 'history'
+        ? 'filterHistoryWarehouse'
+        : 'filterWarehouse'
+    );
+
+    if (select) {
+      select.title =
+        select.options[select.selectedIndex]
+          ? select.options[select.selectedIndex].text
+          : 'Tất cả kho';
+      resizeAdminWarehouseSelect(select);
+    }
+
+    if (type === 'history') {
+      renderHistoryList();
+    } else {
+      renderTrackingList();
+    }
+  }
+
+  function resetAdminWarehouseFiltersForAccount() {
+    [
+      'filterWarehouse',
+      'filterHistoryWarehouse'
+    ].forEach(id => {
+      const select =
+        document.getElementById(id);
+
+      if (select) {
+        select.value = '__all__';
+        select.title = 'Tất cả kho';
+        select.style.display =
+          currentUser &&
+          currentUser.role === 'admin'
+            ? 'inline-block'
+            : 'none';
+        resizeAdminWarehouseSelect(select);
+      }
+    });
+  }
+  /* ===== END FIX11 ADMIN WAREHOUSE FILTER ===== */
+
+
+  let currentUser = null;
+  let parsedFileData = {};
+  let parsedDuplicateStatus = {};
+  let cloudWaitList = {};
+  let cloudHistoryData = [];
+  let activeVoucherId = null;
+  let syncInterval = null;
+  let adminSessionValidationTimer = null;
+  let adminSessionValidationInFlight = false;
+  let forcedSessionLogoutHandled = false;
+  let currentVoucherVersion = 0;
+  let syncInFlight = false;
+  let mutationInFlight = false;
+  let detailSyncIntervalMs = 1500;
+  let skipNextListReload = false;
+  let detailRefreshing = false;
+  let adminFinalizedEditConfirmed = false;
+  let activeVoucherFinalizedHint = false;
+  let activeVoucherCheckedHint = false;
+  let detailOpenSequence = 0;
+  let openingVoucherId = null;
+  let detailActionInFlight = false;
+  let detailPromptInFlight = false;
+  let loadingWatchdogTimer = null;
+
+
+  /* ===== FIX6: HÀNG ĐỢI CHỐT PHÁT NỀN BỀN VỮNG ===== */
+  const BACKGROUND_FINISH_STORAGE_PREFIX =
+    'phatthuoc_background_finish_v1_';
+
+  let backgroundFinishWorkerRunning = false;
+  let backgroundFinishWakeTimer = null;
+  /* ===== END FIX6 STATE ===== */
+
+
+  /* ===== CHẾ ĐỘ HỖ TRỢ MẮT TRÊN ĐIỆN THOẠI ===== */
+  const LOW_VISION_STORAGE_PREFIX =
+    'phatthuoc_low_vision_v1_';
+
+  /*
+   * lowVisionDetailActive chỉ cho biết chế độ đã được bật cho phiếu đang mở.
+   * Giao diện phóng to chỉ được áp dụng khi điện thoại thực sự ở chiều ngang.
+   * Ứng dụng không yêu cầu fullscreen, không khóa hướng và không tự xoay giao diện.
+   */
+  let lowVisionDetailActive = false;
+
+  function lowVisionStorageKey() {
+    const username =
+      currentUser && currentUser.username
+        ? String(currentUser.username)
+            .trim()
+            .toLowerCase()
+        : 'guest';
+
+    return LOW_VISION_STORAGE_PREFIX + username;
+  }
+
+  function isLowVisionRoleEligible() {
+    return Boolean(
+      currentUser &&
+      (
+        currentUser.role === 'phat' ||
+        currentUser.role === 'xem'
+      )
+    );
+  }
+
+  function isPhoneLikeDevice() {
+    const screenWidth = Number(
+      window.screen && window.screen.width ||
+      window.innerWidth ||
+      0
+    );
+
+    const screenHeight = Number(
+      window.screen && window.screen.height ||
+      window.innerHeight ||
+      0
+    );
+
+    const shortSide = Math.min(
+      screenWidth || window.innerWidth,
+      screenHeight || window.innerHeight
+    );
+
+    const coarsePointer =
+      window.matchMedia &&
+      window.matchMedia('(pointer: coarse)').matches;
+
+    return Boolean(
+      Math.min(
+        window.innerWidth || screenWidth,
+        window.innerHeight || screenHeight
+      ) <= 600 ||
+      (coarsePointer && shortSide <= 700)
+    );
+  }
+
+  function isLowVisionEnabled() {
+    if (!isLowVisionRoleEligible()) {
+      return false;
+    }
+
+    try {
+      return localStorage.getItem(
+        lowVisionStorageKey()
+      ) === '1';
+    } catch (error) {
+      return false;
+    }
+  }
+
+  function updateLowVisionSettingsButton() {
+    const button =
+      document.getElementById(
+        'btnLowVisionSettings'
+      );
+
+    if (!button) return;
+
+    const visible =
+      isLowVisionRoleEligible() &&
+      isPhoneLikeDevice();
+
+    const enabled =
+      visible && isLowVisionEnabled();
+
+    button.style.display =
+      visible ? 'inline-block' : 'none';
+
+    button.classList.toggle(
+      'low-vision-enabled',
+      enabled
+    );
+
+    button.setAttribute(
+      'aria-pressed',
+      enabled ? 'true' : 'false'
+    );
+
+    button.innerText = enabled
+      ? '👁️ Hỗ trợ mắt: Bật'
+      : '👁️ Hỗ trợ mắt';
+  }
+
+  function openLowVisionSettings() {
+    if (!isLowVisionRoleEligible()) {
+      return;
+    }
+
+    const checkbox =
+      document.getElementById(
+        'lowVisionEnabledCheckbox'
+      );
+
+    const note =
+      document.getElementById(
+        'lowVisionSupportNote'
+      );
+
+    if (checkbox) {
+      checkbox.checked =
+        isLowVisionEnabled();
+    }
+
+    if (note) {
+      note.innerText =
+        'Khi cầm điện thoại dọc, phiếu vẫn giữ nguyên giao diện dọc. Chỉ khi bạn tự xoay điện thoại sang ngang, ứng dụng mới phóng to phiếu và vẫn giữ số cột như màn hình dọc. Thiết lập được lưu riêng trên điện thoại này.';
+    }
+
+    const modal =
+      document.getElementById(
+        'lowVisionSettingsModal'
+      );
+
+    if (modal) {
+      modal.style.display = 'flex';
+    }
+  }
+
+  function closeLowVisionSettings() {
+    const modal =
+      document.getElementById(
+        'lowVisionSettingsModal'
+      );
+
+    if (modal) {
+      modal.style.display = 'none';
+    }
+  }
+
+  function saveLowVisionSettings() {
+    const checkbox =
+      document.getElementById(
+        'lowVisionEnabledCheckbox'
+      );
+
+    const enabled = Boolean(
+      checkbox && checkbox.checked
+    );
+
+    try {
+      localStorage.setItem(
+        lowVisionStorageKey(),
+        enabled ? '1' : '0'
+      );
+    } catch (error) {
+      return showMsg(
+        'Trình duyệt không cho lưu thiết lập hiển thị trên thiết bị này.',
+        'Không lưu được thiết lập',
+        'warning'
+      );
+    }
+
+    closeLowVisionSettings();
+    updateLowVisionSettingsButton();
+
+    if (!enabled && lowVisionDetailActive) {
+      exitLowVisionDetailMode();
+    } else if (enabled && activeVoucherId) {
+      lowVisionDetailActive = true;
+      syncLowVisionOrientationMode();
+    }
+
+    showMsg(
+      enabled
+        ? 'Đã bật Hỗ trợ mắt. Phiếu giữ giao diện dọc khi cầm dọc và chỉ phóng to khi bạn tự xoay điện thoại sang ngang.'
+        : 'Đã tắt Hỗ trợ mắt.',
+      'Thiết lập hiển thị',
+      'success'
+    );
+  }
+
+  function usesPortraitVoucherColumns() {
+    return Boolean(
+      lowVisionDetailActive ||
+      (
+        window.innerWidth <= 768 &&
+        window.innerHeight >
+          window.innerWidth
+      )
+    );
+  }
+
+  function isActualLandscapeOrientation() {
+    const orientationType =
+      window.screen &&
+      window.screen.orientation &&
+      String(
+        window.screen.orientation.type || ''
+      ).toLowerCase();
+
+    if (orientationType.indexOf('landscape') === 0) {
+      return true;
+    }
+
+    if (orientationType.indexOf('portrait') === 0) {
+      return false;
+    }
+
+    if (
+      window.matchMedia &&
+      window.matchMedia('(orientation: landscape)').matches
+    ) {
+      return true;
+    }
+
+    return window.innerWidth > window.innerHeight;
+  }
+
+  function syncLowVisionOrientationMode() {
+    const shouldMagnify = Boolean(
+      lowVisionDetailActive &&
+      isLowVisionEnabled() &&
+      isPhoneLikeDevice() &&
+      isActualLandscapeOrientation()
+    );
+
+    document.body.classList.toggle(
+      'low-vision-detail-active',
+      shouldMagnify
+    );
+
+    return shouldMagnify;
+  }
+
+  function activateLowVisionDetailMode() {
+    if (
+      !isLowVisionEnabled() ||
+      !isPhoneLikeDevice()
+    ) {
+      lowVisionDetailActive = false;
+      document.body.classList.remove(
+        'low-vision-detail-active'
+      );
+      return false;
+    }
+
+    lowVisionDetailActive = true;
+    syncLowVisionOrientationMode();
+    return true;
+  }
+
+  function exitLowVisionDetailMode() {
+    lowVisionDetailActive = false;
+
+    document.body.classList.remove(
+      'low-vision-detail-active',
+      'low-vision-visual-landscape'
+    );
+  }
+
+  window.addEventListener(
+    'resize',
+    () => {
+      updateLowVisionSettingsButton();
+      syncLowVisionOrientationMode();
+    }
+  );
+
+  window.addEventListener(
+    'orientationchange',
+    () => {
+      setTimeout(
+        syncLowVisionOrientationMode,
+        120
+      );
+    }
+  );
+  /* ===== END CHẾ ĐỘ HỖ TRỢ MẮT ===== */
+
+
+
+  /* ===== PHÁT NHANH / LƯU NỀN THEO LÔ ===== */
+  const ITEM_BATCH_MAX_ACTIONS = 25;
+  const DISTRIBUTION_BATCH_DELAY_MS = 180;
+  const DISTRIBUTION_RETRY_MAX_MS = 4000;
+  const DISTRIBUTION_STORAGE_PREFIX = 'phatthuoc_distribution_queue_v1_';
+  const distributionIntentStates = new Map();
+  let distributionBatchTimer = null;
+  let distributionBatchRunning = false;
+  let distributionRetryTimer = null;
+  /* ===== END PHÁT NHANH ===== */
+
+  /*
+   * Cửa sổ 0,5 giây để người lĩnh chạm lại và hủy thao tác nhầm
+   * trước khi yêu cầu được gửi lên server.
+   */
+  const CHECK_UNDO_WINDOW_MS = 500;
+  const checkIntentStates = new Map();
+  const checkServerQueue = [];
+  let checkQueueRunning = false;
+
+  const detailPrefetchPromises = new Map();
+  let detailPrefetchTimer = null;
+
+  let isFolderAutoLoad = false;
+  let folderImportSummary = null;
+
+  const FILE_PARSE_CONCURRENCY =
+    Math.max(
+      2,
+      Math.min(
+        4,
+        Number(
+          navigator.hardwareConcurrency ||
+          4
+        )
+      )
+    );
+
+  const HOSPITAL_DEPARTMENTS = [
+    'Khoa Cấp Cứu',
+    'Khoa Chẩn Đoán Hình Ảnh',
+    'Khoa Da Liễu',
+    'Khoa điều trị ngoại trú RHM',
+    'Khoa điều trị ngoại trú TMH',
+    'Khoa Hồi Sức Tích Cực & Chống Độc',
+    'Khoa Huyết Học Truyền Máu',
+    'Khoa Khám Bệnh',
+    'Khoa Mắt',
+    'Khoa Nội A',
+    'Khoa nội tiêu hóa',
+    'Khoa Nội Tim Mạch',
+    'Khoa Nội Tổng Hợp',
+    'Khoa Nội Thận Khớp',
+    'Khoa Ngoại Thận - Tiết niệu',
+    'Khoa Ngoại Thần Kinh',
+    'Khoa Nhi',
+    'Khoa Phẫu Thuật-GMHS',
+    'Khoa Phụ Sản',
+    'Khoa Răng Hàm Mặt',
+    'Khoa Tai Mũi Họng',
+    'Khoa Ung Bướu',
+    'Khoa Y Học Dân Tộc',
+    'Ngoại Chấn Thương',
+    'Ngoại Tổng Hợp',
+    'Phòng Can Thiệp Mạch',
+    'Phục Hồi Chức Năng',
+    'Tâm Thần Kinh',
+    'Thận Nhân Tạo',
+    'Truyền Nhiễm',
+    'Khoa Lão Học'
+  ];
+
+  let deferredInstallPrompt = null;
+  let oneSignalSdk = null;
+  let oneSignalConfig = null;
+  let oneSignalInitPromise = null;
+  let notificationOptions = null;
+  let notificationDeviceOptions = null;
+  let notificationDeviceSubscriptionId = '';
+
+  window.OneSignalDeferred =
+    window.OneSignalDeferred || [];
+
+  function forceHideLoading() {
+    const spinner =
+      document.getElementById('loadingSpinner');
+
+    if (spinner) {
+      spinner.style.display = 'none';
+    }
+
+    if (loadingWatchdogTimer) {
+      clearTimeout(loadingWatchdogTimer);
+      loadingWatchdogTimer = null;
+    }
+  }
+
+  function showLoading(
+    show,
+    text = "Đang xử lý..."
+  ) {
+    const spinner =
+      document.getElementById('loadingSpinner');
+
+    const loadingText =
+      document.getElementById('loadingText');
+
+    if (!spinner || !loadingText) return;
+
+    if (!show) {
+      forceHideLoading();
+      return;
+    }
+
+    loadingText.innerText = text;
+    spinner.style.display = 'flex';
+
+    if (loadingWatchdogTimer) {
+      clearTimeout(loadingWatchdogTimer);
+    }
+
+    /*
+     * Không để lớp phủ toàn màn hình bị kẹt vô hạn
+     * khi một callback mạng không trở về.
+     */
+    loadingWatchdogTimer = setTimeout(() => {
+      forceHideLoading();
+
+      console.warn(
+        'Đã tự đóng lớp tải do vượt quá 20 giây.'
+      );
+    }, 20000);
+  }
+  let appPopupResolver = null;
+
+  function openAppPopup(message, options = {}) {
+    return new Promise(resolve => {
+      if (appPopupResolver) {
+        appPopupResolver(false);
+        appPopupResolver = null;
+      }
+
+      const modal = document.getElementById('appPopupModal');
+      const title = document.getElementById('appPopupTitle');
+      const messageEl = document.getElementById('appPopupMessage');
+      const icon = document.getElementById('appPopupIcon');
+      const cancelBtn = document.getElementById('appPopupCancel');
+      const confirmBtn = document.getElementById('appPopupConfirm');
+
+      const type = options.type || 'info';
+      modal.classList.remove('popup-warning', 'popup-danger', 'popup-success');
+      if (type !== 'info') modal.classList.add('popup-' + type);
+
+      title.innerText = options.title || (options.showCancel ? 'Xác nhận' : 'Thông báo');
+      messageEl.innerText = String(message == null ? '' : message);
+      icon.innerText = options.icon || (type === 'danger' ? '⚠️' : (type === 'warning' ? '!' : (type === 'success' ? '✓' : 'ℹ️')));
+
+      cancelBtn.style.display = options.showCancel ? 'inline-block' : 'none';
+      cancelBtn.innerText = options.cancelText || 'Hủy';
+      confirmBtn.innerText = options.confirmText || (options.showCancel ? 'Đồng ý' : 'Đóng');
+      confirmBtn.className = options.confirmClass || (type === 'danger' ? 'btn-danger' : (type === 'success' ? 'btn-success' : 'btn-primary'));
+
+      appPopupResolver = resolve;
+      modal.style.display = 'flex';
+      setTimeout(() => confirmBtn.focus(), 50);
+    });
+  }
+
+  function closeAppPopup(result) {
+    const modal = document.getElementById('appPopupModal');
+    modal.style.display = 'none';
+    const resolve = appPopupResolver;
+    appPopupResolver = null;
+    if (resolve) resolve(Boolean(result));
+  }
+
+  function showMsg(msg, title = 'Thông báo', type = 'info') {
+    return openAppPopup(msg, {
+      title: title,
+      type: type,
+      showCancel: false,
+      confirmText: 'Đóng'
+    });
+  }
+
+  function showConfirm(msg, title = 'Xác nhận', options = {}) {
+    return openAppPopup(msg, {
+      title: title,
+      type: options.type || 'warning',
+      icon: options.icon,
+      showCancel: true,
+      confirmText: options.confirmText || 'Đồng ý',
+      cancelText: options.cancelText || 'Hủy',
+      confirmClass: options.confirmClass
+    });
+  }
+
+  document.addEventListener('keydown', function(event) {
+    const modal = document.getElementById('appPopupModal');
+    if (!modal || modal.style.display !== 'flex') return;
+    if (event.key === 'Escape') closeAppPopup(false);
+    if (event.key === 'Enter') closeAppPopup(true);
+  });
+
+  function formatVoucherColors(vArray) {
+    if (!vArray || vArray.length === 0) return "";
+    return vArray.map((str, index) => {
+      let color = V_COLORS[index % V_COLORS.length];
+      let cleanStr = str.replace(/^\[.*?\]\s*/, "");
+      return cleanStr.replace(/\((\d+)\)/, `(<b style="color:${color};">$1</b>)`);
+    }).join("; ");
+  }
+
+
+  window.addEventListener(
+    'beforeinstallprompt',
+    event => {
+      event.preventDefault();
+      deferredInstallPrompt = event;
+      updateInstallButton();
+    }
+  );
+
+  window.addEventListener(
+    'appinstalled',
+    () => {
+      deferredInstallPrompt = null;
+      updateInstallButton();
+    }
+  );
+
+
+  let modalPageScrollY = 0;
+  let modalPageIsLocked = false;
+  let modalScrollObserver = null;
+
+  function hasVisibleModal() {
+    return Array.from(
+      document.querySelectorAll(
+        '.modal-overlay'
+      )
+    ).some(modal => {
+      const style =
+        window.getComputedStyle(
+          modal
+        );
+
+      return (
+        style.display !== 'none' &&
+        style.visibility !== 'hidden'
+      );
+    });
+  }
+
+  function lockPageScrollForModal() {
+    if (modalPageIsLocked) {
+      return;
+    }
+
+    modalPageScrollY =
+      window.scrollY ||
+      window.pageYOffset ||
+      0;
+
+    document.documentElement
+      .classList.add(
+        'modal-page-locked'
+      );
+
+    document.body
+      .classList.add(
+        'modal-page-locked'
+      );
+
+    document.body.style.position =
+      'fixed';
+
+    document.body.style.top =
+      '-' +
+      modalPageScrollY +
+      'px';
+
+    document.body.style.left =
+      '0';
+
+    document.body.style.right =
+      '0';
+
+    document.body.style.width =
+      '100%';
+
+    modalPageIsLocked =
+      true;
+  }
+
+  function unlockPageScrollForModal() {
+    if (!modalPageIsLocked) {
+      return;
+    }
+
+    document.documentElement
+      .classList.remove(
+        'modal-page-locked'
+      );
+
+    document.body
+      .classList.remove(
+        'modal-page-locked'
+      );
+
+    document.body.style.position =
+      '';
+
+    document.body.style.top =
+      '';
+
+    document.body.style.left =
+      '';
+
+    document.body.style.right =
+      '';
+
+    document.body.style.width =
+      '';
+
+    window.scrollTo(
+      0,
+      modalPageScrollY
+    );
+
+    modalPageIsLocked =
+      false;
+  }
+
+  function syncModalPageScrollLock() {
+    if (hasVisibleModal()) {
+      lockPageScrollForModal();
+    } else {
+      unlockPageScrollForModal();
+    }
+  }
+
+  function initializeModalPageScrollLock() {
+    if (modalScrollObserver) {
+      return;
+    }
+
+    const modals =
+      Array.from(
+        document.querySelectorAll(
+          '.modal-overlay'
+        )
+      );
+
+    modalScrollObserver =
+      new MutationObserver(() => {
+        window.requestAnimationFrame(
+          syncModalPageScrollLock
+        );
+      });
+
+    modals.forEach(modal => {
+      modalScrollObserver.observe(
+        modal,
+        {
+          attributes: true,
+          attributeFilter: [
+            'style',
+            'class'
+          ]
+        }
+      );
+    });
+
+    document.addEventListener(
+      'touchmove',
+      event => {
+        const visibleModal =
+          modals.find(modal => {
+            const style =
+              window.getComputedStyle(
+                modal
+              );
+
+            return (
+              style.display !== 'none' &&
+              style.visibility !==
+                'hidden'
+            );
+          });
+
+        if (!visibleModal) {
+          return;
+        }
+
+        const modalContent =
+          event.target.closest(
+            '.modal-content'
+          );
+
+        if (
+          !modalContent ||
+          !visibleModal.contains(
+            modalContent
+          )
+        ) {
+          event.preventDefault();
+        }
+      },
+      {
+        passive: false
+      }
+    );
+
+    syncModalPageScrollLock();
+  }
+
+  function normalizeAutomaticNotificationTypeLabels() {
+    const expectedLabels = {
+      newNotifyReady: 'Phiếu sẵn sàng để phát',
+      newNotifyDone: 'Phiếu đã phát xong',
+      editNotifyReady: 'Phiếu sẵn sàng để phát',
+      editNotifyDone: 'Phiếu đã phát xong'
+    };
+
+    Object.entries(expectedLabels).forEach(([inputId, expectedText]) => {
+      const input = document.getElementById(inputId);
+      const row = input && input.closest('.automatic-notification-type-row');
+      if (!input || !row) return;
+
+      let label = row.querySelector('.automatic-notification-type-label');
+      if (!label) {
+        label = document.createElement('span');
+        label.className = 'automatic-notification-type-label';
+      }
+
+      label.textContent = expectedText;
+
+      Array.from(row.childNodes).forEach(node => {
+        if (node === input || node === label) return;
+
+        if (
+          node.nodeType === Node.TEXT_NODE ||
+          (
+            node.nodeType === Node.ELEMENT_NODE &&
+            node.classList &&
+            node.classList.contains('automatic-notification-type-label')
+          )
+        ) {
+          node.remove();
+        }
+      });
+
+      row.appendChild(label);
+    });
+  }
+
+  window.onload = function() {
+    initializeModalPageScrollLock();
+    normalizeAutomaticNotificationTypeLabels();
+    populateAccountNotificationDepartmentSelects();
+    initializeDepartmentSearchSelects();
+
+    registerPwaServiceWorker();
+    updateInstallButton();
+
+    const frame = getGasBridgeFrame();
+
+    if (frame && frame.src !== GAS_BRIDGE_URL) {
+      frame.src = GAS_BRIDGE_URL;
+    }
+
+    const usernameInput =
+      document.getElementById('loginUsername');
+
+    const passwordInput =
+      document.getElementById('loginPassword');
+
+    if (usernameInput) {
+      usernameInput.addEventListener(
+        'focus',
+        prewarmBackend,
+        { once: true }
+      );
+    }
+
+    if (passwordInput) {
+      passwordInput.addEventListener(
+        'focus',
+        prewarmBackend,
+        { once: true }
+      );
+
+      passwordInput.addEventListener(
+        'keydown',
+        event => {
+          if (event.key === 'Enter') {
+            handleLogin();
+          }
+        }
+      );
+    }
+
+    const persistedAuth =
+      readPersistedAuthSession();
+
+    let saved =
+      persistedAuth
+        ? JSON.stringify(
+            persistedAuth.user
+          )
+        : '';
+
+    let token =
+      persistedAuth
+        ? persistedAuth.token
+        : '';
+
+    detailSyncIntervalMs = Math.max(
+      500,
+      Number(
+        sessionStorage.getItem(
+          'detail_sync_interval_ms'
+        ) || 700
+      )
+    );
+
+    if (saved && token) {
+      try {
+        currentUser = JSON.parse(saved);
+
+        const localCards =
+          readVoucherCardsLocalCache();
+
+        if (localCards) {
+          cloudWaitList = localCards;
+          skipNextListReload = true;
+        }
+
+        initUI();
+      } catch (e) {
+        clearPersistedAuthSession();
+      }
+    }
+  }
+
+  document.addEventListener('click', function(event) {
+      ['active', 'history'].forEach(type => {
+          let sc = document.getElementById(type === 'history' ? 'scHistory' : 'scActive');
+          let inp = document.getElementById(type === 'history' ? 'searchHistoryKhoa' : 'searchKhoa');
+          if (sc && sc.classList.contains('active-search') && !sc.contains(event.target)) {
+              if (inp.value.trim() === '') {
+                  sc.classList.remove('active-search');
+                  updateSearchIcon(type, false);
+              }
+          }
+      });
+      let statusWrap = document.getElementById('statusFilterWrap');
+      if (statusWrap && !statusWrap.contains(event.target)) statusWrap.classList.remove('open');
+  });
+
+
+
+
+  function isAllDepartmentsValue(
+    value
+  ) {
+    const normalized =
+      String(value || '')
+        .trim()
+        .toLowerCase();
+
+    return (
+      normalized ===
+        'tất cả' ||
+      normalized ===
+        'tất cả các khoa'
+    );
+  }
+
+  function showManualNotificationOnMain(
+    title,
+    message,
+    department = ''
+  ) {
+    if (
+      !currentUser ||
+      !message
+    ) {
+      return Promise.resolve(
+        false
+      );
+    }
+
+    switchView(
+      'list'
+    );
+
+    const input =
+      document.getElementById(
+        'searchKhoa'
+      );
+
+    if (input) {
+      markVoucherDepartmentFilterInitialized(
+        'active'
+      );
+
+      if (
+        department &&
+        !isAllDepartmentsValue(
+          department
+        )
+      ) {
+        input.value =
+          department;
+
+        handleSearchInput(
+          'active'
+        );
+      } else if (
+        isAllDepartmentsValue(
+          department
+        )
+      ) {
+        input.value = '';
+
+        const select =
+          document.getElementById(
+            'filterKhoa'
+          );
+
+        if (select) {
+          select.value =
+            'Tất cả các khoa';
+
+          select.title =
+            'Tất cả các khoa';
+        }
+
+        updateSearchIcon(
+          'active',
+          false
+        );
+
+        renderTrackingList();
+      }
+    }
+
+    return openAppPopup(
+      message,
+      {
+        title:
+          title ||
+          'Thông báo từ Khoa Dược',
+        type:
+          'warning',
+        icon:
+          '🔔',
+        showCancel:
+          false,
+        confirmText:
+          'Đóng tin nhắn',
+        confirmClass:
+          'btn-primary'
+      }
+    );
+  }
+
+  function extractOneSignalNotificationData(
+    event
+  ) {
+    let notification = null;
+
+    if (
+      event &&
+      event.notification
+    ) {
+      notification =
+        event.notification;
+    } else if (
+      event &&
+      typeof event.getNotification ===
+        'function'
+    ) {
+      try {
+        notification =
+          event.getNotification();
+      } catch (error) {
+        notification = null;
+      }
+    }
+
+    notification =
+      notification || {};
+
+    const additionalData =
+      notification.additionalData ||
+      notification.data ||
+      (
+        notification.rawPayload &&
+        notification.rawPayload
+          .additionalData
+      ) ||
+      {};
+
+    return {
+      type:
+        String(
+          additionalData.type ||
+          ''
+        ).trim(),
+      department:
+        String(
+          additionalData.khoa ||
+          ''
+        ).trim(),
+      title:
+        String(
+          additionalData
+            .notificationTitle ||
+          notification.title ||
+          ''
+        ).trim(),
+      message:
+        String(
+          additionalData
+            .notificationMessage ||
+          notification.body ||
+          notification.message ||
+          ''
+        ).trim(),
+      notificationId:
+        String(
+          additionalData
+            .notificationId ||
+          notification.notificationId ||
+          notification.id ||
+          ''
+        ).trim(),
+      voucherId:
+        String(
+          additionalData
+            .voucherId ||
+          ''
+        ).trim()
+    };
+  }
+
+  async function showAutomaticVoucherNotification(
+    payload
+  ) {
+    if (
+      !payload ||
+      !payload.voucherId ||
+      !payload.message ||
+      !currentUser
+    ) {
+      return false;
+    }
+
+    const voucherCard =
+      cloudWaitList[
+        payload.voucherId
+      ];
+
+    const fallbackState =
+      payload.type ===
+        'voucher_ready'
+        ? 'waiting'
+        : 'done';
+
+    await openDetail(
+      payload.voucherId,
+      voucherCard
+        ? voucherCard.state
+        : fallbackState
+    );
+
+    const detailView =
+      document.getElementById(
+        'view-detail'
+      );
+
+    const detailOpened =
+      activeVoucherId ===
+        payload.voucherId &&
+      detailView &&
+      detailView.style.display ===
+        'block';
+
+    if (!detailOpened) {
+      return false;
+    }
+
+    const ready =
+      payload.type ===
+        'voucher_ready';
+
+    await openAppPopup(
+      payload.message,
+      {
+        title:
+          payload.title ||
+          (
+            ready
+              ? 'Phiếu sẵn sàng để phát'
+              : 'Thông báo đã phát xong'
+          ),
+        type:
+          ready
+            ? 'warning'
+            : 'success',
+        icon:
+          ready
+            ? '📦'
+            : '🔔',
+        showCancel:
+          false,
+        confirmText:
+          'Đóng tin nhắn',
+        confirmClass:
+          ready
+            ? 'btn-warning'
+            : 'btn-success'
+      }
+    );
+
+    return true;
+  }
+
+  function handleOneSignalForegroundNotification(
+    event
+  ) {
+    const payload =
+      extractOneSignalNotificationData(
+        event
+      );
+
+    if (
+      !payload.message ||
+      !currentUser ||
+      document.visibilityState !==
+        'visible'
+    ) {
+      return;
+    }
+
+    if (
+      payload.type === 'manual'
+    ) {
+      window.setTimeout(
+        () => {
+          showManualNotificationOnMain(
+            payload.title,
+            payload.message,
+            payload.department
+          );
+        },
+        0
+      );
+
+      return;
+    }
+
+    if (
+      payload.type ===
+        'voucher_ready' ||
+      payload.type ===
+        'warehouse_done'
+    ) {
+      window.setTimeout(
+        () => {
+          showAutomaticVoucherNotification(
+            payload
+          );
+        },
+        0
+      );
+    }
+  }
+
+  function applyNotificationDeepLink() {
+    const params =
+      new URLSearchParams(
+        window.location.search
+      );
+
+    const voucherId =
+      String(
+        params.get('voucherId') ||
+        params.get('voucher') ||
+        ''
+      ).trim();
+
+    const khoa =
+      String(
+        params.get('khoa') || ''
+      ).trim();
+
+    const requestedView =
+      String(
+        params.get('view') || ''
+      ).trim();
+
+    const notificationType =
+      String(
+        params.get(
+          'notificationType'
+        ) || ''
+      ).trim();
+
+    const notificationTitle =
+      String(
+        params.get(
+          'notificationTitle'
+        ) || ''
+      ).trim();
+
+    const notificationMessage =
+      String(
+        params.get(
+          'notificationMessage'
+        ) || ''
+      ).trim();
+
+    const notificationId =
+      String(
+        params.get(
+          'notificationId'
+        ) || ''
+      ).trim();
+
+    const clearDeepLink = () => {
+      try {
+        window.history.replaceState(
+          {},
+          document.title,
+          window.location.pathname
+        );
+      } catch (error) {
+        // Không ảnh hưởng chức năng chính.
+      }
+    };
+
+    if (voucherId) {
+      setTimeout(async () => {
+        const voucherCard =
+          cloudWaitList[voucherId];
+
+        try {
+          await openDetail(
+            voucherId,
+            voucherCard
+              ? voucherCard.state
+              : (
+                  notificationType ===
+                    'voucher_ready'
+                    ? 'waiting'
+                    : 'done'
+                )
+          );
+
+          const detailView =
+            document.getElementById(
+              'view-detail'
+            );
+
+          const detailOpened =
+            activeVoucherId ===
+              voucherId &&
+            detailView &&
+            detailView.style.display ===
+              'block';
+
+          if (
+            detailOpened &&
+            (
+              notificationType ===
+                'warehouse_done' ||
+              notificationType ===
+                'voucher_ready'
+            ) &&
+            notificationMessage
+          ) {
+            const ready =
+              notificationType ===
+                'voucher_ready';
+
+            await openAppPopup(
+              notificationMessage,
+              {
+                title:
+                  notificationTitle ||
+                  (
+                    ready
+                      ? 'Phiếu sẵn sàng để phát'
+                      : 'Thông báo đã phát xong'
+                  ),
+                type:
+                  ready
+                    ? 'warning'
+                    : 'success',
+                icon:
+                  ready
+                    ? '📦'
+                    : '🔔',
+                showCancel:
+                  false,
+                confirmText:
+                  'Đóng tin nhắn',
+                confirmClass:
+                  ready
+                    ? 'btn-warning'
+                    : 'btn-success'
+              }
+            );
+          }
+        } finally {
+          clearDeepLink();
+        }
+      }, 180);
+
+      return;
+    }
+
+    if (
+      notificationType ===
+        'manual' &&
+      notificationMessage
+    ) {
+      setTimeout(async () => {
+        try {
+          await showManualNotificationOnMain(
+            notificationTitle,
+            notificationMessage,
+            khoa
+          );
+        } finally {
+          clearDeepLink();
+        }
+      }, 150);
+
+      return;
+    }
+
+    if (!khoa) return;
+
+    setTimeout(() => {
+      const isHistory =
+        requestedView === 'history';
+
+      switchView(
+        isHistory
+          ? 'history'
+          : 'list'
+      );
+
+      const input =
+        document.getElementById(
+          isHistory
+            ? 'searchHistoryKhoa'
+            : 'searchKhoa'
+        );
+
+      if (input) {
+        input.value = khoa;
+
+        handleSearchInput(
+          isHistory
+            ? 'history'
+            : 'active'
+        );
+      }
+
+      clearDeepLink();
+    }, 150);
+  }
+
+  function isIosDevice() {
+    return /iphone|ipad|ipod/i.test(
+      navigator.userAgent || ''
+    );
+  }
+
+  function isStandaloneApp() {
+    return (
+      window.matchMedia &&
+      window.matchMedia(
+        '(display-mode: standalone)'
+      ).matches
+    ) || Boolean(navigator.standalone);
+  }
+
+  async function registerPwaServiceWorker() {
+    if (
+      !('serviceWorker' in navigator)
+    ) {
+      return;
+    }
+
+    try {
+      await navigator
+        .serviceWorker
+        .register(
+          '/sw.js',
+          { scope: '/' }
+        );
+    } catch (error) {
+      console.warn(
+        'Không đăng ký được PWA service worker:',
+        error
+      );
+    }
+  }
+
+  function updateInstallButton() {
+    const button =
+      document.getElementById(
+        'btnInstallApp'
+      );
+
+    if (!button) return;
+
+    button.style.display =
+      !isStandaloneApp() &&
+      (
+        Boolean(
+          deferredInstallPrompt
+        ) ||
+        isIosDevice()
+      )
+        ? 'inline-block'
+        : 'none';
+  }
+
+  async function installWebApp() {
+    if (deferredInstallPrompt) {
+      deferredInstallPrompt.prompt();
+
+      try {
+        await deferredInstallPrompt
+          .userChoice;
+      } finally {
+        deferredInstallPrompt = null;
+        updateInstallButton();
+      }
+
+      return;
+    }
+
+    const help =
+      document.getElementById(
+        'installHelpText'
+      );
+
+    if (isIosDevice()) {
+      help.innerHTML =
+        'Trên iPhone/iPad:<br>' +
+        '1. Mở trang bằng Safari.<br>' +
+        '2. Bấm nút Chia sẻ.<br>' +
+        '3. Chọn <b>Thêm vào Màn hình chính</b>.<br>' +
+        '4. Mở ứng dụng từ icon mới.';
+    } else {
+      help.innerHTML =
+        'Mở menu trình duyệt và chọn ' +
+        '<b>Cài đặt ứng dụng</b> hoặc ' +
+        '<b>Thêm vào màn hình chính</b>.';
+    }
+
+    document
+      .getElementById(
+        'installHelpModal'
+      )
+      .style.display = 'flex';
+  }
+
+
+  async function syncOneSignalCurrentUser(sdk) {
+    if (
+      !sdk ||
+      !currentUser ||
+      !currentUser.username
+    ) {
+      return;
+    }
+
+    await sdk.login(
+      String(
+        currentUser.username
+      ).toLowerCase()
+    );
+
+    sdk.User.addTags({
+      role:
+        currentUser.role || '',
+      warehouse_keys:
+        currentUser.kho || ''
+    });
+  }
+
+  async function ensureOneSignalInitialized() {
+    if (oneSignalSdk) {
+      await syncOneSignalCurrentUser(
+        oneSignalSdk
+      );
+
+      await syncSavedDeviceNotificationRegistration(
+        oneSignalSdk
+      );
+
+      return oneSignalSdk;
+    }
+
+    if (oneSignalInitPromise) {
+      return oneSignalInitPromise;
+    }
+
+    oneSignalInitPromise =
+      (async () => {
+        oneSignalConfig =
+          await gasCall(
+            'getNotificationConfigServer',
+            []
+          );
+
+        if (
+          !oneSignalConfig ||
+          !oneSignalConfig.enabled ||
+          !oneSignalConfig.appId
+        ) {
+          throw new Error(
+            'OneSignal chưa được cấu hình trên máy chủ.'
+          );
+        }
+
+        return new Promise(
+          (resolve, reject) => {
+            const timeout =
+              setTimeout(
+                () => {
+                  reject(
+                    new Error(
+                      'Không tải được OneSignal SDK.'
+                    )
+                  );
+                },
+                12000
+              );
+
+            window.OneSignalDeferred.push(
+              async function(OneSignal) {
+                try {
+                  await OneSignal.init({
+                    appId:
+                      oneSignalConfig.appId,
+                    serviceWorkerPath:
+                      'push/onesignal/OneSignalSDKWorker.js',
+                    serviceWorkerParam: {
+                      scope:
+                        '/push/onesignal/'
+                    },
+                    notifyButton: {
+                      enable: false
+                    },
+                    autoResubscribe: true
+                  });
+
+                  oneSignalSdk =
+                    OneSignal;
+
+                  await syncOneSignalCurrentUser(
+                    OneSignal
+                  );
+
+                  OneSignal.User
+                    .PushSubscription
+                    .addEventListener(
+                      'change',
+                      handlePushSubscriptionChange
+                    );
+
+                  OneSignal.Notifications
+                    .addEventListener(
+                      'permissionChange',
+                      updatePushNotificationButton
+                    );
+
+                  OneSignal.Notifications
+                    .addEventListener(
+                      'foregroundWillDisplay',
+                      handleOneSignalForegroundNotification
+                    );
+
+                  clearTimeout(timeout);
+                  updatePushNotificationButton();
+
+                  await syncSavedDeviceNotificationRegistration(
+                    OneSignal
+                  );
+
+                  resolve(OneSignal);
+                } catch (error) {
+                  clearTimeout(timeout);
+                  reject(error);
+                }
+              }
+            );
+          }
+        );
+      })();
+
+    try {
+      return await oneSignalInitPromise;
+    } catch (error) {
+      oneSignalInitPromise = null;
+      throw error;
+    }
+  }
+
+
+  function getNotificationDeviceId() {
+    const key =
+      'phatthuoc_notification_device_id';
+
+    let deviceId =
+      localStorage.getItem(key);
+
+    if (deviceId) {
+      return deviceId;
+    }
+
+    if (
+      window.crypto &&
+      typeof window.crypto.randomUUID ===
+        'function'
+    ) {
+      deviceId =
+        window.crypto.randomUUID();
+    } else {
+      deviceId =
+        'dev_' +
+        Date.now().toString(36) +
+        '_' +
+        Math.random()
+          .toString(36)
+          .slice(2, 14);
+    }
+
+    localStorage.setItem(
+      key,
+      deviceId
+    );
+
+    return deviceId;
+  }
+
+      async function waitForPushSubscriptionId(
+    sdk,
+    timeoutMs = 12000
+  ) {
+    const startedAt =
+      Date.now();
+
+    while (
+      Date.now() - startedAt <
+      timeoutMs
+    ) {
+      const id =
+        sdk &&
+        sdk.User &&
+        sdk.User.PushSubscription
+          ? sdk.User
+              .PushSubscription
+              .id
+          : '';
+
+      if (id) {
+        return String(id);
+      }
+
+      await new Promise(resolve =>
+        setTimeout(resolve, 150)
+      );
+    }
+
+    throw new Error(
+      'OneSignal chưa cấp mã thiết bị. Vui lòng thử lại sau vài giây.'
+    );
+  }
+
+  async function registerCurrentNotificationDevice(
+    sdk
+  ) {
+    const subscriptionId =
+      await waitForPushSubscriptionId(
+        sdk
+      );
+
+    const result =
+      await gasCall(
+        'registerNotificationDeviceServer',
+        [{
+          deviceId:
+            getNotificationDeviceId(),
+          subscriptionId:
+            subscriptionId,
+          platform:
+            navigator.platform || '',
+          userAgent:
+            navigator.userAgent || ''
+        }]
+      );
+
+    if (
+      !result ||
+      result.success === false
+    ) {
+      throw new Error(
+        result && result.msg
+          ? result.msg
+          : (
+              'Không đăng ký được thiết bị với tài khoản.'
+            )
+      );
+    }
+
+    notificationDeviceSubscriptionId =
+      subscriptionId;
+
+    applyCurrentUserNotificationDepartments(
+      result.khoaList || []
+    );
+
+    updatePushNotificationButton();
+
+    return result;
+  }
+
+  async function syncSavedDeviceNotificationRegistration(
+    sdk
+  ) {
+    if (
+      !sdk ||
+      !sdk.Notifications.permission ||
+      !sdk.User.PushSubscription
+        .optedIn
+    ) {
+      updatePushNotificationButton();
+      return;
+    }
+
+    try {
+      await registerCurrentNotificationDevice(
+        sdk
+      );
+    } catch (error) {
+      console.warn(
+        'Không đồng bộ được thiết bị với tài khoản:',
+        error.message || String(error)
+      );
+    }
+  }
+
+  async function handlePushSubscriptionChange(
+    event
+  ) {
+    updatePushNotificationButton();
+
+    const currentId =
+      event &&
+      event.current &&
+      event.current.id
+        ? String(
+            event.current.id
+          )
+        : '';
+
+    if (currentId) {
+      notificationDeviceSubscriptionId =
+        currentId;
+    }
+
+    if (oneSignalSdk) {
+      await syncSavedDeviceNotificationRegistration(
+        oneSignalSdk
+      );
+    }
+  }
+
+  function closeDeviceNotificationModal() {
+    document
+      .getElementById(
+        'notificationDeviceModal'
+      )
+      .style.display = 'none';
+  }
+
+      async function openDeviceNotificationModal(
+    subscriptionId
+  ) {
+    const sdk =
+      oneSignalSdk ||
+      await ensureOneSignalInitialized();
+
+    const resolvedSubscriptionId =
+      subscriptionId ||
+      sdk.User.PushSubscription.id ||
+      notificationDeviceSubscriptionId ||
+      '';
+
+    notificationDeviceSubscriptionId =
+      resolvedSubscriptionId;
+
+    const localDepartments =
+      currentUser &&
+      Array.isArray(
+        currentUser.notifyDepartments
+      )
+        ? currentUser.notifyDepartments
+        : [];
+
+    applyCurrentUserNotificationDepartments(
+      localDepartments
+    );
+
+    document
+      .getElementById(
+        'deviceNotifyAccount'
+      )
+      .innerText =
+        (
+          currentUser.fullName ||
+          currentUser.username
+        ) +
+        ' (' +
+        currentUser.username +
+        ')';
+
+    document
+      .getElementById(
+        'deviceNotifyAccountKhoa'
+      )
+      .innerText =
+        localDepartments.length
+          ? localDepartments.join(', ')
+          : 'Chưa được Admin gán khoa';
+
+    const pushEnabled =
+      Boolean(
+        sdk.Notifications.permission &&
+        sdk.User.PushSubscription
+          .optedIn
+      );
+
+    document
+      .getElementById(
+        'deviceNotifyStatus'
+      )
+      .innerText =
+        pushEnabled
+          ? 'Đang bật nhận thông báo'
+          : 'Chưa bật nhận thông báo';
+
+    document
+      .getElementById(
+        'notificationDeviceModal'
+      )
+      .style.display = 'flex';
+
+    gasCall(
+      'getNotificationSubscriptionOptionsServer',
+      [{
+        deviceId:
+          getNotificationDeviceId(),
+        subscriptionId:
+          resolvedSubscriptionId
+      }]
+    )
+      .then(result => {
+        if (
+          !result ||
+          result.success === false
+        ) {
+          return;
+        }
+
+        notificationDeviceOptions =
+          result;
+
+        const accountDepartments =
+          result.accountDepartments || [];
+
+        applyCurrentUserNotificationDepartments(
+          accountDepartments
+        );
+
+        document
+          .getElementById(
+            'deviceNotifyAccountKhoa'
+          )
+          .innerText =
+          accountDepartments.length
+            ? accountDepartments.join(', ')
+            : 'Chưa được Admin gán khoa';
+      })
+      .catch(error => {
+        console.warn(
+          'Không làm mới được trạng thái thông báo:',
+          error.message || String(error)
+        );
+      });
+  }
+
+  async function saveDeviceNotificationRegistration() {
+    try {
+      showLoading(
+        true,
+        'Đang đồng bộ thiết bị...'
+      );
+
+      const sdk =
+        await ensureOneSignalInitialized();
+
+      if (
+        !sdk.Notifications.permission
+      ) {
+        await sdk.Notifications
+          .requestPermission();
+      }
+
+      if (
+        !sdk.Notifications.permission
+      ) {
+        throw new Error(
+          'Bạn chưa cho phép trình duyệt gửi thông báo.'
+        );
+      }
+
+      if (
+        !sdk.User.PushSubscription
+          .optedIn
+      ) {
+        await sdk.User
+          .PushSubscription
+          .optIn();
+      }
+
+      await syncOneSignalCurrentUser(
+        sdk
+      );
+
+      const result =
+        await registerCurrentNotificationDevice(
+          sdk
+        );
+
+      showLoading(false);
+
+      await openDeviceNotificationModal(
+        result.subscriptionId
+      );
+
+    } catch (error) {
+      showLoading(false);
+
+      await showMsg(
+        error.message || String(error),
+        'Không đồng bộ được thiết bị',
+        'danger'
+      );
+    }
+  }
+
+  async function disableDeviceNotifications() {
+    const ok =
+      await showConfirm(
+        'Tắt thông báo trên thiết bị này? Các thiết bị khác đăng nhập cùng tài khoản vẫn tiếp tục nhận.',
+        'Tắt thông báo',
+        {
+          type: 'warning',
+          confirmText:
+            'Tắt trên thiết bị'
+        }
+      );
+
+    if (!ok) return;
+
+    try {
+      showLoading(
+        true,
+        'Đang tắt thông báo...'
+      );
+
+      const sdk =
+        await ensureOneSignalInitialized();
+
+      const subscriptionId =
+        sdk.User.PushSubscription.id ||
+        notificationDeviceSubscriptionId;
+
+      await gasCall(
+        'disableNotificationDeviceServer',
+        [{
+          deviceId:
+            getNotificationDeviceId(),
+          subscriptionId:
+            subscriptionId || ''
+        }]
+      );
+
+      if (
+        sdk.User.PushSubscription
+          .optedIn
+      ) {
+        await sdk.User
+          .PushSubscription
+          .optOut();
+      }
+
+      notificationDeviceSubscriptionId =
+        '';
+
+      updatePushNotificationButton();
+      closeDeviceNotificationModal();
+      showLoading(false);
+
+      await showMsg(
+        'Đã tắt thông báo trên thiết bị này. Cấu hình khoa của tài khoản vẫn được giữ nguyên.',
+        'Đã tắt thông báo',
+        'success'
+      );
+    } catch (error) {
+      showLoading(false);
+
+      await showMsg(
+        error.message || String(error),
+        'Không tắt được thông báo',
+        'danger'
+      );
+    }
+  }
+
+  function updatePushNotificationButton() {
+    const button =
+      document.getElementById(
+        'btnPushSubscribe'
+      );
+
+    if (!button) return;
+
+    const departments =
+      currentUser &&
+      Array.isArray(
+        currentUser.notifyDepartments
+      )
+        ? currentUser.notifyDepartments
+        : [];
+
+    const sdk =
+      oneSignalSdk;
+
+    const pushEnabled =
+      Boolean(
+        sdk &&
+        sdk.Notifications.permission &&
+        sdk.User.PushSubscription
+          .optedIn
+      );
+
+    if (!departments.length) {
+      button.innerText =
+        '🔔 Chưa gán khoa';
+
+      button.title =
+        'Admin cần gán khoa nhận thông báo cho tài khoản này.';
+
+      button.classList.remove(
+        'notification-button-active'
+      );
+
+      button.classList.add(
+        'notification-button-muted'
+      );
+
+      return;
+    }
+
+    if (pushEnabled) {
+      const hasAll =
+        departments.some(
+          item =>
+            String(item).trim() ===
+            'Tất cả các khoa'
+        );
+
+      const label =
+        hasAll
+          ? 'Tất cả các khoa'
+          : (
+              departments.length === 1
+                ? departments[0]
+                : departments.length +
+                  ' khoa'
+            );
+
+      button.innerText =
+        '🔔 ' + label;
+
+      button.title =
+        'Đang bật thông báo cho: ' +
+        departments.join(', ');
+    } else {
+      button.innerText =
+        '🔕 Bật thông báo';
+
+      button.title =
+        'Bật thông báo trên thiết bị này cho: ' +
+        departments.join(', ');
+    }
+
+    button.classList.toggle(
+      'notification-button-active',
+      pushEnabled
+    );
+
+    button.classList.toggle(
+      'notification-button-muted',
+      !pushEnabled
+    );
+  }
+
+  async function enablePushNotifications() {
+    try {
+      const departments =
+        currentUser &&
+        Array.isArray(
+          currentUser.notifyDepartments
+        )
+          ? currentUser.notifyDepartments
+          : [];
+
+      if (!departments.length) {
+        await showMsg(
+          'Tài khoản chưa được Admin gán khoa nhận thông báo.',
+          'Chưa cấu hình khoa',
+          'warning'
+        );
+
+        return;
+      }
+
+      const sdk =
+        await ensureOneSignalInitialized();
+
+      if (
+        !sdk.Notifications
+          .isPushSupported()
+      ) {
+        throw new Error(
+          'Trình duyệt này không hỗ trợ thông báo web.'
+        );
+      }
+
+      if (
+        isIosDevice() &&
+        !isStandaloneApp()
+      ) {
+        await showMsg(
+          'Trên iPhone/iPad, hãy cài ứng dụng vào Màn hình chính trước, sau đó mở ứng dụng và bật thông báo.',
+          'Cần cài ứng dụng',
+          'warning'
+        );
+
+        installWebApp();
+        return;
+      }
+
+      await syncOneSignalCurrentUser(
+        sdk
+      );
+
+      const alreadyEnabled =
+        Boolean(
+          sdk.Notifications.permission &&
+          sdk.User.PushSubscription
+            .optedIn
+        );
+
+      if (!alreadyEnabled) {
+        if (
+          !sdk.Notifications.permission
+        ) {
+          await sdk.Notifications
+            .requestPermission();
+        }
+
+        if (
+          !sdk.Notifications.permission
+        ) {
+          throw new Error(
+            'Bạn chưa cho phép trình duyệt gửi thông báo.'
+          );
+        }
+
+        if (
+          !sdk.User.PushSubscription
+            .optedIn
+        ) {
+          await sdk.User
+            .PushSubscription
+            .optIn();
+        }
+
+        const result =
+          await registerCurrentNotificationDevice(
+            sdk
+          );
+
+      }
+
+      notificationDeviceSubscriptionId =
+        sdk.User.PushSubscription.id ||
+        notificationDeviceSubscriptionId;
+
+      updatePushNotificationButton();
+
+      await openDeviceNotificationModal(
+        notificationDeviceSubscriptionId
+      );
+    } catch (error) {
+      await showMsg(
+        error.message || String(error),
+        'Không bật được thông báo',
+        'warning'
+      );
+    }
+  }
+
+  async function logoutOneSignalUser() {
+    try {
+      if (oneSignalSdk) {
+        await oneSignalSdk.logout();
+      }
+    } catch (error) {
+      console.warn(
+        'Không thể logout OneSignal:',
+        error
+      );
+    }
+  }
+
+  function notificationPrefixByKey(key) {
+    const map = {
+      Tiem_Vien:
+        'Kho Tiêm Viên xin thông báo:',
+      Dich_Truyen:
+        'Kho Dịch Truyền xin thông báo:',
+      Vat_Tu:
+        'Kho Vật tư - Hóa chất xin thông báo:',
+      Khac:
+        'Kho Khác xin thông báo:',
+      General:
+        'Khoa Dược xin thông báo:'
+    };
+
+    return (
+      map[key] ||
+      'Khoa Dược xin thông báo:'
+    );
+  }
+
+  function escapeHtmlText(value) {
+    return String(value || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
+  function escapeHtmlValue(value) {
+    return escapeHtmlText(value);
+  }
+
+  function getSelectedNotificationWarehouseLabel() {
+    const select =
+      document.getElementById(
+        'notifyWarehouse'
+      );
+
+    if (!select) {
+      return '';
+    }
+
+    if (
+      select.value === 'Khac'
+    ) {
+      return String(
+        document
+          .getElementById(
+            'notifyCustomWarehouseName'
+          )
+          .value || ''
+      ).trim();
+    }
+
+    const option =
+      select.options[
+        select.selectedIndex
+      ];
+
+    return option
+      ? String(
+          option.text || ''
+        ).trim()
+      : '';
+  }
+
+  function getNotificationPrefixText() {
+    const warehouseKey =
+      document
+        .getElementById(
+          'notifyWarehouse'
+        )
+        .value;
+
+    const customWarehouseName =
+      String(
+        document
+          .getElementById(
+            'notifyCustomWarehouseName'
+          )
+          .value || ''
+      ).trim();
+
+    if (
+      warehouseKey === 'Khac' &&
+      customWarehouseName
+    ) {
+      return (
+        customWarehouseName +
+        ' xin thông báo:'
+      );
+    }
+
+    return notificationPrefixByKey(
+      warehouseKey
+    );
+  }
+
+  function handleNotificationWarehouseChange() {
+    const warehouseKey =
+      document
+        .getElementById(
+          'notifyWarehouse'
+        )
+        .value;
+
+    const customLabel =
+      document.getElementById(
+        'notifyCustomWarehouseLabel'
+      );
+
+    const customInput =
+      document.getElementById(
+        'notifyCustomWarehouseName'
+      );
+
+    const visible =
+      warehouseKey === 'Khac';
+
+    customLabel.style.display =
+      visible
+        ? 'block'
+        : 'none';
+
+    customInput.style.display =
+      visible
+        ? 'block'
+        : 'none';
+
+    if (!visible) {
+      customInput.value = '';
+    }
+
+    updateNotificationPreview();
+  }
+
+  function setNotificationModalBusy(isBusy) {
+    [
+      'notifyTargetKhoa',
+      'notifyWarehouse',
+      'notifyCustomWarehouseName',
+      'notifyMessage',
+      'btnManualNotifySend',
+      'btnManualNotifyCancel'
+    ].forEach(id => {
+      const node =
+        document.getElementById(
+          id
+        );
+
+      if (
+        node &&
+        !(
+          id ===
+            'notifyCustomWarehouseName' &&
+          node.style.display ===
+            'none'
+        )
+      ) {
+        node.disabled =
+          Boolean(isBusy);
+      }
+    });
+
+    refreshDepartmentSearchSelect(
+      'notifyTargetKhoa'
+    );
+  }
+
+  function fillNotificationModalOptions() {
+    const khoaSelect =
+      document.getElementById(
+        'notifyTargetKhoa'
+      );
+
+    const warehouseSelect =
+      document.getElementById(
+        'notifyWarehouse'
+      );
+
+    khoaSelect.innerHTML =
+      '<option value="">-- Chọn khoa nhận --</option>' +
+      '<option value="Tất cả các khoa">Tất cả các khoa</option>' +
+      (
+        notificationOptions
+          .departments || []
+      )
+        .map(khoa =>
+          `<option value="${escapeHtmlValue(khoa)}">${escapeHtmlText(khoa)}</option>`
+        )
+        .join('');
+
+    warehouseSelect.innerHTML =
+      (
+        notificationOptions
+          .warehouses || []
+      )
+        .map(item =>
+          `<option value="${escapeHtmlValue(item.key)}">${escapeHtmlText(item.name)}</option>`
+        )
+        .join('');
+
+    warehouseSelect.disabled =
+      (
+        notificationOptions
+          .warehouses || []
+      ).length <= 1;
+
+    refreshDepartmentSearchSelect(
+      'notifyTargetKhoa'
+    );
+
+    handleNotificationWarehouseChange();
+    setNotificationModalBusy(false);
+  }
+
+  async function openNotificationModal() {
+    const modal =
+      document.getElementById(
+        'notificationSendModal'
+      );
+
+    modal.style.display = 'flex';
+
+    document
+      .getElementById(
+        'notifyMessage'
+      )
+      .value = '';
+
+    document
+      .getElementById(
+        'notifyCustomWarehouseName'
+      )
+      .value = '';
+
+    if (
+      notificationOptions &&
+      notificationOptions.success !== false &&
+      notificationOptions.enabled
+    ) {
+      fillNotificationModalOptions();
+      updateNotificationPreview();
+      return;
+    }
+
+    setNotificationModalBusy(true);
+
+    document
+      .getElementById(
+        'notifyTargetKhoa'
+      )
+      .innerHTML =
+      '<option value="">Đang tải danh sách khoa...</option>';
+
+    document
+      .getElementById(
+        'notifyWarehouse'
+      )
+      .innerHTML =
+      '<option value="">Đang tải danh sách kho...</option>';
+
+    document
+      .getElementById(
+        'notificationPreview'
+      )
+      .innerText =
+      'Đang tải cấu hình thông báo...';
+
+    try {
+      notificationOptions =
+        await gasCall(
+          'getNotificationOptionsServer',
+          []
+        );
+
+      if (
+        !notificationOptions ||
+        notificationOptions.success === false
+      ) {
+        throw new Error(
+          notificationOptions &&
+          notificationOptions.msg
+            ? notificationOptions.msg
+            : (
+                'Không tải được cấu hình thông báo.'
+              )
+        );
+      }
+
+      if (!notificationOptions.enabled) {
+        throw new Error(
+          'OneSignal chưa được cấu hình đầy đủ trên Apps Script.'
+        );
+      }
+
+      fillNotificationModalOptions();
+      updateNotificationPreview();
+    } catch (error) {
+      closeNotificationModal();
+
+      await showMsg(
+        error.message || String(error),
+        'Không mở được gửi thông báo',
+        'warning'
+      );
+    }
+  }
+
+  function closeNotificationModal() {
+    document
+      .getElementById(
+        'notificationSendModal'
+      )
+      .style.display = 'none';
+  }
+
+  function updateNotificationPreview() {
+    const message =
+      document
+        .getElementById(
+          'notifyMessage'
+        )
+        .value
+        .trim();
+
+    const prefixText =
+      getNotificationPrefixText();
+
+    document
+      .getElementById(
+        'notificationPreview'
+      )
+      .innerText =
+        prefixText +
+        (
+          message
+            ? ' ' + message
+            : ' ...'
+        );
+  }
+
+  async function sendManualNotification() {
+    const khoa =
+      document
+        .getElementById(
+          'notifyTargetKhoa'
+        )
+        .value;
+
+    const warehouseKey =
+      document
+        .getElementById(
+          'notifyWarehouse'
+        )
+        .value;
+
+    const customWarehouseName =
+      String(
+        document
+          .getElementById(
+            'notifyCustomWarehouseName'
+          )
+          .value || ''
+      ).trim();
+
+    const message =
+      document
+        .getElementById(
+          'notifyMessage'
+        )
+        .value
+        .trim();
+
+    if (!khoa) {
+      return showMsg(
+        'Vui lòng chọn khoa nhận thông báo.',
+        'Thiếu khoa nhận',
+        'warning'
+      );
+    }
+
+    if (
+      warehouseKey === 'Khac' &&
+      !customWarehouseName
+    ) {
+      return showMsg(
+        'Vui lòng nhập tên kho gửi.',
+        'Thiếu kho gửi',
+        'warning'
+      );
+    }
+
+    if (!message) {
+      return showMsg(
+        'Vui lòng nhập nội dung thông báo.',
+        'Thiếu nội dung',
+        'warning'
+      );
+    }
+
+    const previewText =
+      getNotificationPrefixText() +
+      ' ' +
+      message;
+
+    const ok =
+      await showConfirm(
+        'Gửi thông báo sau đến ' +
+        khoa +
+        '?\n\n' +
+        previewText,
+        'Xác nhận gửi thông báo',
+        {
+          type: 'warning',
+          confirmText:
+            'Gửi thông báo'
+        }
+      );
+
+    if (!ok) return;
+
+    try {
+      setNotificationModalBusy(true);
+
+      const result =
+        await gasCall(
+          'sendManualNotificationServer',
+          [{
+            khoa:
+              khoa,
+            warehouseKey:
+              warehouseKey,
+            customWarehouseName:
+              customWarehouseName,
+            message:
+              message
+          }]
+        );
+
+      setNotificationModalBusy(false);
+
+      if (
+        !result ||
+        result.success === false
+      ) {
+        throw new Error(
+          result && result.msg
+            ? result.msg
+            : (
+                'Không gửi được thông báo.'
+              )
+        );
+      }
+
+      closeNotificationModal();
+
+      await showMsg(
+        'Đã gửi thông báo đến ' +
+        result.requestedRecipients +
+        ' tài khoản đã đăng ký.',
+        'Gửi thông báo thành công',
+        'success'
+      );
+    } catch (error) {
+      setNotificationModalBusy(false);
+
+      await showMsg(
+        error.message || String(error),
+        'Gửi thông báo thất bại',
+        'danger'
+      );
+    }
+  }
+
+  function handleLogin() {
+    const u =
+      document
+        .getElementById('loginUsername')
+        .value
+        .trim();
+
+    const p =
+      document
+        .getElementById('loginPassword')
+        .value;
+
+    const errorEl =
+      document.getElementById('loginError');
+
+    if (!u || !p) {
+      errorEl.innerText = 'Nhập đủ thông tin!';
+      errorEl.style.display = 'block';
+      return;
+    }
+
+    errorEl.style.display = 'none';
+    showLoading(true, 'Đang đăng nhập...');
+
+    const startedAt = performance.now();
+
+    google.script.run
+      .withSuccessHandler(res => {
+        showLoading(false);
+
+        console.log('Login timing:', {
+          totalMs: Math.round(
+            performance.now() - startedAt
+          ),
+          serverMs: Number(
+            res && res.serverMs || 0
+          ),
+          voucherServerMs: Number(
+            res && res.voucherServerMs || 0
+          ),
+          voucherCacheHit: Boolean(
+            res && res.voucherCacheHit
+          )
+        });
+
+        if (!res || !res.success) {
+          errorEl.innerText =
+            res && res.msg
+              ? res.msg
+              : 'Không đăng nhập được.';
+
+          errorEl.style.display = 'block';
+          return;
+        }
+
+        currentUser = res.user;
+
+        detailSyncIntervalMs = Math.max(
+          1500,
+          Number(res.syncIntervalMs || 1500)
+        );
+
+        sessionStorage.setItem(
+          'detail_sync_interval_ms',
+          String(detailSyncIntervalMs)
+        );
+
+        persistAuthSession(
+          currentUser,
+          res.token || '',
+          res.sessionExpiresAt
+        );
+
+        if (
+          res.vouchers &&
+          typeof res.vouchers === 'object'
+        ) {
+          cloudWaitList = res.vouchers;
+          saveVoucherCardsLocalCache(
+            cloudWaitList
+          );
+          skipNextListReload = true;
+        }
+
+        // Không giữ mật khẩu trên giao diện.
+        document
+          .getElementById('loginPassword')
+          .value = '';
+
+        initUI();
+      })
+      .withFailureHandler(error => {
+        showLoading(false);
+
+        errorEl.innerText =
+          error.message || String(error);
+
+        errorEl.style.display = 'block';
+      })
+      .loginServer(u, p);
+  }
+
+  function isInvalidSessionError(
+    error
+  ) {
+    return /Phiên đăng nhập|hết hạn|đăng xuất trên toàn bộ thiết bị/i
+      .test(
+        error &&
+        error.message
+          ? error.message
+          : String(error || '')
+      );
+  }
+
+  function openAdminLogoutModal() {
+    document
+      .getElementById(
+        'adminLogoutModal'
+      )
+      .style.display = 'flex';
+  }
+
+  function closeAdminLogoutModal() {
+    document
+      .getElementById(
+        'adminLogoutModal'
+      )
+      .style.display = 'none';
+  }
+
+  function stopAdminSessionValidation() {
+    if (
+      adminSessionValidationTimer
+    ) {
+      clearInterval(
+        adminSessionValidationTimer
+      );
+
+      adminSessionValidationTimer =
+        null;
+    }
+
+    adminSessionValidationInFlight =
+      false;
+  }
+
+  async function validateAdminSessionNow() {
+    if (
+      !currentUser ||
+      currentUser.role !== 'admin' ||
+      adminSessionValidationInFlight
+    ) {
+      return;
+    }
+
+    adminSessionValidationInFlight =
+      true;
+
+    try {
+      await gasCall(
+        'validateSessionServer',
+        []
+      );
+    } catch (error) {
+      if (
+        isInvalidSessionError(
+          error
+        )
+      ) {
+        await forceLogoutForInvalidSession(
+          error
+        );
+      } else {
+        console.warn(
+          'Không kiểm tra được phiên Admin:',
+          error.message || String(error)
+        );
+      }
+    } finally {
+      adminSessionValidationInFlight =
+        false;
+    }
+  }
+
+  function startAdminSessionValidation() {
+    stopAdminSessionValidation();
+
+    if (
+      !currentUser ||
+      currentUser.role !== 'admin'
+    ) {
+      return;
+    }
+
+    setTimeout(
+      validateAdminSessionNow,
+      1500
+    );
+
+    adminSessionValidationTimer =
+      setInterval(
+        validateAdminSessionNow,
+        15000
+      );
+  }
+
+  function performLocalLogout() {
+    exitLowVisionDetailMode();
+    stopAdminSessionValidation();
+    logoutOneSignalUser();
+
+    if(syncInterval) clearInterval(syncInterval);
+    syncInterval = null;
+    currentVoucherVersion = 0;
+    syncInFlight = false;
+    mutationInFlight = false;
+    detailRefreshing = false;
+    adminFinalizedEditConfirmed = false;
+    activeVoucherFinalizedHint = false;
+    activeVoucherCheckedHint = false;
+    detailOpenSequence++;
+    openingVoucherId = null;
+    detailActionInFlight = false;
+    detailPromptInFlight = false;
+    clearAllCheckIntentStates();
+    clearDistributionRuntimeState();
+    forceHideLoading();
+    skipNextListReload = false;
+    detailPrefetchPromises.clear();
+
+    if (detailPrefetchTimer) {
+      clearTimeout(detailPrefetchTimer);
+      detailPrefetchTimer = null;
+    }
+
+    document
+      .querySelectorAll(
+        '.modal-overlay'
+      )
+      .forEach(modal => {
+        modal.style.display = 'none';
+      });
+
+    clearPersistedAuthSession();
+    currentUser = null;
+    activeVoucherId = null;
+    parsedFileData = {};
+    cloudWaitList = {};
+    cloudHistoryData = [];
+    showLoading(false);
+
+    [
+      'upload',
+      'list',
+      'detail',
+      'admin',
+      'history'
+    ].forEach(v => {
+      let el =
+        document.getElementById(
+          'view-' + v
+        );
+
+      if(el) {
+        el.style.display = 'none';
+      }
+    });
+
+    document
+      .getElementById(
+        'appHeader'
+      )
+      .style.display = 'none';
+
+    document
+      .getElementById(
+        'loginUsername'
+      )
+      .value = '';
+
+    document
+      .getElementById(
+        'loginPassword'
+      )
+      .value = '';
+
+    document
+      .getElementById(
+        'loginError'
+      )
+      .style.display = 'none';
+
+    document
+      .getElementById(
+        'loginError'
+      )
+      .innerText = '';
+
+    document
+      .getElementById(
+        'loginScreen'
+      )
+      .style.display = 'flex';
+
+    setTimeout(
+      () =>
+        document
+          .getElementById(
+            'loginUsername'
+          )
+          .focus(),
+      100
+    );
+  }
+
+  function logoutCurrentDevice() {
+    closeAdminLogoutModal();
+    performLocalLogout();
+  }
+
+  async function logoutAllDevices() {
+    try {
+      showLoading(
+        true,
+        'Đang đăng xuất toàn bộ thiết bị...'
+      );
+
+      const result =
+        await gasCall(
+          'logoutAllDevicesServer',
+          []
+        );
+
+      showLoading(false);
+
+      if (
+        !result ||
+        result.success === false
+      ) {
+        throw new Error(
+          result &&
+          result.message
+            ? result.message
+            : 'Không đăng xuất được toàn bộ thiết bị.'
+        );
+      }
+
+      closeAdminLogoutModal();
+      performLocalLogout();
+
+      await showMsg(
+        'Đã đăng xuất tài khoản Admin trên toàn bộ thiết bị.',
+        'Đăng xuất thành công',
+        'success'
+      );
+    } catch (error) {
+      showLoading(false);
+
+      await showMsg(
+        error.message || String(error),
+        'Không thể đăng xuất toàn bộ thiết bị',
+        'danger'
+      );
+    }
+  }
+
+  async function forceLogoutForInvalidSession(
+    error
+  ) {
+    if (
+      forcedSessionLogoutHandled
+    ) {
+      return;
+    }
+
+    forcedSessionLogoutHandled =
+      true;
+
+    const message =
+      /đăng xuất trên toàn bộ thiết bị/i
+        .test(
+          error &&
+          error.message
+            ? error.message
+            : String(error || '')
+        )
+        ? 'Tài khoản Admin đã được đăng xuất trên toàn bộ thiết bị.'
+        : 'Phiên đăng nhập không còn hiệu lực. Vui lòng đăng nhập lại.';
+
+    performLocalLogout();
+
+    await showMsg(
+      message,
+      'Đã đăng xuất',
+      'warning'
+    );
+  }
+
+  function handleLogout() {
+    if (
+      currentUser &&
+      currentUser.role === 'admin'
+    ) {
+      openAdminLogoutModal();
+      return;
+    }
+
+    performLocalLogout();
+  }
+
+  document.addEventListener(
+    'visibilitychange',
+    () => {
+      if (
+        document.visibilityState ===
+        'visible'
+      ) {
+        validateAdminSessionNow();
+      }
+    }
+  );
+
+  window.addEventListener(
+    'focus',
+    validateAdminSessionNow
+  );
+
+  function initUI() {
+    forcedSessionLogoutHandled =
+      false;
+
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('appHeader').style.display = 'flex';
+    document.getElementById('displayFullName').innerText = currentUser.fullName;
+    document.getElementById('displayRoleBadge').innerText = currentUser.role === 'admin' ? 'Admin' : (currentUser.role === 'phat' ? 'Phát thuốc' : 'Người Lĩnh');
+    
+    if(currentUser.localFolder) {
+        let localInput = document.getElementById('localFolderLink');
+        if(localInput) localInput.value = currentUser.localFolder;
+    }
+
+    if(currentUser.role === 'admin') {
+      document.getElementById('btnAdmin').style.display = 'inline-block';
+      document.getElementById('btnUpload').style.display = 'inline-block';
+      document.getElementById('btnSendNotification').style.display = 'inline-block';
+    } else if (currentUser.role === 'phat') {
+      document.getElementById('btnUpload').style.display = 'inline-block';
+      document.getElementById('btnSendNotification').style.display = 'inline-block';
+    } else {
+      document.getElementById('btnSendNotification').style.display = 'none';
+    }
+
+    updateInstallButton();
+    updateLowVisionSettingsButton();
+    resetVoucherDepartmentFiltersForAccount();
+    resetAdminWarehouseFiltersForAccount();
+    startAdminSessionValidation();
+    resumeBackgroundFinishQueue();
+
+    ensureOneSignalInitialized()
+      .catch(error => {
+        console.warn(
+          'OneSignal chưa sẵn sàng:',
+          error.message || String(error)
+        );
+      });
+
+    switchView('list');
+    applyNotificationDeepLink();
+  }
+
+  function switchView(viewName) {
+    if(syncInterval) clearInterval(syncInterval);
+
+    if (viewName !== 'detail') {
+      exitLowVisionDetailMode();
+      cancelPendingDetailOpen();
+      detailRefreshing = false;
+      syncInFlight = false;
+      forceHideLoading();
+    }
+    ['upload', 'list', 'detail', 'admin', 'history'].forEach(v => document.getElementById('view-' + v).style.display = 'none');
+    document.getElementById('view-' + viewName).style.display = 'block';
+    
+    if (currentUser) {
+      let isDetail = (viewName === 'detail');
+      let isNotAdmin = (currentUser.role !== 'admin');
+      
+      let btnNavList = document.getElementById('btnNavList');
+      let btnNavHistory = document.getElementById('btnNavHistory');
+      let btnUpload = document.getElementById('btnUpload');
+      
+      if (btnNavList) btnNavList.style.display = (isDetail && isNotAdmin) ? 'none' : 'inline-block';
+      if (btnNavHistory) btnNavHistory.style.display = (isDetail && isNotAdmin) ? 'none' : 'inline-block';
+      
+      if (btnUpload) {
+          if (currentUser.role === 'admin') {
+              btnUpload.style.display = 'inline-block';
+          } else if (currentUser.role === 'phat') {
+              btnUpload.style.display = (isDetail && isNotAdmin) ? 'none' : 'inline-block';
+          } else {
+              btnUpload.style.display = 'none';
+          }
+      }
+    }
+
+    if(viewName === 'admin') loadAdminUsers();
+
+    if(viewName === 'list') {
+      if (skipNextListReload) {
+        skipNextListReload = false;
+        renderTrackingList();
+      } else {
+        loadWaitList();
+      }
+    }
+
+    if(viewName === 'history') loadHistoryList();
+  }
+
+  function saveLocalFolder() {
+      let link = document.getElementById('localFolderLink').value.trim();
+      if(!link) return showMsg("Vui lòng nhập đường dẫn thư mục máy tính!");
+      showLoading(true, "Đang lưu đường dẫn...");
+      google.script.run.withSuccessHandler(res => {
+          showLoading(false);
+          if(res.success) {
+              currentUser.localFolder = link;
+              updatePersistedUser(
+                currentUser
+              );
+              showMsg("Đã lưu đường dẫn thành công!");
+          } else {
+              showMsg("Lỗi: " + (res.msg || "Không thể lưu đường dẫn."));
+          }
+      }).saveLocalFolderServer(currentUser.username, link);
+  }
+
+  function copyLocalFolder() {
+      let linkInput = document.getElementById('localFolderLink');
+      if(!linkInput.value.trim()) return showMsg("Chưa có đường dẫn để copy!");
+      linkInput.select();
+      linkInput.setSelectionRange(0, 99999);
+      try {
+          document.execCommand("copy");
+          showMsg("Đã copy đường dẫn thành công!");
+      } catch(e) {
+          navigator.clipboard.writeText(linkInput.value.trim());
+          showMsg("Đã copy đường dẫn thành công!");
+      }
+  }
+
+  function loadFromLocalFolder() {
+    const input = document.getElementById('folderInput');
+    if (!input) return;
+    input.value = '';
+    isFolderAutoLoad = true;
+    input.click();
+  }
+
+  function mapKhoToKey(khoName) {
+    let lower = (khoName||"").toLowerCase();
+    if(lower.includes('dịch truyền')) return 'Dich_Truyen';
+    if(lower.includes('tiêm') || lower.includes('viên')) return 'Tiem_Vien';
+    if(lower.includes('vật tư') || lower.includes('hóa chất')) return 'Vat_Tu';
+    return 'Khac';
+  }
+
+  function getAllowedKhoKeysForCurrentUser() {
+    if (!currentUser) return null;
+    let khoText = String(currentUser.kho || '').trim();
+    if (currentUser.role === 'admin' || khoText === 'Tất cả') return null;
+    return khoText.split(',').map(s => mapKhoToKey(s.trim())).filter(k => k);
+  }
+
+  function processVoucherString(rawStr, arr, datesArr) {
+    if (!rawStr) return;
+    String(rawStr).split(/[;,]/).forEach(part => {
+      const text = part.trim();
+      if (!text) return;
+      const parenthesized = text.match(/^(.*?)\s*\(\s*(.*?)\s*-\s*(\d{1,2}\/\d{1,2}\/\d{2,4})\s*\)\s*$/);
+      let voucherText = text;
+      let dateText = '';
+      if (parenthesized) {
+        voucherText = (parenthesized[1].trim() + ' (' + parenthesized[2].trim() + ')').trim();
+        dateText = parenthesized[3];
+      } else {
+        const trailingDate = text.match(/^(.*?)\s*-\s*(\d{1,2}\/\d{1,2}\/\d{2,4})\s*$/);
+        if (trailingDate) {
+          voucherText = trailingDate[1].trim();
+          dateText = trailingDate[2];
+        }
+      }
+      const combined = dateText ? (voucherText + '|' + dateText) : voucherText;
+      if (!arr.includes(combined)) arr.push(combined);
+      if (dateText && !datesArr.includes(dateText)) datesArr.push(dateText);
+    });
+  }
+
+  function getVoucherStrings(vObj) {
+    if (!vObj) return [];
+    let arr = [];
+    for (let k in vObj) {
+      if (vObj[k].TQ) arr.push(...vObj[k].TQ);
+      if (vObj[k].BT) arr.push(...vObj[k].BT);
+      if (vObj[k].HT) arr.push(...vObj[k].HT);
+    }
+    return arr;
+  }
+
+  function getBaseKhoaName(khoaName) {
+    return String(khoaName || '')
+      .replace(
+        / \(phiếu trùng\)/gi,
+        ''
+      )
+      .trim();
+  }
+
+  function isDuplicateVoucher(khoa) {
+    const status = parsedDuplicateStatus[String(khoa || '')];
+    return Boolean(status && status.duplicate);
+  }
+
+  function isPartialDuplicateVoucher(khoa) {
+    const status = parsedDuplicateStatus[String(khoa || '')];
+    return Boolean(status && !status.duplicate && (status.partial || status.hasOverlap));
+  }
+
+  function hasVoucherIdentityData(vouchers) {
+    return Object.keys(vouchers || {}).some(khoKey => {
+      const group = vouchers[khoKey] || {};
+      return (group.TQ || []).length || (group.BT || []).length || (group.HT || []).length;
+    });
+  }
+
+  function aggregateDuplicateIdentityItems(items) {
+    const totals = new Map();
+    (items || []).forEach(item => {
+      const key = [String(item.khoKey || ''),String(item.ma || '').trim(),String(item.ten || '').trim(),String(item.dvt || '').trim(),String(item.loaiThuoc || '').trim()].join('|');
+      if (!key.replace(/\|/g,'')) return;
+      totals.set(key,(totals.get(key) || 0) + Number(item.sl || 0));
+    });
+    return Array.from(totals.entries()).map(([key,total]) => {
+      const parts=key.split('|');
+      return {khoKey:parts[0],ma:parts[1],ten:parts[2],dvt:parts[3],loaiThuoc:parts[4],sl:Math.round(total*1000000)/1000000};
+    });
+  }
+
+  function buildDuplicateCandidate(sourceData,khoa,candidateKey) {
+    const source=sourceData[khoa];
+    if (!source) return null;
+    return {key:candidateKey,khoa:khoa,vouchers:source.vouchers || {},items:aggregateDuplicateIdentityItems(source.items || [])};
+  }
+
+  function buildDuplicateCheckCandidates(khoaKeys=null) {
+    const keys=Array.isArray(khoaKeys) ? khoaKeys : Object.keys(parsedFileData || {});
+    return keys.map(khoa => buildDuplicateCandidate(parsedFileData,khoa,khoa)).filter(Boolean);
+  }
+
+  async function requestDuplicateCheckCandidates(candidates) {
+    if (!Array.isArray(candidates) || !candidates.length) return {};
+    const response=await gasCall('checkVoucherDuplicatesServer',[JSON.stringify(candidates)]);
+    return response && response.results ? response.results : {};
+  }
+
+  async function refreshParsedDuplicateStatus(khoaKeys=null) {
+    const candidates=buildDuplicateCheckCandidates(khoaKeys);
+    if (!candidates.length) { if (!khoaKeys) parsedDuplicateStatus={}; return {}; }
+    try {
+      const results=await requestDuplicateCheckCandidates(candidates);
+      if (!khoaKeys) parsedDuplicateStatus={};
+      candidates.forEach(candidate => {
+        parsedDuplicateStatus[candidate.key]=results[candidate.key] || {duplicate:false,partial:false,hasOverlap:false,matchedCount:0,tokenCount:0,duplicateWarehouseKeys:[],partialWarehouseKeys:[],newWarehouseKeys:[]};
+      });
+      return results;
+    } catch(error) {
+      console.error('Không kiểm tra được phiếu trùng:',error && error.message ? error.message : String(error || ''));
+      return {};
+    }
+  }
+
+  function handleSingleFileDragOver(
+    event
+  ) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (
+      event.dataTransfer
+    ) {
+      event.dataTransfer.dropEffect =
+        'copy';
+    }
+
+    const area =
+      document.getElementById(
+        'singleFileDropArea'
+      );
+
+    if (area) {
+      area.classList.add(
+        'drag-active'
+      );
+    }
+  }
+
+  function handleSingleFileDragLeave(
+    event
+  ) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const area =
+      document.getElementById(
+        'singleFileDropArea'
+      );
+
+    if (area) {
+      area.classList.remove(
+        'drag-active'
+      );
+    }
+  }
+
+  function handleSingleFileDrop(
+    event
+  ) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const area =
+      document.getElementById(
+        'singleFileDropArea'
+      );
+
+    if (area) {
+      area.classList.remove(
+        'drag-active'
+      );
+    }
+
+    const files =
+      event.dataTransfer
+        ? event.dataTransfer.files
+        : null;
+
+    if (
+      !files ||
+      !files.length
+    ) {
+      return;
+    }
+
+    isFolderAutoLoad = false;
+    handleFiles(files);
+  }
+
+  function mergeInsertedVoucherCards(
+    insertedCards
+  ) {
+    if (
+      !insertedCards ||
+      typeof insertedCards !==
+        'object'
+    ) {
+      return 0;
+    }
+
+    let merged = 0;
+
+    Object.keys(
+      insertedCards
+    ).forEach(id => {
+      const card =
+        insertedCards[id];
+
+      if (
+        !card ||
+        !card.id
+      ) {
+        return;
+      }
+
+      cloudWaitList[id] = card;
+      merged++;
+    });
+
+    if (merged) {
+      saveVoucherCardsLocalCache(
+        cloudWaitList
+      );
+    }
+
+    return merged;
+  }
+
+  function prepareVoucherListForInsertedCards(
+    insertedCards
+  ) {
+    const cards =
+      insertedCards &&
+      typeof insertedCards ===
+        'object'
+        ? Object.values(
+            insertedCards
+          ).filter(Boolean)
+        : [];
+
+    if (!cards.length) {
+      return;
+    }
+
+    /*
+     * Tài khoản nạp phiếu là Admin/Người phát.
+     * Xóa bộ lọc khoa cũ và bảo đảm trạng thái Chưa phát đang bật
+     * để các phiếu vừa nạp chắc chắn xuất hiện ngay trên màn hình.
+     */
+    markVoucherDepartmentFilterInitialized(
+      'active'
+    );
+
+    const searchInput =
+      document.getElementById(
+        'searchKhoa'
+      );
+
+    if (searchInput) {
+      searchInput.value = '';
+    }
+
+    const departmentSelect =
+      document.getElementById(
+        'filterKhoa'
+      );
+
+    if (departmentSelect) {
+      departmentSelect.value =
+        'Tất cả các khoa';
+
+      departmentSelect.title =
+        'Tất cả các khoa';
+    }
+
+    updateSearchIcon(
+      'active',
+      false
+    );
+
+    const waitingFilter =
+      document.querySelector(
+        '.voucher-state-filter[value="waiting"]'
+      );
+
+    if (waitingFilter) {
+      waitingFilter.checked = true;
+    }
+
+    updateStatusFilterLabel();
+  }
+
+  function readFileAsArrayBufferFast(
+    file
+  ) {
+    if (
+      file &&
+      typeof file.arrayBuffer ===
+        'function'
+    ) {
+      return file.arrayBuffer();
+    }
+
+    return new Promise(
+      (resolve, reject) => {
+        const reader =
+          new FileReader();
+
+        reader.onload =
+          event =>
+            resolve(
+              event.target.result
+            );
+
+        reader.onerror =
+          () =>
+            reject(
+              reader.error ||
+              new Error(
+                'Không đọc được file.'
+              )
+            );
+
+        reader.readAsArrayBuffer(
+          file
+        );
+      }
+    );
+  }
+
+  async function parseImportFile(
+    file,
+    allowedKhoKeys
+  ) {
+    const buffer =
+      await readFileAsArrayBufferFast(file);
+
+    const workbook =
+      XLSX.read(
+        new Uint8Array(buffer),
+        { type: 'array' }
+      );
+
+    const rows =
+      XLSX.utils.sheet_to_json(
+        workbook.Sheets[
+          workbook.SheetNames[0]
+        ],
+        {
+          header: 1,
+          defval: ''
+        }
+      );
+
+    const localData = {};
+
+    parseRows(
+      rows,
+      allowedKhoKeys,
+      localData
+    );
+
+    return {
+      fileName: file && file.name
+        ? file.name
+        : '',
+      data: localData
+    };
+  }
+
+  function mergeParsedImportData(
+    target,
+    source
+  ) {
+    Object.keys(source || {})
+      .forEach(khoa => {
+        const incoming = source[khoa];
+        if (!incoming) return;
+
+        if (!target[khoa]) {
+          target[khoa] = {
+            items: [],
+            vouchers: {}
+          };
+        }
+
+        const existing = target[khoa];
+        const itemSignatures = new Set(
+          (existing.items || []).map(item =>
+            [
+              item.khoKey,
+              item.ma,
+              item.ten,
+              item.dvt,
+              Number(item.sl || 0),
+              item.loaiThuoc
+            ].join('|')
+          )
+        );
+
+        (incoming.items || []).forEach(item => {
+          const signature = [
+            item.khoKey,
+            item.ma,
+            item.ten,
+            item.dvt,
+            Number(item.sl || 0),
+            item.loaiThuoc
+          ].join('|');
+
+          if (!itemSignatures.has(signature)) {
+            itemSignatures.add(signature);
+            existing.items.push(item);
+          }
+        });
+
+        Object.keys(incoming.vouchers || {})
+          .forEach(khoKey => {
+            if (!existing.vouchers[khoKey]) {
+              existing.vouchers[khoKey] = {
+                TQ: [], BT: [], HT: [], dates: []
+              };
             }
 
-            return response;
-          })
-          .catch(() => cached);
+            const targetVoucher =
+              existing.vouchers[khoKey];
+            const sourceVoucher =
+              incoming.vouchers[khoKey] || {};
 
-        return cached || network;
+            ['TQ','BT','HT','dates']
+              .forEach(field => {
+                targetVoucher[field] = Array.from(
+                  new Set(
+                    (targetVoucher[field] || [])
+                      .concat(sourceVoucher[field] || [])
+                  )
+                );
+              });
+          });
+      });
+  }
+
+  function removeWarehouseKeysFromImportData(source, warehouseKeys) {
+    if (!source) return;
+    const remove=new Set((warehouseKeys || []).map(String));
+    source.items=(source.items || []).filter(item => !remove.has(String(item.khoKey || '')));
+    Object.keys(source.vouchers || {}).forEach(key => { if (remove.has(String(key))) delete source.vouchers[key]; });
+  }
+
+  function hasImportData(source) {
+    return Boolean(source && (source.items || []).length > 0 && Object.keys(source.vouchers || {}).length > 0);
+  }
+
+  function renderFolderImportSummary() {
+    const element=document.getElementById('folderImportSummary');
+    if (!element) return;
+    if (!folderImportSummary || !isFolderAutoLoad) { element.style.display='none'; element.innerText=''; return; }
+    const s=folderImportSummary;
+    element.innerText='Đã đọc '+s.filesRead+'/'+s.totalFiles+' file. Có '+s.newUnits+' nhóm phiếu mới; tự bỏ qua '+s.duplicateWarehouses+' phần kho trùng hoàn toàn'+(s.partialWarehouses>0 ? '; bỏ qua '+s.partialWarehouses+' phần kho chồng lấp cần nạp bằng file đơn' : '')+(s.failedFiles>0 ? '; '+s.failedFiles+' file không đọc được' : '')+'.';
+    element.style.display='block';
+  }
+
+  async function handleFiles(files) {
+    if (!files || files.length===0) return;
+    showLoading(true,'Đang đọc và phân tích file...');
+    parsedFileData={}; parsedDuplicateStatus={}; folderImportSummary=null; renderFolderImportSummary();
+    const fileList=Array.from(files);
+    const allowedKhoKeys=getAllowedKhoKeysForCurrentUser();
+    let nextIndex=0,failedCount=0;
+    const parsedUnits=new Array(fileList.length);
+    const worker=async()=>{ while(nextIndex<fileList.length){ const index=nextIndex++; try{ parsedUnits[index]=await parseImportFile(fileList[index],allowedKhoKeys); }catch(error){ failedCount++; console.error('Lỗi đọc file:',fileList[index]?fileList[index].name:'',error); } } };
+    const workerCount=Math.min(FILE_PARSE_CONCURRENCY,fileList.length);
+    await Promise.all(Array.from({length:workerCount},()=>worker()));
+    const validUnits=parsedUnits.filter(unit=>unit && unit.data && Object.keys(unit.data).length);
+    showLoading(true,'Đang kiểm tra phiếu trùng...');
+
+    if (isFolderAutoLoad) {
+      const candidates=[],candidateMeta={};
+      validUnits.forEach((unit,unitIndex)=>{
+        Object.keys(unit.data).forEach(khoa=>{
+          const candidateKey='F'+unitIndex+'::'+khoa;
+          const candidate=buildDuplicateCandidate(unit.data,khoa,candidateKey);
+          if(candidate){ candidates.push(candidate); candidateMeta[candidateKey]={unit:unit,khoa:khoa}; }
+        });
+      });
+      let results={};
+      try { results=await requestDuplicateCheckCandidates(candidates); }
+      catch(error){ console.error('Không kiểm tra được phiếu trùng từ thư mục:',error.message || String(error)); }
+      let duplicateWarehouses=0,partialWarehouses=0,newUnits=0;
+      candidates.forEach(candidate=>{
+        const meta=candidateMeta[candidate.key];
+        const result=results[candidate.key] || {};
+        const exactKeys=Array.isArray(result.duplicateWarehouseKeys) ? result.duplicateWarehouseKeys : [];
+        const partialKeys=Array.isArray(result.partialWarehouseKeys) ? result.partialWarehouseKeys : [];
+        duplicateWarehouses+=exactKeys.length;
+        partialWarehouses+=partialKeys.length;
+        removeWarehouseKeysFromImportData(meta.unit.data[meta.khoa],exactKeys.concat(partialKeys));
+        const remaining=meta.unit.data[meta.khoa];
+        if(!hasImportData(remaining)) return;
+        mergeParsedImportData(parsedFileData,{[meta.khoa]:remaining});
+        parsedDuplicateStatus[meta.khoa]={duplicate:false,partial:false,hasOverlap:false,matchedCount:0,tokenCount:0,duplicateWarehouseKeys:[],partialWarehouseKeys:[],newWarehouseKeys:Object.keys(remaining.vouchers || {})};
+        newUnits++;
+      });
+      folderImportSummary={totalFiles:fileList.length,filesRead:validUnits.length,newUnits:newUnits,duplicateWarehouses:duplicateWarehouses,partialWarehouses:partialWarehouses,failedFiles:failedCount};
+      renderFolderImportSummary();
+    } else {
+      validUnits.forEach(unit=>mergeParsedImportData(parsedFileData,unit.data));
+      await refreshParsedDuplicateStatus();
+      const duplicateKhoas=Object.keys(parsedFileData).filter(isDuplicateVoucher);
+      const partialKhoas=Object.keys(parsedFileData).filter(isPartialDuplicateVoucher);
+      if(duplicateKhoas.length || partialKhoas.length){
+        const parts=[];
+        if(duplicateKhoas.length) parts.push('trùng hoàn toàn: '+duplicateKhoas.join(', '));
+        if(partialKhoas.length) parts.push('chồng lấp một phần: '+partialKhoas.join(', '));
+        await showMsg('Phát hiện phiếu '+parts.join('; ')+'.\\n\\nCác phiếu được bỏ tích mặc định. Phiếu chồng lấp có một số số phiếu cũ nhưng nội dung kho không giống hoàn toàn; chỉ tiếp tục khi bạn đã kiểm tra file.','Kiểm tra phiếu trùng','warning');
+      }
+    }
+    renderUploadList(); showLoading(false);
+    if(!isFolderAutoLoad && failedCount>0) await showMsg('Có '+failedCount+' file không đọc được. Các file còn lại đã được xử lý.','Một số file bị lỗi','warning');
+  }
+
+  function parseRows(
+    rows,
+    allowedKhoKeys,
+    targetData = parsedFileData
+  ) {
+    let h = { khoa: -1, kho: -1, loaiPhieu: -1, ma: -1, ten: -1, dvt: -1, sl: -1, phieuTQ: -1, phieuBT: -1, phieuHT: -1 };
+    for(let i=0; i<Math.min(20, rows.length); i++) {
+      let rowHeader = rows[i].map(x => String(x).trim().toUpperCase());
+      if(rowHeader.includes("NGAY") && rowHeader.includes("TENKHO")) {
+        h.khoa = rowHeader.indexOf("NGAY"); h.kho = rowHeader.indexOf("NGAY_S");
+        h.loaiPhieu = rowHeader.indexOf("TENKHOAPHONG"); h.ma = rowHeader.indexOf("TENKHO");
+        h.ten = rowHeader.indexOf("TENNHOMIN"); h.dvt = rowHeader.indexOf("MABIETDUOC");
+        h.sl = rowHeader.indexOf("TENBIETDUOC"); h.phieuTQ = rowHeader.indexOf("DVT");
+        h.phieuBT = rowHeader.indexOf("PHIEUTHUONGQUY"); h.phieuHT = rowHeader.indexOf("PHIEUBUTRUC");
+        break;
+      }
+    }
+    for(let i=1; i<rows.length; i++) {
+      let r = rows[i]; if(!r || r.length === 0) continue;
+      let khoa = String(r[h.khoa]||"").trim(); let khoName = String(r[h.kho]||"").trim(); let khoKey = mapKhoToKey(khoName);
+      if (allowedKhoKeys && !allowedKhoKeys.includes(khoKey)) continue;
+      let ma = String(r[h.ma]||"").trim(); let ten = String(r[h.ten]||"").trim(); let dvt = String(r[h.dvt]||"").trim(); let sl = parseFloat(r[h.sl]);
+      if(!khoa || !ma || !ten || isNaN(sl) || sl === 0 || khoa.toUpperCase() === "NGAY") continue;
+      
+      if(!targetData[khoa]) {
+        targetData[khoa] = { items: [], vouchers: {} };
+      }
+      if(!targetData[khoa].vouchers[khoKey]) {
+        targetData[khoa].vouchers[khoKey] = { TQ:[], BT:[], HT:[], dates:[] };
+      }
+      let vCat = targetData[khoa].vouchers[khoKey];
+      if(h.phieuTQ !== -1) processVoucherString(r[h.phieuTQ], vCat.TQ, vCat.dates);
+      if(h.phieuBT !== -1) processVoucherString(r[h.phieuBT], vCat.BT, vCat.dates);
+      if(h.phieuHT !== -1) processVoucherString(r[h.phieuHT], vCat.HT, vCat.dates);
+      targetData[khoa].items.push({ khoKey: khoKey, ma: ma, ten: ten, dvt: dvt, sl: sl, loaiThuoc: String(r[h.loaiPhieu]||"").trim(), status: 'Chưa phát' });
+    }
+  }
+
+  async function clearAllUploads() {
+      const ok = await showConfirm("Bạn có chắc chắn muốn hủy bỏ toàn bộ danh sách nạp này không?", "Hủy danh sách nạp", { type: 'danger', confirmText: 'Hủy toàn bộ', confirmClass: 'btn-danger' });
+      if(ok) {
+          parsedFileData = {};
+          parsedDuplicateStatus = {};
+          folderImportSummary = null;
+          renderFolderImportSummary();
+          renderUploadList(); 
+      }
+  }
+
+  async function removeUploadItem(khoa) {
+      const ok = await showConfirm("Xóa " + khoa + " khỏi danh sách nạp?", "Xóa phiếu đang nạp", { type: 'danger', confirmText: 'Xóa', confirmClass: 'btn-danger' });
+      if(ok) {
+          delete parsedFileData[khoa];
+          delete parsedDuplicateStatus[khoa];
+          renderUploadList(); 
+      }
+  }
+
+  function renderUploadList() {
+    let container=document.getElementById('deptListContainer'); container.innerHTML='';
+    let keys=Object.keys(parsedFileData);
+    if(keys.length===0){ document.getElementById('uploadResultArea').style.display='none'; let fileInput=document.getElementById('fileInput'); if(fileInput) fileInput.value=''; let folderInput=document.getElementById('folderInput'); if(folderInput) folderInput.value=''; return; }
+    keys.forEach(khoa=>{
+      let total=parsedFileData[khoa].items.length,allDates=new Set(),allVouchers=new Set();
+      for(let kKey in parsedFileData[khoa].vouchers){ let vc=parsedFileData[khoa].vouchers[kKey]; (vc.dates || []).forEach(d=>allDates.add(d)); ['TQ','BT','HT'].forEach(type=>(vc[type] || []).forEach(v=>allVouchers.add(String(v).split('|')[0]))); }
+      let isDup=isDuplicateVoucher(khoa),isPartial=isPartialDuplicateVoucher(khoa);
+      let borderCard=isDup?'border:2px solid var(--danger);':(isPartial?'border:2px solid #ef6c00;':'border:1px solid #ccc;');
+      let bgHeader=isDup?'#ffebee':(isPartial?'#fff3e0':'#f0f0f0');
+      let colorHeader=isDup?'var(--danger)':(isPartial?'#e65100':'var(--green)');
+      let statusTag=isDup?' <span style="font-size:14px; font-style:italic;">(trùng hoàn toàn)</span>':(isPartial?' <span style="font-size:14px; font-style:italic;">(chồng lấp một phần – cần kiểm tra)</span>':'');
+      let bgBody=isDup?'#fff9f9':(isPartial?'#fffaf2':'#fff');
+      const checked=(isDup || isPartial)?'':'checked';
+      container.innerHTML+=`<div style="${borderCard} margin-bottom:15px; border-radius:8px; overflow:hidden;"><div style="background:${bgHeader}; padding:15px; font-weight:bold; font-size:20px; color:${colorHeader}; display:flex; justify-content:space-between; align-items:center;"><label style="display:flex; align-items:center; flex-wrap:wrap;"><input type="checkbox" class="v-chk" value="${escapeHtmlValue(khoa)}" ${checked} style="width:20px; height:20px; margin:0 10px 0 0;">${escapeHtmlText(khoa)}${statusTag}</label><div style="display:flex; align-items:center; gap:15px;"><span style="color:var(--danger); font-size:18px; white-space:nowrap;">${total} khoản</span><button onclick="removeUploadItem('${String(khoa).replace(/'/g,"\\'")}')" style="background:transparent; border:none; color:var(--danger); font-size:22px; padding:0; cursor:pointer; line-height:1;" title="Xóa khoa này">✖</button></div></div><div style="padding:15px; background:${bgBody}; font-size:16px;"><div style="margin-bottom:8px; font-size:18px;"><b>📅 Ngày:</b> <span style="color:var(--danger); font-weight:bold;">${escapeHtmlText(Array.from(allDates).join(', '))}</span></div><div><b>🧾 Các phiếu:</b><br>${formatVoucherColors(Array.from(allVouchers))}</div></div></div>`;
+    });
+    document.getElementById('uploadResultArea').style.display='block';
+  }
+
+  async function pushToWaitList() {
+    let checksNode = document.querySelectorAll('.v-chk:checked');
+    if(checksNode.length === 0) return showMsg("Vui lòng chọn ít nhất 1 khoa!");
+    let checks = Array.from(checksNode);
+    
+    /*
+     * Không gọi máy chủ kiểm tra trùng lần hai.
+     * Backend vẫn kiểm tra lại ngay trong pushVouchersServer
+     * trước khi ghi nên không giảm độ an toàn.
+     */
+    let duplicateKhoas =
+      checks
+        .map(cb => cb.value)
+        .filter(khoa =>
+          isDuplicateVoucher(khoa) ||
+          isPartialDuplicateVoucher(khoa)
+        );
+
+    if (
+      duplicateKhoas.length > 0 &&
+      isFolderAutoLoad
+    ) {
+      duplicateKhoas
+        .forEach(khoa => {
+          delete parsedFileData[
+            khoa
+          ];
+
+          delete parsedDuplicateStatus[
+            khoa
+          ];
+        });
+
+      checks =
+        checks.filter(cb =>
+          !duplicateKhoas.includes(
+            cb.value
+          )
+        );
+
+      renderUploadList();
+      duplicateKhoas = [];
+
+      if (!checks.length) {
+        return;
+      }
+    }
+
+    if (duplicateKhoas.length > 0) {
+        const acceptDuplicate = await showConfirm("Bạn vẫn muốn đưa các phiếu trùng hoặc chồng lấp (" + duplicateKhoas.join(", ") + ") vào danh sách?\n\nPhiếu chồng lấp có một số số phiếu cũ nhưng nội dung kho không giống hoàn toàn. Hệ thống sẽ thêm chữ '(phiếu trùng)' để dễ nhận biết.", "Xác nhận nạp phiếu cần kiểm tra", { type: 'warning', confirmText: 'Vẫn đưa vào' });
+        if (!acceptDuplicate) {
+            renderUploadList();
+            return;
+        }
+    }
+
+    const uploadMode =
+      isFolderAutoLoad
+        ? 'folder'
+        : 'manual';
+
+    let payload = {};
+
+    checks.forEach(cb => {
+      let k = cb.value;
+
+      const allowDuplicate =
+        duplicateKhoas.includes(k);
+
+      let finalKhoa =
+        allowDuplicate
+          ? (k + " (phiếu trùng)")
+          : k;
+
+      payload[
+        "P_" +
+        Date.now() +
+        "_" +
+        Math.floor(
+          Math.random() * 10000
+        )
+      ] = {
+        sourceKey:
+          k,
+        uploadMode:
+          uploadMode,
+        allowDuplicate:
+          allowDuplicate,
+        khoa:
+          finalKhoa,
+        time:
+          new Date().toISOString(),
+        vouchers:
+          parsedFileData[k].vouchers,
+        items:
+          parsedFileData[k].items
+      };
+    });
+    
+    showLoading(true, "Đang lưu...");
+    google.script.run
+      .withSuccessHandler(async r => {
+        showLoading(false);
+        if (!r || r.success === false) {
+          showMsg((r && r.msg) || 'Không thể đưa phiếu vào danh sách.', 'Nạp phiếu thất bại', 'warning');
+          return;
+        }
+        const blockedDuplicates =
+          Array.isArray(
+            r.blockedDuplicates
+          )
+            ? r.blockedDuplicates
+            : [];
+
+        const blockedSet =
+          new Set(
+            blockedDuplicates
+          );
+
+        checks.forEach(cb => {
+          if (
+            !blockedSet.has(
+              cb.value
+            )
+          ) {
+            delete parsedFileData[
+              cb.value
+            ];
+
+            delete parsedDuplicateStatus[
+              cb.value
+            ];
+          }
+        });
+
+        renderUploadList();
+
+        if (
+          blockedDuplicates.length
+        ) {
+          await showMsg(
+            "Máy chủ vừa phát hiện phiếu trùng ở bước kiểm tra cuối (" +
+              blockedDuplicates.join(", ") +
+              ").\n\nCác phiếu này chưa được nạp. Hãy tích chọn lại để xác nhận nạp bằng file đơn lẻ.",
+            "Phát hiện phiếu trùng",
+            "warning"
+          );
+
+          if (
+            Number(r.inserted || 0) === 0
+          ) {
+            return;
+          }
+        }
+
+        /*
+         * Ghép ngay các thẻ vừa được máy chủ xác nhận vào dữ liệu cục bộ.
+         * Nhờ đó khi quay về danh sách, phiếu xuất hiện tức thời,
+         * không phải chờ thêm một lượt tải danh sách 1–2 giây.
+         */
+        mergeInsertedVoucherCards(
+          r.insertedCards || {}
+        );
+
+        prepareVoucherListForInsertedCards(
+          r.insertedCards || {}
+        );
+
+        skipNextListReload = true;
+        switchView('list');
       })
+      .withFailureHandler(error => {
+        showLoading(false);
+        showMsg(error.message || String(error), 'Lỗi nạp phiếu', 'danger');
+      })
+      .pushVouchersServer(
+        JSON.stringify(payload),
+        uploadMode
+      );
+  }
+
+  function formatDateDDMMYYYY(value) {
+    if (
+      value === null ||
+      value === undefined ||
+      value === ''
+    ) {
+      return '';
+    }
+
+    if (
+      value instanceof Date &&
+      !Number.isNaN(value.getTime())
+    ) {
+      return (
+        String(value.getDate()).padStart(2, '0') +
+        '/' +
+        String(value.getMonth() + 1).padStart(2, '0') +
+        '/' +
+        value.getFullYear()
+      );
+    }
+
+    const text = String(value).trim();
+    if (!text) return '';
+
+    const vi = text.match(
+      /^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/
+    );
+
+    if (vi) {
+      let year = Number(vi[3]);
+      if (year < 100) year += 2000;
+
+      return (
+        String(Number(vi[1])).padStart(2, '0') +
+        '/' +
+        String(Number(vi[2])).padStart(2, '0') +
+        '/' +
+        year
+      );
+    }
+
+    const iso = text.match(
+      /^(\d{4})-(\d{1,2})-(\d{1,2})(?:T|\s|$)/
+    );
+
+    if (iso) {
+      return (
+        String(Number(iso[3])).padStart(2, '0') +
+        '/' +
+        String(Number(iso[2])).padStart(2, '0') +
+        '/' +
+        iso[1]
+      );
+    }
+
+    const jsDate = text.match(
+      /^(?:Sun|Mon|Tue|Wed|Thu|Fri|Sat)\s+([A-Za-z]{3})\s+(\d{1,2})\s+(\d{4})/
+    );
+
+    if (jsDate) {
+      const months = {
+        Jan: 1,
+        Feb: 2,
+        Mar: 3,
+        Apr: 4,
+        May: 5,
+        Jun: 6,
+        Jul: 7,
+        Aug: 8,
+        Sep: 9,
+        Oct: 10,
+        Nov: 11,
+        Dec: 12
+      };
+
+      const month = months[jsDate[1]];
+
+      if (month) {
+        return (
+          String(Number(jsDate[2])).padStart(2, '0') +
+          '/' +
+          String(month).padStart(2, '0') +
+          '/' +
+          jsDate[3]
+        );
+      }
+    }
+
+    const cleaned = text.replace(
+      /\s*\([^)]*\)\s*$/,
+      ''
+    );
+
+    const parsed = new Date(cleaned);
+
+    if (!Number.isNaN(parsed.getTime())) {
+      return (
+        String(parsed.getDate()).padStart(2, '0') +
+        '/' +
+        String(parsed.getMonth() + 1).padStart(2, '0') +
+        '/' +
+        parsed.getFullYear()
+      );
+    }
+
+    return text;
+  }
+
+  function normalizeDateList(values) {
+    const output = [];
+    const seen = new Set();
+
+    Array.from(values || []).forEach(value => {
+      const formatted = formatDateDDMMYYYY(value);
+
+      if (!formatted || seen.has(formatted)) return;
+
+      seen.add(formatted);
+      output.push(formatted);
+    });
+
+    return output;
+  }
+
+  function detailCacheUsername() {
+    return (
+      currentUser &&
+      currentUser.username
+        ? currentUser.username
+        : 'guest'
+    );
+  }
+
+  function detailCacheKey(id) {
+    return (
+      'voucher_detail_v10_' +
+      detailCacheUsername() +
+      '_' +
+      String(id || '')
+    );
+  }
+
+  function detailCacheIndexKey() {
+    return (
+      'voucher_detail_index_v10_' +
+      detailCacheUsername()
+    );
+  }
+
+  function readVoucherDetailCache(id) {
+    try {
+      const raw = sessionStorage.getItem(
+        detailCacheKey(id)
+      );
+
+      if (!raw) return null;
+
+      const voucher = JSON.parse(raw);
+
+      if (
+        !voucher ||
+        String(voucher.id || '') !== String(id) ||
+        !Array.isArray(voucher.items)
+      ) {
+        return null;
+      }
+
+      return voucher;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  function saveVoucherDetailCache(voucher) {
+    if (
+      !voucher ||
+      !voucher.id ||
+      !Array.isArray(voucher.items)
+    ) {
+      return;
+    }
+
+    const id = String(voucher.id);
+    const key = detailCacheKey(id);
+
+    try {
+      let index = [];
+
+      try {
+        index = JSON.parse(
+          sessionStorage.getItem(
+            detailCacheIndexKey()
+          ) || '[]'
+        );
+      } catch (error) {
+        index = [];
+      }
+
+      index = index
+        .map(String)
+        .filter(itemId => itemId !== id);
+
+      index.unshift(id);
+
+      // Chỉ giữ tối đa 3 phiếu gần nhất để tránh đầy sessionStorage.
+      while (index.length > 3) {
+        const removedId = index.pop();
+
+        sessionStorage.removeItem(
+          detailCacheKey(removedId)
+        );
+      }
+
+      sessionStorage.setItem(
+        key,
+        JSON.stringify(voucher)
+      );
+
+      sessionStorage.setItem(
+        detailCacheIndexKey(),
+        JSON.stringify(index)
+      );
+    } catch (error) {
+      // Nếu dung lượng trình duyệt không đủ, xóa cache cũ rồi thử lại một lần.
+      try {
+        const index = JSON.parse(
+          sessionStorage.getItem(
+            detailCacheIndexKey()
+          ) || '[]'
+        );
+
+        index.slice(1).forEach(oldId => {
+          sessionStorage.removeItem(
+            detailCacheKey(oldId)
+          );
+        });
+
+        sessionStorage.setItem(
+          detailCacheIndexKey(),
+          JSON.stringify([id])
+        );
+
+        sessionStorage.setItem(
+          key,
+          JSON.stringify(voucher)
+        );
+      } catch (ignored) {
+        // Không ảnh hưởng chức năng chính.
+      }
+    }
+  }
+
+  function removeVoucherDetailCache(id) {
+    try {
+      sessionStorage.removeItem(
+        detailCacheKey(id)
+      );
+
+      let index = JSON.parse(
+        sessionStorage.getItem(
+          detailCacheIndexKey()
+        ) || '[]'
+      );
+
+      index = index
+        .map(String)
+        .filter(itemId => itemId !== String(id));
+
+      sessionStorage.setItem(
+        detailCacheIndexKey(),
+        JSON.stringify(index)
+      );
+    } catch (error) {
+      // Không ảnh hưởng chức năng chính.
+    }
+  }
+
+  function unpackSingleVoucherResponse(response) {
+    if (
+      response &&
+      response.success !== false &&
+      response.voucher
+    ) {
+      console.log('Voucher detail loaded:', {
+        cacheHit: Boolean(response.cacheHit),
+        serverMs: Number(response.serverMs || 0),
+        version: Number(response.version || 0),
+        itemCount: Array.isArray(
+          response.voucher.items
+        )
+          ? response.voucher.items.length
+          : 0
+      });
+
+      return response.voucher;
+    }
+
+    return null;
+  }
+
+  function prefetchVoucherDetail(id) {
+    id = String(id || '');
+    if (!id || !currentUser) {
+      return Promise.resolve(null);
+    }
+
+    const localCached =
+      readVoucherDetailCache(id);
+
+    if (localCached) {
+      return Promise.resolve(localCached);
+    }
+
+    if (detailPrefetchPromises.has(id)) {
+      return detailPrefetchPromises.get(id);
+    }
+
+    const promise = gasCall(
+      'getSingleVoucherServer',
+      [id]
+    )
+      .then(response => {
+        const voucher =
+          unpackSingleVoucherResponse(response);
+
+        if (voucher) {
+          saveVoucherDetailCache(voucher);
+        }
+
+        return voucher;
+      })
+      .catch(error => {
+        console.warn(
+          'Không prefetch được phiếu ' + id + ':',
+          error.message || String(error)
+        );
+
+        return null;
+      })
+      .finally(() => {
+        detailPrefetchPromises.delete(id);
+      });
+
+    detailPrefetchPromises.set(id, promise);
+    return promise;
+  }
+
+  function scheduleVoucherDetailPrefetch() {
+    if (detailPrefetchTimer) {
+      clearTimeout(detailPrefetchTimer);
+    }
+
+    detailPrefetchTimer = setTimeout(() => {
+      detailPrefetchTimer = null;
+
+      const cards = Array.from(
+        document.querySelectorAll(
+          '.tracking-card[data-voucher-id]'
+        )
+      ).slice(0, 2);
+
+      cards.forEach((card, index) => {
+        setTimeout(() => {
+          prefetchVoucherDetail(
+            card.dataset.voucherId
+          );
+        }, index * 250);
+      });
+    }, 300);
+  }
+
+  function buildCardHTML(id, v) {
+    let bClass =
+      v.state === 'checked'
+        ? 'status-checked'
+        : (
+            v.state === 'done'
+              ? 'status-done'
+              : (
+                  v.state === 'progress'
+                    ? 'status-progress'
+                    : 'status-waiting'
+                )
+          );
+
+    let bText =
+      v.state === 'checked'
+        ? 'Đã chốt đối chiếu'
+        : (
+            v.state === 'done'
+              ? 'Đã phát'
+              : (
+                  v.state === 'progress'
+                    ? 'Đang phát'
+                    : 'Chưa phát'
+                )
+          );
+    let allDates = new Set();
+    let allVouchers = new Set();
+    let khoNames = new Set();
+    let khoKeys = new Set();
+
+    // Dữ liệu danh sách nhẹ V7.
+    String(v.dateSummary || '')
+      .split(',')
+      .map(s => s.trim())
+      .filter(Boolean)
+      .forEach(d => {
+        const formatted = formatDateDDMMYYYY(d);
+        if (formatted) allDates.add(formatted);
+      });
+
+    String(v.warehouseKeys || '')
+      .split(',')
+      .map(s => s.trim())
+      .filter(Boolean)
+      .forEach(rawWarehouseKey => {
+        const warehouseKey =
+          normalizeWarehouseColorKey(
+            rawWarehouseKey
+          );
+
+        const warehouseDisplayName =
+          getWarehouseDisplayNameByKey(
+            warehouseKey
+          ) || rawWarehouseKey;
+
+        if (warehouseKey) {
+          khoKeys.add(warehouseKey);
+        }
+
+        if (warehouseDisplayName) {
+          khoNames.add(
+            warehouseDisplayName
+          );
+        }
+      });
+
+    String(v.voucherSummary || '')
+      .split(';')
+      .map(s => s.trim())
+      .filter(Boolean)
+      .forEach(entry => {
+        const withoutType = entry.replace(
+          /^(TQ|BT|HT):/i,
+          ''
+        );
+
+        const voucherText = withoutType
+          .split('|')[0]
+          .trim();
+
+        if (voucherText) {
+          allVouchers.add(voucherText);
+        }
+      });
+
+    // Tương thích dữ liệu đầy đủ cũ.
+    if (
+      v.vouchers &&
+      allDates.size === 0 &&
+      allVouchers.size === 0
+    ) {
+      let keys = Object.keys(v.vouchers);
+
+      let isLikelyOldFormat =
+        keys.length === 4 &&
+        keys.includes("Tiem_Vien") &&
+        keys.includes("Dich_Truyen") &&
+        keys.includes("Vat_Tu") &&
+        keys.includes("Khac");
+
+      for (let kKey in v.vouchers) {
+        let vc = v.vouchers[kKey];
+
+        let hasData =
+          vc.TQ.length > 0 ||
+          vc.BT.length > 0 ||
+          vc.HT.length > 0 ||
+          vc.dates.length > 0;
+
+        if (hasData || !isLikelyOldFormat) {
+          const warehouseDisplayName =
+            getWarehouseDisplayNameByKey(kKey);
+
+          if (warehouseDisplayName) {
+            khoNames.add(warehouseDisplayName);
+            khoKeys.add(String(kKey));
+          }
+        }
+
+        if (hasData) {
+          vc.dates.forEach(d => {
+            const formatted = formatDateDDMMYYYY(d);
+            if (formatted) allDates.add(formatted);
+          });
+          vc.TQ.forEach(
+            x => allVouchers.add(x.split('|')[0])
+          );
+          vc.BT.forEach(
+            x => allVouchers.add(x.split('|')[0])
+          );
+          vc.HT.forEach(
+            x => allVouchers.add(x.split('|')[0])
+          );
+        }
+      }
+    }
+
+    let phieuArr = Array.from(allVouchers);
+    let phieuStr = formatVoucherColors(phieuArr.slice(0, 3)) + (phieuArr.length > 3 ? ` <i style="color:#777;">...và thêm ${phieuArr.length - 3} phiếu khác</i>` : "");
+    if (!phieuStr) phieuStr = "Không có phiếu";
+    
+    let khoKeyArr = Array.from(khoKeys);
+    let khoStr = Array.from(khoNames).join(", ");
+    let khoBadgesHtml = buildWarehouseBadgesHtml(khoKeyArr);
+    let voucherCardStyle = buildWarehouseCardStyle(khoKeyArr);
+
+    let dateStr = normalizeDateList(allDates).join(", ");
+    if (!dateStr) dateStr = "Không có ngày";
+
+let d = new Date(v.time);
+    let timeStr = ("0"+d.getHours()).slice(-2) + ":" + ("0"+d.getMinutes()).slice(-2) + " " + ("0"+d.getDate()).slice(-2) + "/" + ("0"+(d.getMonth()+1)).slice(-2) + "/" + d.getFullYear();
+    
+    let timeHtml = `<span style="font-size:16px; color:#555; font-style:italic;">(Nạp: ${timeStr})</span>`;
+    if (
+      v.state === 'done' ||
+      v.state === 'checked'
+    ) {
+        let fD = v.finishTime ? new Date(v.finishTime) : d;
+        let fTimeStr = ("0"+fD.getHours()).slice(-2) + ":" + ("0"+fD.getMinutes()).slice(-2) + " " + ("0"+fD.getDate()).slice(-2) + "/" + ("0"+(fD.getMonth()+1)).slice(-2) + "/" + fD.getFullYear();
+        let finalLabel = v.state === 'checked' ? 'Đối chiếu' : 'Chốt';
+        timeHtml = `<span onclick="event.stopPropagation(); this.innerText = this.innerText.includes('${finalLabel}') ? '(Nạp: ${timeStr})' : '(${finalLabel}: ${fTimeStr})'" style="font-size:16px; color:#555; font-style:italic; cursor:pointer;" title="Bấm để xem giờ nạp/hoàn tất">(${finalLabel}: ${fTimeStr})</span>`;
+    }
+
+    return `
+      <div
+        class="tracking-card"
+        style="${voucherCardStyle}"
+        data-voucher-id="${id}"
+        onmouseenter="prefetchVoucherDetail('${id}')"
+        onpointerdown="prefetchVoucherDetail('${id}')"
+        onclick="openDetail('${id}', '${v.state}')">
+        <div class="tracking-card-title-row">
+          ${currentUser.role === 'admin' ? `<input type="checkbox" class="bulk-voucher-chk" value="${id}" onclick="event.stopPropagation()">` : ''}
+          <div class="tracking-card-title-text">${v.khoa}</div>
+          ${(currentUser.role === 'admin' || (currentUser.role === 'phat' && (v.state === 'waiting' || v.state === 'progress'))) ? `<button class="tracking-delete-btn" onclick="event.stopPropagation(); deleteVoucher('${id}')">Xóa</button>` : ''}
+        </div>
+        <div style="margin-top:2px;">${timeHtml}</div>
+        <div class="tracking-card-warehouse-row"><span class="tracking-card-warehouse-label">🏢 Kho:</span><span class="warehouse-badges">${khoBadgesHtml}</span></div>
+        <div style="font-size:18px; margin-top:0px;"><b>📅 Ngày:</b> <span style="color:var(--danger);">${dateStr}</span></div>
+        <div style="font-size:18px; margin-top:10px; line-height:1.4;"><b>🧾 Phiếu:</b> <span style="color:#333; font-weight:bold;">${phieuStr}</span></div>
+        <div class="tracking-card-status"><span class="status-badge ${bClass}"><span class="status-badge-text">${bText}</span></span></div>
+      </div>`;
+  }
+
+
+  const voucherDepartmentFilterInitialized = {
+    active: false,
+    history: false
+  };
+
+  function getCurrentAccountDefaultVoucherDepartment() {
+    if (
+      !currentUser ||
+      currentUser.role !== 'xem'
+    ) {
+      return '';
+    }
+
+    let departments =
+      Array.isArray(
+        currentUser.notifyDepartments
+      )
+        ? currentUser.notifyDepartments
+        : [];
+
+    if (
+      !departments.length &&
+      currentUser.notifyKhoa
+    ) {
+      departments =
+        String(
+          currentUser.notifyKhoa
+        )
+          .split(',')
+          .map(item =>
+            item.trim()
+          )
+          .filter(Boolean);
+    }
+
+    const specificDepartments =
+      departments
+        .map(item =>
+          String(item || '').trim()
+        )
+        .filter(Boolean)
+        .filter(item => {
+          const normalized =
+            item.toLowerCase();
+
+          return (
+            normalized !==
+              'tất cả' &&
+            normalized !==
+              'tất cả các khoa'
+          );
+        });
+
+    return (
+      specificDepartments.length === 1
+        ? specificDepartments[0]
+        : ''
+    );
+  }
+
+  function resetVoucherDepartmentFiltersForAccount() {
+    voucherDepartmentFilterInitialized
+      .active = false;
+
+    voucherDepartmentFilterInitialized
+      .history = false;
+
+    [
+      {
+        type: 'active',
+        inputId: 'searchKhoa',
+        selectId: 'filterKhoa'
+      },
+      {
+        type: 'history',
+        inputId:
+          'searchHistoryKhoa',
+        selectId:
+          'filterHistoryKhoa'
+      }
+    ].forEach(item => {
+      const input =
+        document.getElementById(
+          item.inputId
+        );
+
+      const select =
+        document.getElementById(
+          item.selectId
+        );
+
+      if (input) {
+        input.value = '';
+
+        updateSearchIcon(
+          item.type,
+          false
+        );
+      }
+
+      if (select) {
+        select.value =
+          'Tất cả các khoa';
+
+        select.title =
+          'Tất cả các khoa';
+      }
+    });
+  }
+
+  function markVoucherDepartmentFilterInitialized(
+    type
+  ) {
+    const key =
+      type === 'history'
+        ? 'history'
+        : 'active';
+
+    voucherDepartmentFilterInitialized[
+      key
+    ] = true;
+  }
+
+  function getVoucherDepartmentFilterForRender(
+    type
+  ) {
+    const isHistory =
+      type === 'history';
+
+    const key =
+      isHistory
+        ? 'history'
+        : 'active';
+
+    const input =
+      document.getElementById(
+        isHistory
+          ? 'searchHistoryKhoa'
+          : 'searchKhoa'
+      );
+
+    if (!input) {
+      return '';
+    }
+
+    if (
+      !voucherDepartmentFilterInitialized[
+        key
+      ]
+    ) {
+      voucherDepartmentFilterInitialized[
+        key
+      ] = true;
+
+      const defaultDepartment =
+        getCurrentAccountDefaultVoucherDepartment();
+
+      if (defaultDepartment) {
+        input.value =
+          defaultDepartment;
+
+        updateSearchIcon(
+          type,
+          true
+        );
+
+        return defaultDepartment;
+      }
+
+      input.value = '';
+
+      updateSearchIcon(
+        type,
+        false
+      );
+
+      return '';
+    }
+
+    return input.value.trim();
+  }
+
+  function openSearch(type) {
+      let sc = document.getElementById(type === 'history' ? 'scHistory' : 'scActive');
+      let inp = document.getElementById(type === 'history' ? 'searchHistoryKhoa' : 'searchKhoa');
+      if (!sc.classList.contains('active-search')) {
+          sc.classList.add('active-search');
+          setTimeout(() => inp.focus(), 100);
+          if (inp.value.trim() !== '') {
+              updateSearchIcon(type, true);
+          }
+      } else {
+          inp.focus();
+      }
+  }
+
+  function updateSearchIcon(type, hasText) {
+      let clearIcon = document.getElementById(type === 'history' ? 'sIconHistoryClear' : 'sIconActiveClear');
+      if (hasText) {
+          clearIcon.classList.add('show');
+      } else {
+          clearIcon.classList.remove('show');
+      }
+  }
+
+  function handleSearchInput(type) {
+      markVoucherDepartmentFilterInitialized(
+        type
+      );
+
+      let isHistory = type === 'history';
+      let searchInput = document.getElementById(isHistory ? 'searchHistoryKhoa' : 'searchKhoa');
+      let selectBtn = document.getElementById(isHistory ? 'filterHistoryKhoa' : 'filterKhoa');
+      
+      let val = searchInput.value.trim();
+      updateSearchIcon(type, val !== '');
+      
+      let options = Array.from(selectBtn.options).map(o => o.value);
+      if (options.includes(val)) {
+          selectBtn.value = val;
+      } else {
+          selectBtn.value = "Tất cả các khoa";
+      }
+      
+      if(isHistory) renderHistoryList(); else renderTrackingList();
+  }
+
+  function clearSearch(type) {
+      markVoucherDepartmentFilterInitialized(
+        type
+      );
+
+      let isHistory = type === 'history';
+      let searchInput = document.getElementById(isHistory ? 'searchHistoryKhoa' : 'searchKhoa');
+      let selectBtn = document.getElementById(isHistory ? 'filterHistoryKhoa' : 'filterKhoa');
+      
+      searchInput.value = '';
+      updateSearchIcon(type, false);
+      selectBtn.value = "Tất cả các khoa";
+      searchInput.focus(); 
+      if(isHistory) renderHistoryList(); else renderTrackingList();
+  }
+  
+  function handleSelectChange(type) {
+      markVoucherDepartmentFilterInitialized(
+        type
+      );
+
+      let isHistory = type === 'history';
+      let searchInput = document.getElementById(isHistory ? 'searchHistoryKhoa' : 'searchKhoa');
+      let selectBtn = document.getElementById(isHistory ? 'filterHistoryKhoa' : 'filterKhoa');
+      let sc = document.getElementById(isHistory ? 'scHistory' : 'scActive');
+      
+      let val = selectBtn.value;
+      selectBtn.title = val;
+      if (val === "Tất cả các khoa") {
+          searchInput.value = '';
+          updateSearchIcon(type, false);
+      } else {
+          searchInput.value = val;
+          updateSearchIcon(type, true);
+      }
+      
+      // Giữ cho hộp tìm kiếm đóng, chỉ cập nhật âm thầm giá trị bên trong
+      sc.classList.remove('active-search');
+
+      if(isHistory) renderHistoryList(); else renderTrackingList();
+  }
+
+  function toggleStatusFilter(event) {
+    if(event) event.stopPropagation();
+    let wrap = document.getElementById('statusFilterWrap');
+    if(wrap) wrap.classList.toggle('open');
+  }
+
+  function getSelectedVoucherStates() {
+    return Array.from(document.querySelectorAll('.voucher-state-filter:checked')).map(el => el.value);
+  }
+
+  function updateStatusFilterLabel() {
+    let selected = getSelectedVoucherStates();
+    let label = document.getElementById('statusFilterLabel');
+    if(!label) return;
+    let names = { waiting: 'Chưa phát', progress: 'Đang phát', done: 'Đã phát' };
+    if(selected.length === 3) label.innerText = '3 loại phiếu';
+    else if(selected.length === 2) label.innerText = '2 loại phiếu';
+    else if(selected.length === 1) label.innerText = names[selected[0]] || '1 loại';
+  }
+
+  function handleStatusFilterChange(changedInput) {
+    let selected = getSelectedVoucherStates();
+    if(selected.length === 0) {
+      changedInput.checked = true;
+      showMsg('Cần chọn ít nhất 1 loại phiếu.', 'Bộ lọc loại phiếu', 'warning');
+      return;
+    }
+    updateStatusFilterLabel();
+    renderTrackingList();
+  }
+
+  function voucherCardsCacheKey() {
+    const username =
+      currentUser && currentUser.username
+        ? currentUser.username
+        : 'guest';
+
+    return 'voucher_cards_v7_' + username;
+  }
+
+  function readVoucherCardsLocalCache() {
+    try {
+      const raw = sessionStorage.getItem(
+        voucherCardsCacheKey()
+      );
+
+      if (!raw) return null;
+
+      const parsed = JSON.parse(raw);
+
+      return parsed && typeof parsed === 'object'
+        ? parsed
+        : null;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  function saveVoucherCardsLocalCache(data) {
+    try {
+      sessionStorage.setItem(
+        voucherCardsCacheKey(),
+        JSON.stringify(data || {})
+      );
+    } catch (error) {
+      // Không chặn ứng dụng nếu trình duyệt hết dung lượng.
+    }
+  }
+
+  function unpackVoucherCardsResponse(response) {
+    if (
+      response &&
+      response.success !== false &&
+      response.vouchers &&
+      typeof response.vouchers === 'object'
+    ) {
+      console.log('Voucher cards loaded:', {
+        cacheHit: Boolean(response.cacheHit),
+        serverMs: Number(response.serverMs || 0),
+        count: Object.keys(response.vouchers).length
+      });
+
+      return response.vouchers;
+    }
+
+    return {};
+  }
+
+  function loadWaitList() {
+    const localCached = readVoucherCardsLocalCache();
+
+    const hasCurrentData =
+      cloudWaitList &&
+      Object.keys(cloudWaitList).length > 0;
+
+    if (!hasCurrentData && localCached) {
+      cloudWaitList = localCached;
+      renderTrackingList();
+    }
+
+    if (!hasCurrentData && !localCached) {
+      showLoading(true, "Đang tải danh sách phiếu...");
+    }
+
+    const startedAt = performance.now();
+
+    google.script.run
+      .withSuccessHandler(response => {
+        showLoading(false);
+
+        cloudWaitList =
+          unpackVoucherCardsResponse(response);
+
+        saveVoucherCardsLocalCache(cloudWaitList);
+        renderTrackingList();
+
+        console.log(
+          'Voucher list totalMs:',
+          Math.round(performance.now() - startedAt)
+        );
+      })
+      .withFailureHandler(error => {
+        showLoading(false);
+
+        if (!hasCurrentData && !localCached) {
+          showMsg(
+            error.message || String(error),
+            'Không tải được danh sách',
+            'danger'
+          );
+        }
+      })
+      .getVoucherCardsServer();
+  }
+
+  function renderTrackingList() {
+    let bulkBtn = document.getElementById('btnBulkDelete');
+    if (bulkBtn) bulkBtn.style.display = (currentUser && currentUser.role === 'admin') ? 'inline-block' : 'none';
+    renderBackgroundFinishPanel();
+    let c = document.getElementById('trackingListContainer'); c.innerHTML = "";
+    let arr = Object.values(cloudWaitList)
+      .filter(v =>
+        !isVoucherFinishingInBackground(
+          v && v.id
+        )
+      );
+    if (
+      currentUser.role !== 'admin' &&
+      currentUser.kho !== 'Tất cả'
+    ) {
+      let myKhos = currentUser.kho
+        .split(',')
+        .map(s => mapKhoToKey(s.trim()));
+
+      arr = arr.filter(v => {
+        const keys = String(v.warehouseKeys || '')
+          .split(',')
+          .map(s => s.trim())
+          .filter(Boolean);
+
+        if (keys.length) {
+          return myKhos.some(k => keys.includes(k));
+        }
+
+        // Dữ liệu cũ vẫn được hỗ trợ.
+        if (!v.vouchers) return true;
+
+        return myKhos.some(
+          k =>
+            v.vouchers[k] &&
+            (
+              v.vouchers[k].TQ.length > 0 ||
+              v.vouchers[k].BT.length > 0 ||
+              v.vouchers[k].HT.length > 0
+            )
+        );
+      });
+    }
+
+    let todayStr = new Date().toLocaleDateString('vi-VN');
+    let selectedStates = getSelectedVoucherStates();
+
+    // Chỉ giữ các phiếu thực sự có thể hiển thị theo trạng thái đang chọn.
+    // Phiếu "Đã phát" trong danh sách chính chỉ hiển thị trong ngày hôm nay.
+    let visibleArr = arr.filter(v => {
+      if(!selectedStates.includes(v.state)) return false;
+      if(v.state === 'done') {
+        let vDate = v.finishTime ? new Date(v.finishTime) : new Date(v.time);
+        return vDate.toLocaleDateString('vi-VN') === todayStr;
+      }
+      return v.state === 'waiting' || v.state === 'progress';
+    });
+
+    const adminWarehouseFilter =
+      updateAdminWarehouseFilterOptions(
+        'active',
+        visibleArr
+      );
+
+    if (adminWarehouseFilter) {
+      visibleArr = visibleArr.filter(voucher =>
+        voucherMatchesAdminWarehouseFilter(
+          voucher,
+          adminWarehouseFilter
+        )
+      );
+    }
+
+    let searchInput = document.getElementById('searchKhoa');
+    let selectBtn = document.getElementById('filterKhoa');
+
+    let currentFilter =
+      getVoucherDepartmentFilterForRender(
+        'active'
+      );
+
+    const accountDefaultDepartment =
+      getCurrentAccountDefaultVoucherDepartment();
+
+    // Danh sách khoa lấy từ chính các phiếu đang được hiển thị.
+    // Luôn thêm khoa được phân quyền để bộ lọc vẫn hiển thị đúng
+    // ngay cả khi hiện tại khoa đó chưa có phiếu.
+    let uniqueKhoas =
+      [
+        ...new Set(
+          visibleArr.map(v => v.khoa)
+        )
+      ];
+
+    if (
+      accountDefaultDepartment &&
+      !uniqueKhoas.includes(
+        accountDefaultDepartment
+      )
+    ) {
+      uniqueKhoas.push(
+        accountDefaultDepartment
+      );
+    }
+
+    uniqueKhoas.sort(
+      (a, b) =>
+        a.localeCompare(
+          b,
+          'vi'
+        )
+    );
+    
+    let dlKhoaSearch = document.getElementById('dlKhoaSearch');
+    let dlHTML = '';
+    let selHTML = '<option value="Tất cả các khoa">Tất cả</option>';
+    
+    uniqueKhoas.forEach(khoa => {
+      dlHTML += `<option value="${khoa}"></option>`;
+      selHTML += `<option value="${khoa}">${khoa}</option>`;
+    });
+
+    if (dlKhoaSearch.innerHTML !== dlHTML) {
+        dlKhoaSearch.innerHTML = dlHTML;
+    }
+    
+    let prevSelect = selectBtn.value;
+    if (selectBtn.innerHTML !== selHTML) {
+        selectBtn.innerHTML = selHTML;
+        if (uniqueKhoas.includes(prevSelect)) {
+            selectBtn.value = prevSelect;
+        } else if (uniqueKhoas.includes(currentFilter)) {
+            selectBtn.value = currentFilter;
+        } else {
+            selectBtn.value = "Tất cả các khoa";
+
+            /*
+             * Chỉ xóa bộ lọc cũ khi đó không phải khoa mặc định
+             * của tài khoản Người lĩnh.
+             */
+            if (
+              prevSelect !== "Tất cả các khoa" &&
+              currentFilter === prevSelect &&
+              currentFilter !==
+                accountDefaultDepartment
+            ) {
+              searchInput.value = '';
+              currentFilter = '';
+              updateSearchIcon('active', false);
+            }
+        }
+    }
+    selectBtn.title = selectBtn.value;
+
+    arr = visibleArr;
+    if(currentFilter !== '') {
+      arr = arr.filter(v => v.khoa.toLowerCase().includes(currentFilter.toLowerCase()));
+    }
+    
+    let waiting = [], progress = [], done = [];
+    arr.forEach(v => { 
+        if(v.state === 'waiting') waiting.push(v); 
+        else if(v.state === 'progress') progress.push(v); 
+        else if(v.state === 'done') done.push(v); 
+    });
+    
+    let groups = [
+      { state: 'waiting', title: "Chưa phát", cls: "group-waiting", items: waiting },
+      { state: 'progress', title: "Đang phát", cls: "group-progress", items: progress },
+      { state: 'done', title: "Đã phát", cls: "group-done", items: done }
+    ];
+    if(currentUser.role === 'xem') {
+      let order = { progress: 0, waiting: 1, done: 2 };
+      groups.sort((a, b) => order[a.state] - order[b.state]);
+    }
+    groups.forEach(g => {
+      if(g.items.length === 0) return;
+      c.innerHTML += `<div class="group-title ${g.cls}">${g.title} (${g.items.length})</div>`;
+      g.items.forEach(v => { c.innerHTML += buildCardHTML(v.id, v); });
+    });
+    scheduleVoucherDetailPrefetch();
+  }
+
+  async function deleteVoucher(id) {
+    let v = cloudWaitList[id];
+    if (currentUser.role === 'phat' && v && !(v.state === 'waiting' || v.state === 'progress')) {
+      return showMsg("Tài khoản phát thuốc chỉ được xóa phiếu Chưa phát hoặc Đang phát.", "Không đủ quyền", "warning");
+    }
+    const ok = await showConfirm("Bạn có chắc chắn muốn xóa phiếu này không?", "Xóa phiếu", { type: 'danger', confirmText: 'Xóa', confirmClass: 'btn-danger' });
+    if(ok) {
+      google.script.run
+        .withSuccessHandler(() => {
+          removeVoucherDetailCache(id);
+          loadWaitList();
+        })
+        .deleteVoucherServer(id);
+    }
+  }
+
+
+  function refreshAfterBulkDelete() {
+    let isHistoryVisible = document.getElementById('view-history') && document.getElementById('view-history').style.display === 'block';
+    if (isHistoryVisible) loadHistoryList(); else loadWaitList();
+  }
+
+  function deleteVouchersOneByOne(ids) {
+    if (!ids || ids.length === 0) {
+      showLoading(false);
+      refreshAfterBulkDelete();
+      return;
+    }
+    let done = 0;
+    const finishOne = () => {
+      done++;
+      if (done >= ids.length) {
+        showLoading(false);
+        refreshAfterBulkDelete();
+      }
+    };
+    ids.forEach(id => {
+      google.script.run
+        .withSuccessHandler(finishOne)
+        .withFailureHandler(finishOne)
+        .deleteVoucherServer(id);
+    });
+  }
+
+  async function deleteSelectedVouchers() {
+    if (!currentUser || currentUser.role !== 'admin') return showMsg("Chỉ tài khoản Admin mới được xóa hàng loạt.", "Không đủ quyền", "warning");
+    let ids = Array.from(document.querySelectorAll('.bulk-voucher-chk:checked')).map(cb => cb.value);
+    ids = [...new Set(ids)];
+    if (ids.length === 0) return showMsg("Vui lòng tích chọn ít nhất 1 phiếu cần xóa.", "Chưa chọn phiếu", "warning");
+    const ok = await showConfirm("Bạn có chắc chắn muốn xóa hàng loạt " + ids.length + " phiếu đã chọn không?", "Xóa hàng loạt", { type: 'danger', confirmText: 'Xóa đã chọn', confirmClass: 'btn-danger' });
+    if (!ok) return;
+
+    showLoading(true, "Đang xóa hàng loạt...");
+    try {
+      google.script.run
+        .withSuccessHandler(() => { showLoading(false); refreshAfterBulkDelete(); })
+        .withFailureHandler(() => { deleteVouchersOneByOne(ids); })
+        .batchDeleteVouchersServer(JSON.stringify(ids));
+    } catch (e) {
+      deleteVouchersOneByOne(ids);
+    }
+  }
+
+  function loadHistoryList() {
+    const localCached = readVoucherCardsLocalCache();
+
+    if (localCached) {
+      cloudHistoryData = Object
+        .values(localCached)
+        .filter(v => v.state === 'done' || v.state === 'checked');
+
+      renderHistoryList();
+    }
+
+    google.script.run
+      .withSuccessHandler(response => {
+        const data =
+          unpackVoucherCardsResponse(response);
+
+        saveVoucherCardsLocalCache(data);
+
+        cloudHistoryData = Object
+          .values(data)
+          .filter(v => v.state === 'done' || v.state === 'checked');
+
+        renderHistoryList();
+      })
+      .withFailureHandler(error => {
+        if (!localCached) {
+          showMsg(
+            error.message || String(error),
+            'Không tải được lịch sử',
+            'danger'
+          );
+        }
+      })
+      .getVoucherCardsServer();
+  }
+
+  /* FIX13: nhận biết ngày ISO và ngày Việt Nam, không để trình duyệt tự đoán sai tháng/ngày */
+  function getHistoryLocalDateKey(value) {
+    if (value === null || value === undefined || value === '') return '';
+
+    if (value instanceof Date && !Number.isNaN(value.getTime())) {
+      return (
+        value.getFullYear() + '-' +
+        String(value.getMonth() + 1).padStart(2, '0') + '-' +
+        String(value.getDate()).padStart(2, '0')
+      );
+    }
+
+    const text = String(value).trim();
+    if (!text) return '';
+
+    const iso = text.match(/^(\d{4})-(\d{1,2})-(\d{1,2})(?:T|\s|$)/);
+    if (iso) {
+      return (
+        iso[1] + '-' +
+        String(Number(iso[2])).padStart(2, '0') + '-' +
+        String(Number(iso[3])).padStart(2, '0')
+      );
+    }
+
+    const vietnamese = text.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})(?:\s|$)/);
+    if (vietnamese) {
+      let year = Number(vietnamese[3]);
+      if (year < 100) year += 2000;
+      return (
+        year + '-' +
+        String(Number(vietnamese[2])).padStart(2, '0') + '-' +
+        String(Number(vietnamese[1])).padStart(2, '0')
+      );
+    }
+
+    const date = new Date(text);
+    if (Number.isNaN(date.getTime())) return '';
+
+    return (
+      date.getFullYear() + '-' +
+      String(date.getMonth() + 1).padStart(2, '0') + '-' +
+      String(date.getDate()).padStart(2, '0')
+    );
+  }
+
+  function formatHistoryDateKey(dateKey) {
+    const match = String(dateKey || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!match) return String(dateKey || '');
+    return `${match[3]}/${match[2]}/${match[1]}`;
+  }
+
+  function updateHistoryDateFilterOptions(vouchers) {
+    const select = document.getElementById('filterHistoryDate');
+    if (!select) return '__all__';
+
+    const dateKeys = [...new Set(
+      (Array.isArray(vouchers) ? vouchers : [])
+        .map(voucher => getHistoryLocalDateKey(voucher && voucher.time))
+        .filter(Boolean)
+    )].sort((a, b) => b.localeCompare(a));
+
+    const previousValue = String(select.value || '__all__');
+    const optionsHtml =
+      '<option value="__all__">📅 Tất cả ngày</option>' +
+      dateKeys
+        .map(dateKey =>
+          `<option value="${dateKey}">📅 ${formatHistoryDateKey(dateKey)}</option>`
+        )
+        .join('');
+
+    if (select.innerHTML !== optionsHtml) {
+      select.innerHTML = optionsHtml;
+    }
+
+    select.value = dateKeys.includes(previousValue)
+      ? previousValue
+      : '__all__';
+
+    select.title = select.value === '__all__'
+      ? 'Tất cả ngày'
+      : formatHistoryDateKey(select.value);
+
+    return select.value;
+  }
+
+  function handleHistoryDateFilterChange() {
+    const select = document.getElementById('filterHistoryDate');
+    if (select) {
+      select.title = select.value === '__all__'
+        ? 'Tất cả ngày'
+        : formatHistoryDateKey(select.value);
+    }
+    renderHistoryList();
+  }
+
+  function renderHistoryList() {
+    let bulkBtn = document.getElementById('btnBulkDeleteHistory');
+    if (bulkBtn) bulkBtn.style.display = (currentUser && currentUser.role === 'admin') ? 'inline-block' : 'none';
+    let c = document.getElementById('historyListContainer'); c.innerHTML = "";
+    let arr = cloudHistoryData;
+
+    const adminWarehouseFilter =
+      updateAdminWarehouseFilterOptions(
+        'history',
+        arr
+      );
+
+    if (adminWarehouseFilter) {
+      arr = arr.filter(voucher =>
+        voucherMatchesAdminWarehouseFilter(
+          voucher,
+          adminWarehouseFilter
+        )
+      );
+    }
+    
+    let searchInput = document.getElementById('searchHistoryKhoa');
+    let selectBtn = document.getElementById('filterHistoryKhoa');
+
+    let currentFilter =
+      getVoucherDepartmentFilterForRender(
+        'history'
+      );
+
+    const accountDefaultDepartment =
+      getCurrentAccountDefaultVoucherDepartment();
+
+    let uniqueKhoas =
+      [
+        ...new Set(
+          arr.map(v => v.khoa)
+        )
+      ];
+
+    if (
+      accountDefaultDepartment &&
+      !uniqueKhoas.includes(
+        accountDefaultDepartment
+      )
+    ) {
+      uniqueKhoas.push(
+        accountDefaultDepartment
+      );
+    }
+
+    uniqueKhoas.sort(
+      (a, b) =>
+        a.localeCompare(
+          b,
+          'vi'
+        )
+    );
+    
+    let dlHistoryKhoaSearch = document.getElementById('dlHistoryKhoaSearch');
+    let dlHTML = '';
+    let selHTML = '<option value="Tất cả các khoa">Tất cả</option>';
+    
+    uniqueKhoas.forEach(khoa => {
+      dlHTML += `<option value="${khoa}"></option>`;
+      selHTML += `<option value="${khoa}">${khoa}</option>`;
+    });
+
+    if (dlHistoryKhoaSearch.innerHTML !== dlHTML) {
+        dlHistoryKhoaSearch.innerHTML = dlHTML;
+    }
+    
+    let prevSelect = selectBtn.value;
+    if (selectBtn.innerHTML !== selHTML) {
+        selectBtn.innerHTML = selHTML;
+        if (uniqueKhoas.includes(prevSelect)) {
+            selectBtn.value = prevSelect;
+        } else if (uniqueKhoas.includes(currentFilter)) {
+            selectBtn.value = currentFilter;
+        } else {
+            selectBtn.value = "Tất cả các khoa";
+        }
+    }
+    selectBtn.title = selectBtn.value;
+
+    if(currentFilter !== '') {
+      arr = arr.filter(v => v.khoa.toLowerCase().includes(currentFilter.toLowerCase()));
+    }
+
+    const historyDateFilter = updateHistoryDateFilterOptions(arr);
+    if (historyDateFilter && historyDateFilter !== '__all__') {
+      arr = arr.filter(voucher =>
+        getHistoryLocalDateKey(voucher && voucher.time) === historyDateFilter
+      );
+    }
+
+    const historyByDate = {};
+    arr.forEach(voucher => {
+      const dateKey = getHistoryLocalDateKey(voucher && voucher.time);
+      if (!dateKey) return;
+      if (!historyByDate[dateKey]) historyByDate[dateKey] = [];
+      historyByDate[dateKey].push(voucher);
+    });
+
+    const historyDateKeys = Object.keys(historyByDate).sort((a, b) => b.localeCompare(a));
+    historyDateKeys.forEach(dateKey => {
+      const hasChecked =
+        historyByDate[dateKey].some(
+          v => v.state === 'checked'
+        );
+
+      c.innerHTML +=
+        `<div class="group-title ${hasChecked ? 'group-checked' : 'group-done'}">Ngày ${formatHistoryDateKey(dateKey)}</div>` +
+        `<div class="tracking-list">` +
+        historyByDate[dateKey]
+          .map(v => buildCardHTML(v.id, v))
+          .join("") +
+        `</div>`;
+    });
+
+    if (!arr.length) {
+      c.innerHTML = '<div class="empty-state">Không có phiếu trong ngày đã chọn.</div>';
+    }
+  }
+
+  function clearOpeningVoucherCard(id = null) {
+    const targetId =
+      id === null
+        ? openingVoucherId
+        : String(id || '');
+
+    if (targetId) {
+      document
+        .querySelectorAll(
+          `.tracking-card[data-voucher-id="${CSS.escape(targetId)}"]`
+        )
+        .forEach(card => {
+          card.classList.remove('opening');
+        });
+    }
+
+    if (
+      id === null ||
+      String(openingVoucherId || '') === targetId
+    ) {
+      openingVoucherId = null;
+    }
+  }
+
+  function markOpeningVoucherCard(id) {
+    clearOpeningVoucherCard();
+
+    openingVoucherId = String(id || '');
+
+    document
+      .querySelectorAll(
+        `.tracking-card[data-voucher-id="${CSS.escape(openingVoucherId)}"]`
+      )
+      .forEach(card => {
+        card.classList.add('opening');
+      });
+  }
+
+  function setDetailActionsBusy(
+    busy,
+    message = ''
+  ) {
+    detailActionInFlight = Boolean(busy);
+
+    [
+      'btnFinishVoucher',
+      'btnFinishCheck',
+      'btnCloseDetail'
+    ].forEach(id => {
+      const button =
+        document.getElementById(id);
+
+      if (!button) return;
+
+      button.disabled = Boolean(busy);
+      button.classList.toggle(
+        'detail-action-busy',
+        Boolean(busy)
+      );
+    });
+
+    if (message) {
+      const modeText =
+        document.getElementById(
+          'detailModeText'
+        );
+
+      if (modeText) {
+        modeText.innerText = message;
+      }
+    }
+
+    updateBatchSaveIndicator();
+  }
+
+  function cancelPendingDetailOpen() {
+    detailOpenSequence++;
+    clearOpeningVoucherCard();
+  }
+
+  function refreshDetailAccessUi(
+    voucher,
+    refreshing = false
+  ) {
+    if (!voucher || !currentUser) return;
+
+    const modeText =
+      document.getElementById('detailModeText');
+
+    const finishButton =
+      document.getElementById('btnFinishVoucher');
+
+    const finishCheckButton =
+      document.getElementById('btnFinishCheck');
+
+    const isCheckFinalized =
+      voucher.state === 'checked' ||
+      activeVoucherCheckedHint;
+
+    const isDistributionFinalized =
+      voucher.state === 'done' ||
+      isCheckFinalized ||
+      activeVoucherFinalizedHint;
+
+    if (refreshing) {
+      modeText.innerText =
+        '⏳ Đang đồng bộ dữ liệu mới...';
+    } else if (isCheckFinalized) {
+      modeText.innerText =
+        currentUser.role === 'admin'
+          ? '🔓 Đã chốt đối chiếu – Chỉ Admin được sửa'
+          : '🔒 Đã chốt đối chiếu – Chỉ Admin được sửa';
+    } else if (
+      currentUser.role === 'admin' &&
+      isDistributionFinalized
+    ) {
+      modeText.innerText =
+        '🔓 Phiếu đã chốt phát – Admin được phép sửa';
+    } else if (
+      currentUser.role === 'phat' &&
+      isDistributionFinalized
+    ) {
+      modeText.innerText =
+        '🔒 Phiếu đã chốt phát – Chỉ Admin được sửa';
+    } else if (currentUser.role === 'xem') {
+      modeText.innerText =
+        '👀 Chỉ Xem / Đối Chiếu';
+    } else {
+      modeText.innerText =
+        '💊 Dược sĩ: ' + currentUser.fullName;
+    }
+
+    const canFinishDistribution =
+      (
+        currentUser.role === 'phat' ||
+        currentUser.role === 'admin'
+      ) &&
+      voucher.state !== 'done' &&
+      voucher.state !== 'checked' &&
+      !activeVoucherFinalizedHint;
+
+    finishButton.style.display =
+      canFinishDistribution
+        ? 'inline-block'
+        : 'none';
+
+    const canFinishCheck =
+      (
+        currentUser.role === 'xem' ||
+        currentUser.role === 'admin'
+      ) &&
+      voucher.state === 'done' &&
+      !activeVoucherCheckedHint;
+
+    finishCheckButton.style.display =
+      canFinishCheck
+        ? 'inline-block'
+        : 'none';
+  }
+
+  function startDetailSync(id, isViewer) {
+    if (syncInterval) {
+      clearInterval(syncInterval);
+    }
+
+    syncInterval = setInterval(
+      () => syncDetail(id, isViewer),
+      detailSyncIntervalMs
+    );
+  }
+
+  function displayVoucherDetail(
+    voucher,
+    isViewer,
+    options = {}
+  ) {
+    forceHideLoading();
+    clearOpeningVoucherCard(voucher && voucher.id);
+
+    const renderStartedAt = performance.now();
+
+    cloudWaitList[voucher.id] = voucher;
+    activeVoucherId = voucher.id;
+
+    switchView('detail');
+
+    document
+      .getElementById('detailKhoa')
+      .innerText = 'Khoa: ' + voucher.khoa;
+
+    refreshDetailAccessUi(
+      voucher,
+      Boolean(options.refreshing)
+    );
+
+    currentVoucherVersion = Number(
+      voucher.version || 0
+    );
+
+    syncInFlight = false;
+    detailRefreshing = Boolean(
+      options.refreshing
+    );
+
+    // Khi dữ liệu không còn ở trạng thái cache đang đồng bộ,
+    // trạng thái trong voucher là trạng thái server hiện tại.
+    if (!detailRefreshing) {
+      activeVoucherFinalizedHint =
+        voucher.state === 'done' ||
+        voucher.state === 'checked';
+
+      activeVoucherCheckedHint =
+        voucher.state === 'checked';
+    }
+
+    renderTabs(voucher, !isViewer);
+    restorePendingDistributionActions(voucher.id);
+
+    saveVoucherDetailCache(voucher);
+
+    console.log(
+      'Voucher renderMs:',
+      Math.round(
+        performance.now() - renderStartedAt
+      )
+    );
+  }
+
+  function markDetailFresh(isViewer) {
+    detailRefreshing = false;
+
+    const voucher =
+      cloudWaitList[activeVoucherId];
+
+    if (voucher) {
+      activeVoucherFinalizedHint =
+        voucher.state === 'done' ||
+        voucher.state === 'checked';
+
+      activeVoucherCheckedHint =
+        voucher.state === 'checked';
+
+      refreshDetailAccessUi(voucher, false);
+    }
+  }
+
+  function refreshCachedVoucherDetail(
+    id,
+    cachedVoucher,
+    isViewer,
+    openedAt
+  ) {
+    gasCall(
+      'getVoucherDeltaServer',
+      [
+        id,
+        Number(cachedVoucher.version || 0)
+      ]
+    )
+      .then(delta => {
+        if (
+          id !== activeVoucherId
+        ) {
+          return;
+        }
+
+        if (!delta) {
+          markDetailFresh(isViewer);
+          startDetailSync(id, isViewer);
+          return;
+        }
+
+        if (delta.deleted) {
+          removeVoucherDetailCache(id);
+
+          showMsg(
+            'Phiếu đã bị xóa hoặc hết thời gian lưu.',
+            'Phiếu không còn tồn tại',
+            'warning'
+          );
+
+          switchView('list');
+          return;
+        }
+
+        if (!delta.changed) {
+          currentVoucherVersion = Number(
+            delta.version ||
+            currentVoucherVersion
+          );
+
+          const current =
+            cloudWaitList[id];
+
+          if (current) {
+            current.version =
+              currentVoucherVersion;
+
+            saveVoucherDetailCache(current);
+          }
+
+          markDetailFresh(isViewer);
+          startDetailSync(id, isViewer);
+
+          console.log('Open voucher timing:', {
+            source: 'browser-cache',
+            totalMs: Math.round(
+              performance.now() - openedAt
+            ),
+            changed: false
+          });
+
+          return;
+        }
+
+        if (delta.full && delta.voucher) {
+          displayVoucherDetail(
+            delta.voucher,
+            isViewer,
+            { refreshing: false }
+          );
+        } else if (
+          delta.item &&
+          Number.isInteger(delta.index)
+        ) {
+          applyServerItemUpdate(
+            delta.index,
+            delta.item,
+            delta.version,
+            delta.state,
+            delta.finishTime
+          );
+
+          markDetailFresh(isViewer);
+        }
+
+        const current =
+          cloudWaitList[id];
+
+        if (current) {
+          saveVoucherDetailCache(current);
+        }
+
+        startDetailSync(id, isViewer);
+
+        console.log('Open voucher timing:', {
+          source: 'browser-cache',
+          totalMs: Math.round(
+            performance.now() - openedAt
+          ),
+          changed: true
+        });
+      })
+      .catch(error => {
+        if (id !== activeVoucherId) return;
+
+        markDetailFresh(isViewer);
+        startDetailSync(id, isViewer);
+
+        console.error(
+          'Lỗi kiểm tra phiên bản phiếu:',
+          error
+        );
+      });
+  }
+
+  async function openDetail(id, state) {
+    id = String(id || '');
+
+    if (!id || detailActionInFlight) return;
+
+    activateLowVisionDetailMode();
+
+    const requestSequence =
+      ++detailOpenSequence;
+
+    markOpeningVoucherCard(id);
+    forceHideLoading();
+
+    adminFinalizedEditConfirmed = false;
+
+    const openedState =
+      String(state || '');
+
+    activeVoucherFinalizedHint =
+      openedState === 'done' ||
+      openedState === 'checked';
+
+    activeVoucherCheckedHint =
+      openedState === 'checked';
+
+    const openedAt = performance.now();
+    const isViewer =
+      currentUser.role === 'xem';
+
+    activeVoucherId = id;
+
+    const cachedVoucher =
+      readVoucherDetailCache(id);
+
+    try {
+      if (cachedVoucher) {
+        if (
+          requestSequence !== detailOpenSequence ||
+          id !== activeVoucherId
+        ) {
+          return;
+        }
+
+        displayVoucherDetail(
+          cachedVoucher,
+          isViewer,
+          { refreshing: true }
+        );
+
+        refreshCachedVoucherDetail(
+          id,
+          cachedVoucher,
+          isViewer,
+          openedAt
+        );
+
+        return;
+      }
+
+      const voucher =
+        await prefetchVoucherDetail(id);
+
+      if (
+        requestSequence !== detailOpenSequence ||
+        id !== activeVoucherId
+      ) {
+        return;
+      }
+
+      if (!voucher) {
+        throw new Error(
+          'Phiếu không còn tồn tại hoặc không tải được.'
+        );
+      }
+
+      displayVoucherDetail(
+        voucher,
+        isViewer,
+        { refreshing: false }
+      );
+
+      startDetailSync(id, isViewer);
+
+      console.log('Open voucher timing:', {
+        source: 'server-or-prefetch',
+        totalMs: Math.round(
+          performance.now() - openedAt
+        )
+      });
+    } catch (error) {
+      if (
+        requestSequence !== detailOpenSequence ||
+        id !== activeVoucherId
+      ) {
+        return;
+      }
+
+      exitLowVisionDetailMode();
+
+      showMsg(
+        error.message || String(error),
+        'Không mở được phiếu',
+        'danger'
+      );
+    } finally {
+      /*
+       * Chỉ request mới nhất mới được dọn chỉ báo.
+       * Callback cũ không thể để lại overlay hoặc khóa thẻ.
+       */
+      if (requestSequence === detailOpenSequence) {
+        clearOpeningVoucherCard(id);
+        forceHideLoading();
+      }
+    }
+  }
+
+  function renderTabs(voucherData, isEditable) {
+    const h = document.getElementById('distTabsHeader');
+    const b = document.getElementById('distTabsBody');
+    const headerParts = [];
+    const bodyParts = [];
+    let first = true;
+    let myKhos = (currentUser.role === 'admin' || currentUser.kho === 'Tất cả') ? null : currentUser.kho.split(',').map(s => mapKhoToKey(s.trim()));
+    
+    refreshDetailAccessUi(
+      voucherData,
+      detailRefreshing
+    );
+    
+    for(let k in KHO_CONFIG) {
+      if(myKhos && !myKhos.includes(k)) continue; 
+      let itemsInKho = voucherData.items.map((it, idx) => ({...it, index: idx})).filter(x => x.khoKey === k);
+      if(itemsInKho.length === 0) continue;
+      
+      itemsInKho.sort((a, b) => a.ten.localeCompare(b.ten, 'vi'));
+      
+      headerParts.push(
+        `<button class="tab-btn ${first?'active':''}" onclick="switchTab(event,'${k}')">${KHO_CONFIG[k]}</button>`
+      );
+      let categories = [
+          { title: "THUỐC GÂY NGHIỆN", items: itemsInKho.filter(it => it.loaiThuoc.toLowerCase().includes("gây nghiện")), color: "#dc3545" },
+          { title: "THUỐC HƯỚNG THẦN", items: itemsInKho.filter(it => it.loaiThuoc.toLowerCase().includes("hướng thần")), color: "#fd7e14" },
+          { title: "THUỐC THƯỜNG", items: itemsInKho.filter(it => !it.loaiThuoc.toLowerCase().includes("gây nghiện") && !it.loaiThuoc.toLowerCase().includes("hướng thần")), color: "#28a745" }
+      ];
+      
+      let contentHtml = buildVoucherHeader(voucherData.vouchers ? voucherData.vouchers[k] : null);
+      
+      let negativeItems = itemsInKho.filter(it => it.sl < 0);
+      if (negativeItems.length > 0) {
+          let itemsListHtml = negativeItems.map(it => {
+              let tenNgan = it.ten.split('//')[0].trim();
+              return `<span style="color: #0056b3; font-style: italic; font-weight: 900; font-size: 1.1em;">${Math.abs(it.sl)} ${it.dvt} ${tenNgan}</span>`;
+          }).join('; ');
+          
+          let warnHtml = currentUser.role === 'xem' 
+              ? `Bạn cần trả lại ${itemsListHtml} cho kho` 
+              : `Bạn cần thu hồi lại ${itemsListHtml} về kho`;
+              
+          contentHtml += `<div style="background: #ffebee; color: var(--danger); padding: 12px 15px; margin-bottom: 15px; border-radius: 6px; border: 1px solid var(--danger); font-weight: bold;">⚠️ ${warnHtml}</div>`;
+      }
+
+      categories.forEach(cat => {
+          if(cat.items.length === 0) return;
+          contentHtml += `<div style="margin-bottom:25px; border:2px solid ${cat.color}; border-radius:8px; overflow:hidden;">
+              <div style="background:${cat.color}; color:#fff; padding:12px; font-weight:900; text-align:center;">${cat.title}</div>
+              <table style="border:none; table-layout: fixed; width: 100%;">
+              <thead>
+                <tr>
+                  <th width="5%">STT</th>
+                  <th class="col-mabd" width="12%">Mã BD</th>
+                  <th width="43%">Tên Thuốc</th>
+                  <th width="12%">ĐVT</th>
+                  <th width="8%">SL</th>
+                  <th class="col-ghichu">Ghi chú</th>
+                  <th width="20%">Người phát</th>
+                </tr>
+              </thead>
+              <tbody>` + cat.items.map((it, i) => {
+               let isDone = it.status !== 'Chưa phát';
+               let isChecked = it.checker && it.checker !== '';
+               let sttDisplay = i + 1;
+               
+               if(usesPortraitVoucherColumns()) { 
+                   sttDisplay = isDone ? (isChecked ? '<span style="display:inline-block; background:#007bff; color:#fff; width:22px; height:22px; line-height:22px; border-radius:4px; text-align:center; font-size:14px;">✔</span>' : '✅') : i + 1; 
+               }
+               
+               let badgeHtml = 'Chưa phát';
+               if (isDone) {
+                   if (isChecked) {
+                       badgeHtml = `<span class="phat-badge" style="background: #87CEFA; color: #333;">✅ ${it.checker}</span>`;
+                   } else {
+                       badgeHtml = `<span class="phat-badge">✅ ${it.status}</span>`;
+                   }
+               }
+               
+               let clickAction = "showMsg('Chỉ xem!')";
+
+               if (currentUser.role === 'admin') {
+                   clickAction = `toggleItem(${it.index})`;
+               } else if (
+                   voucherData.state === 'checked' ||
+                   activeVoucherCheckedHint
+               ) {
+                   clickAction = `showMsg('Phiếu đã chốt đối chiếu. Chỉ Admin mới được sửa.', 'Không đủ quyền', 'warning')`;
+               } else if (
+                   currentUser.role === 'phat' &&
+                   voucherData.state !== 'done' &&
+                   !activeVoucherFinalizedHint
+               ) {
+                   clickAction = `toggleItem(${it.index})`;
+               } else if (
+                   currentUser.role === 'phat' &&
+                   (
+                     voucherData.state === 'done' ||
+                     activeVoucherFinalizedHint
+                   )
+               ) {
+                   clickAction = `showMsg('Phiếu đã chốt phát. Chỉ Admin mới được sửa trạng thái phát thuốc.', 'Không đủ quyền', 'warning')`;
+               } else if (currentUser.role === 'xem') {
+                   clickAction = `toggleCheckItem(${it.index})`;
+               }
+
+               let tenParts = it.ten.split('//');
+               let tenThuocDisplay = tenParts.length > 1 ? `<span class="ten-thuoc-main">${tenParts[0]}</span>//${tenParts.slice(1).join('//')}` : `<span class="ten-thuoc-main">${it.ten}</span>`;
+
+               return `<tr class="${isDone ? "item-row distributed" : (it.sl < 0 ? "item-row negative-row" : "item-row")}" id="tr_${it.index}" onclick="${clickAction}">
+               <td class="text-center" id="stt_${it.index}" data-stt="${i + 1}">${sttDisplay}</td>
+               <td class="col-mabd text-center"><b>${it.ma}</b></td>
+               <td><b>${tenThuocDisplay}</b></td>
+               <td class="text-center">${it.dvt}</td>
+               <td class="text-center"><b>${it.sl}</b></td>
+               <td class="col-ghichu"></td>
+               <td class="text-center" id="st_${it.index}">${badgeHtml}</td></tr>`}).join("") + `</tbody></table></div>`;
+      });
+      bodyParts.push(
+        `<div id="content-${k}" class="tab-content ${first?'active':''}">${contentHtml}</div>`
+      );
+
+      first = false;
+    }
+
+    h.innerHTML = headerParts.join('');
+    b.innerHTML = bodyParts.join('');
+  }
+
+  function switchTab(e, k) {
+    document.querySelectorAll(`.tab-btn`).forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll(`.tab-content`).forEach(c=>c.classList.remove('active'));
+    e.currentTarget.classList.add('active'); document.getElementById('content-'+k).classList.add('active');
+  }
+
+  function renderServerItemState(idx, item) {
+    const trElem = document.getElementById('tr_' + idx);
+    const statusElem = document.getElementById('st_' + idx);
+    const sttElem = document.getElementById('stt_' + idx);
+    if (!trElem || !statusElem || !item) return;
+
+    const isDone = item.status !== 'Chưa phát';
+    const isChecked = !!item.checker;
+    trElem.classList.remove('status-updating', 'missed-item');
+    trElem.className = isDone ? 'item-row distributed' : (item.sl < 0 ? 'item-row negative-row' : 'item-row');
+
+    if (!isDone) statusElem.innerHTML = 'Chưa phát';
+    else if (isChecked) statusElem.innerHTML = `<span class="phat-badge" style="background:#87CEFA;color:#333;">✅ ${item.checker}</span>`;
+    else statusElem.innerHTML = `<span class="phat-badge">✅ ${item.status}</span>`;
+
+    if (sttElem && usesPortraitVoucherColumns()) {
+      const origStt = sttElem.getAttribute('data-stt') || '';
+      sttElem.innerHTML = isDone
+        ? (isChecked ? '<span style="display:inline-block;background:#007bff;color:#fff;width:22px;height:22px;line-height:22px;border-radius:4px;text-align:center;font-size:14px;">✔</span>' : '✅')
+        : origStt;
+    }
+  }
+
+  function applyServerItemUpdate(
+    idx,
+    item,
+    version,
+    state,
+    finishTime
+  ) {
+    const voucher =
+      cloudWaitList[activeVoucherId];
+
+    if (
+      !voucher ||
+      !voucher.items ||
+      !voucher.items[idx]
+    ) {
+      return;
+    }
+
+    voucher.items[idx] = {
+      ...voucher.items[idx],
+      ...item
+    };
+
+    if (state) {
+      voucher.state = state;
+      activeVoucherFinalizedHint =
+        state === 'done' ||
+        state === 'checked';
+
+      activeVoucherCheckedHint =
+        state === 'checked';
+    }
+
+    if (finishTime !== undefined) {
+      voucher.finishTime = finishTime || '';
+    }
+
+    voucher.version = Number(
+      version || voucher.version || 0
+    );
+
+    currentVoucherVersion = voucher.version;
+
+    renderServerItemState(
+      idx,
+      voucher.items[idx]
+    );
+
+    refreshDetailAccessUi(
+      voucher,
+      false
+    );
+
+    saveVoucherDetailCache(voucher);
+  }
+
+  function waitForDetailFresh(timeoutMs = 5000) {
+    if (!detailRefreshing) {
+      return Promise.resolve(true);
+    }
+
+    return new Promise(resolve => {
+      const startedAt = Date.now();
+
+      const timer = setInterval(() => {
+        if (!detailRefreshing) {
+          clearInterval(timer);
+          resolve(true);
+          return;
+        }
+
+        if (Date.now() - startedAt >= timeoutMs) {
+          clearInterval(timer);
+          resolve(false);
+        }
+      }, 50);
+    });
+  }
+
+  function isAdminEditingFinalizedVoucher(voucher) {
+    return Boolean(
+      currentUser &&
+      currentUser.role === 'admin' &&
+      voucher &&
+      (
+        voucher.state === 'done' ||
+        voucher.state === 'checked' ||
+        activeVoucherFinalizedHint
+      )
+    );
+  }
+
+
+  function distributionActionKey(voucherId, idx) {
+    return String(voucherId || '') + ':' + Number(idx);
+  }
+
+  function distributionStorageKey() {
+    const username = currentUser && currentUser.username
+      ? String(currentUser.username).trim().toLowerCase()
+      : 'guest';
+    return DISTRIBUTION_STORAGE_PREFIX + username;
+  }
+
+  function createMutationId(prefix = 'M') {
+    return prefix + '_' + Date.now() + '_' +
+      Math.random().toString(36).slice(2, 10);
+  }
+
+  function getPendingDistributionActionCount(voucherId = '') {
+    const targetVoucherId = String(voucherId || '');
+
+    return Array.from(distributionIntentStates.values()).filter(state =>
+      (!targetVoucherId || state.voucherId === targetVoucherId) &&
+      (
+        state.inFlight ||
+        state.desiredDistributed !== state.confirmedDistributed
+      )
+    ).length;
+  }
+
+  function hasPendingDistributionActions(voucherId = '') {
+    const targetVoucherId = String(voucherId || '');
+    const hasMatchingActions =
+      getPendingDistributionActionCount(targetVoucherId) > 0;
+
+    return targetVoucherId
+      ? hasMatchingActions
+      : (hasMatchingActions || distributionBatchRunning);
+  }
+
+  function updateBatchSaveIndicator() {
+    const indicator = document.getElementById('batchSaveIndicator');
+    if (!indicator) return;
+
+    const distributionCount = Array.from(distributionIntentStates.values())
+      .filter(state =>
+        state.voucherId === String(activeVoucherId || '') &&
+        (
+          state.inFlight ||
+          state.desiredDistributed !== state.confirmedDistributed
+        )
+      ).length;
+
+    const checkCount = Array.from(checkIntentStates.values())
+      .filter(state =>
+        state.voucherId === String(activeVoucherId || '') &&
+        (
+          state.inFlight ||
+          state.queued ||
+          state.desiredChecked !== state.confirmedChecked
+        )
+      ).length;
+
+    const count = distributionCount + checkCount;
+    indicator.style.display = count ? 'inline-flex' : 'none';
+    indicator.innerText = count
+      ? '⏳ Đang lưu ' + count + ' mục'
+      : '';
+
+    const finishButton = document.getElementById('btnFinishVoucher');
+    if (finishButton) {
+      const blockFinish =
+        distributionCount > 0 || detailActionInFlight;
+
+      finishButton.disabled = blockFinish;
+      finishButton.classList.toggle(
+        'detail-action-busy',
+        blockFinish
+      );
+
+      if (distributionCount > 0) {
+        finishButton.title =
+          'Hãy chờ các thuốc lưu xong rồi mới chốt phát.';
+      } else if (!detailActionInFlight) {
+        finishButton.removeAttribute('title');
+      }
+    }
+  }
+
+  function persistDistributionIntentStates() {
+    try {
+      const payload = Array.from(distributionIntentStates.values())
+        .filter(state =>
+          state.desiredDistributed !== state.confirmedDistributed ||
+          state.inFlight
+        )
+        .map(state => ({
+          voucherId: state.voucherId,
+          idx: state.idx,
+          itemId: state.itemId || '',
+          desiredDistributed: Boolean(state.desiredDistributed),
+          mutationId: state.mutationId || createMutationId('D'),
+          savedAt: Date.now()
+        }));
+
+      if (payload.length) {
+        localStorage.setItem(
+          distributionStorageKey(),
+          JSON.stringify(payload)
+        );
+      } else {
+        localStorage.removeItem(distributionStorageKey());
+      }
+    } catch (error) {
+      console.warn('Không lưu được hàng đợi phát thuốc:', error);
+    }
+  }
+
+  function readPersistedDistributionActions() {
+    try {
+      const parsed = JSON.parse(
+        localStorage.getItem(distributionStorageKey()) || '[]'
+      );
+      if (!Array.isArray(parsed)) return [];
+      const cutoff = Date.now() - 7 * 24 * 60 * 60 * 1000;
+      return parsed.filter(item => Number(item.savedAt || 0) >= cutoff);
+    } catch (error) {
+      return [];
+    }
+  }
+
+  function renderPendingDistributionState(state, phase = 'pending') {
+    if (!state || state.voucherId !== String(activeVoucherId || '')) return;
+
+    const voucher = cloudWaitList[state.voucherId];
+    const item = voucher && voucher.items && voucher.items[state.idx];
+    if (!item) return;
+
+    const previewItem = {
+      ...item,
+      status: state.desiredDistributed
+        ? currentUser.fullName
+        : 'Chưa phát',
+      dispenserUsername: state.desiredDistributed
+        ? currentUser.username
+        : '',
+      checker: state.desiredDistributed ? item.checker : '',
+      checkerUsername: state.desiredDistributed ? item.checkerUsername : ''
+    };
+
+    renderServerItemState(state.idx, previewItem);
+
+    const row = document.getElementById('tr_' + state.idx);
+    const status = document.getElementById('st_' + state.idx);
+    const stt = document.getElementById('stt_' + state.idx);
+
+    if (row) {
+      row.classList.remove(
+        'distribution-pending',
+        'distribution-saving',
+        'distribution-error'
+      );
+      row.classList.add(
+        phase === 'saving'
+          ? 'distribution-saving'
+          : (phase === 'error' ? 'distribution-error' : 'distribution-pending')
+      );
+      row.setAttribute('aria-busy', 'true');
+    }
+
+    const icon = phase === 'saving'
+      ? '⏳'
+      : (phase === 'error' ? '⚠' : '●');
+    const hint = phase === 'saving'
+      ? 'Đang lưu nền'
+      : (phase === 'error' ? 'Mạng lỗi • sẽ tự thử lại' : 'Chờ lưu nền');
+
+    if (status) {
+      status.innerHTML = state.desiredDistributed
+        ? `<span class="phat-badge">✅ ${currentUser.fullName}</span>` +
+          `<span class="batch-sync-hint">${icon} ${hint}</span>`
+        : `<span class="phat-badge">↩ Hủy phát</span>` +
+          `<span class="batch-sync-hint">${icon} ${hint}</span>`;
+    }
+
+    if (stt && usesPortraitVoucherColumns()) {
+      stt.innerHTML = state.desiredDistributed ? '✅' : '↩';
+    }
+
+    updateBatchSaveIndicator();
+  }
+
+  function clearDistributionVisualState(voucherId, idx) {
+    if (String(voucherId) !== String(activeVoucherId || '')) return;
+    const row = document.getElementById('tr_' + idx);
+    if (row) {
+      row.classList.remove(
+        'distribution-pending',
+        'distribution-saving',
+        'distribution-error'
+      );
+      row.removeAttribute('aria-busy');
+    }
+  }
+
+  function removeDistributionIntentState(state) {
+    if (!state) return;
+    distributionIntentStates.delete(state.key);
+    clearDistributionVisualState(state.voucherId, state.idx);
+    persistDistributionIntentStates();
+    updateBatchSaveIndicator();
+  }
+
+  function applyBatchItemResult(voucherId, result) {
+    if (!result || !result.item) return;
+
+    if (String(voucherId) === String(activeVoucherId || '')) {
+      applyServerItemUpdate(
+        result.index,
+        result.item,
+        result.version,
+        result.state,
+        result.finishTime
+      );
+      return;
+    }
+
+    const voucher = cloudWaitList[voucherId];
+    if (!voucher || !voucher.items || !voucher.items[result.index]) return;
+    voucher.items[result.index] = {
+      ...voucher.items[result.index],
+      ...result.item
+    };
+    if (result.state) voucher.state = result.state;
+    if (result.version) voucher.version = Number(result.version);
+    saveVoucherDetailCache(voucher);
+  }
+
+  function scheduleDistributionBatch(delayMs = DISTRIBUTION_BATCH_DELAY_MS) {
+    if (distributionBatchTimer) clearTimeout(distributionBatchTimer);
+    distributionBatchTimer = setTimeout(() => {
+      distributionBatchTimer = null;
+      processDistributionBatch();
+    }, Math.max(0, Number(delayMs || 0)));
+  }
+
+  async function processDistributionBatch() {
+    if (distributionBatchRunning) return;
+
+    const candidates = Array.from(distributionIntentStates.values())
+      .filter(state =>
+        !state.inFlight &&
+        state.desiredDistributed !== state.confirmedDistributed
+      );
+
+    if (!candidates.length) {
+      persistDistributionIntentStates();
+      updateBatchSaveIndicator();
+      return;
+    }
+
+    const voucherId = candidates[0].voucherId;
+    const batch = candidates
+      .filter(state => state.voucherId === voucherId)
+      .slice(0, ITEM_BATCH_MAX_ACTIONS);
+
+    if (!batch.length) return;
+
+    distributionBatchRunning = true;
+    mutationInFlight = true;
+
+    if (voucherId === String(activeVoucherId || '') && detailRefreshing) {
+      const ready = await waitForDetailFresh(5000);
+      if (!ready) {
+        distributionBatchRunning = false;
+        mutationInFlight = false;
+        scheduleDistributionBatch(500);
+        updateBatchSaveIndicator();
+        return;
+      }
+    }
+
+    batch.forEach(state => {
+      state.inFlight = true;
+      state.sentDesired = state.desiredDistributed;
+      state.sentMutationId = state.mutationId;
+      renderPendingDistributionState(state, 'saving');
+    });
+    persistDistributionIntentStates();
+
+    try {
+      const actions = batch.map(state => ({
+        idx: state.idx,
+        itemId: state.itemId || '',
+        desiredDistributed: state.sentDesired,
+        expectedItemVersion: Number(state.confirmedItemVersion || 0),
+        mutationId: state.sentMutationId
+      }));
+
+      const result = await gasCall(
+        'saveItemActionsBatchServer',
+        [voucherId, 'distribute', actions],
+        12000
+      );
+
+      if (!result || result.success === false) {
+        const error = new Error(
+          (result && result.msg) || 'Không thể lưu lô phát thuốc.'
+        );
+        error.retryable = !result || result.retryable !== false;
+        throw error;
+      }
+
+      const resultMap = new Map(
+        (result.results || []).map(item => [Number(item.index), item])
+      );
+      const errors = [];
+
+      batch.forEach(state => {
+        const itemResult = resultMap.get(state.idx);
+        state.inFlight = false;
+
+        if (!itemResult || itemResult.success === false) {
+          if (itemResult && itemResult.item) {
+            applyBatchItemResult(voucherId, {
+              ...itemResult,
+              version: result.version,
+              state: result.state,
+              finishTime: result.finishTime
+            });
+            state.confirmedDistributed =
+              itemResult.item.status !== 'Chưa phát';
+            state.confirmedItemVersion = Number(
+              itemResult.item.itemVersion || state.confirmedItemVersion || 0
+            );
+          }
+
+          state.desiredDistributed = state.confirmedDistributed;
+          errors.push(
+            (itemResult && itemResult.msg) || 'Một khoản thuốc không lưu được.'
+          );
+          removeDistributionIntentState(state);
+          return;
+        }
+
+        applyBatchItemResult(voucherId, {
+          ...itemResult,
+          version: result.version,
+          state: result.state,
+          finishTime: result.finishTime
+        });
+
+        state.confirmedDistributed =
+          itemResult.item.status !== 'Chưa phát';
+        state.confirmedItemVersion = Number(
+          itemResult.item.itemVersion || result.version || 0
+        );
+        state.retryCount = 0;
+
+        if (state.desiredDistributed !== state.confirmedDistributed) {
+          state.mutationId = createMutationId('D');
+          renderPendingDistributionState(state, 'pending');
+        } else {
+          removeDistributionIntentState(state);
+        }
+      });
+
+      if (result.reopened) {
+        adminFinalizedEditConfirmed = true;
+        activeVoucherFinalizedHint = false;
+        showMsg(
+          'Phiếu đã được mở lại thành trạng thái Đang phát. Sau khi sửa xong, hãy bấm Chốt Phát.',
+          'Đã mở lại phiếu',
+          'success'
+        );
+      }
+
+      if (errors.length) {
+        showMsg(
+          Array.from(new Set(errors)).slice(0, 3).join('\n'),
+          'Một số thuốc chưa cập nhật',
+          'warning'
+        );
+      }
+    } catch (error) {
+      batch.forEach(state => {
+        state.inFlight = false;
+        state.retryCount = Number(state.retryCount || 0) + 1;
+        renderPendingDistributionState(state, 'error');
+      });
+
+      persistDistributionIntentStates();
+
+      const retryDelay = Math.min(
+        DISTRIBUTION_RETRY_MAX_MS,
+        500 * Math.pow(2, Math.min(3, batch[0].retryCount || 1))
+      );
+
+      if (distributionRetryTimer) clearTimeout(distributionRetryTimer);
+      distributionRetryTimer = setTimeout(() => {
+        distributionRetryTimer = null;
+        processDistributionBatch();
+      }, retryDelay);
+
+      console.warn('Lưu lô phát thuốc thất bại, sẽ tự thử lại:', error);
+    } finally {
+      distributionBatchRunning = false;
+      mutationInFlight = false;
+      persistDistributionIntentStates();
+      updateBatchSaveIndicator();
+
+      if (
+        Array.from(distributionIntentStates.values()).some(state =>
+          !state.inFlight &&
+          state.desiredDistributed !== state.confirmedDistributed
+        ) &&
+        !distributionRetryTimer
+      ) {
+        scheduleDistributionBatch(0);
+      }
+    }
+  }
+
+  async function flushPendingDistributionActions(
+    timeoutMs = 6000,
+    voucherId = activeVoucherId
+  ) {
+    const targetVoucherId = String(voucherId || '');
+
+    if (!hasPendingDistributionActions(targetVoucherId)) {
+      return true;
+    }
+
+    if (distributionBatchTimer) {
+      clearTimeout(distributionBatchTimer);
+      distributionBatchTimer = null;
+    }
+
+    if (!distributionBatchRunning && !distributionRetryTimer) {
+      scheduleDistributionBatch(0);
+    }
+
+    const startedAt = Date.now();
+
+    while (hasPendingDistributionActions(targetVoucherId)) {
+      if (Date.now() - startedAt >= timeoutMs) {
+        return false;
+      }
+
+      if (
+        !distributionBatchRunning &&
+        !distributionBatchTimer &&
+        !distributionRetryTimer
+      ) {
+        scheduleDistributionBatch(0);
+      }
+
+      await new Promise(resolve => setTimeout(resolve, 250));
+    }
+
+    return true;
+  }
+
+  async function blockFinalActionWhileDistributionPending(
+    actionLabel = 'tiếp tục'
+  ) {
+    const voucherId = String(activeVoucherId || '');
+    const pendingCount =
+      getPendingDistributionActionCount(voucherId);
+
+    if (!hasPendingDistributionActions(voucherId)) {
+      return false;
+    }
+
+    if (distributionRetryTimer) {
+      clearTimeout(distributionRetryTimer);
+      distributionRetryTimer = null;
+    }
+
+    if (!distributionBatchRunning) {
+      scheduleDistributionBatch(0);
+    }
+
+    updateBatchSaveIndicator();
+
+    await showMsg(
+      'Còn ' + Math.max(1, pendingCount) +
+        ' khoản thuốc chưa lưu xong. Hệ thống đang tiếp tục lưu nền. ' +
+        'Hãy chờ dòng “Đang lưu … mục” biến mất rồi bấm ' +
+        actionLabel + ' lại.',
+      'Đang lưu thuốc',
+      'warning'
+    );
+
+    return true;
+  }
+
+  function restorePendingDistributionActions(voucherId) {
+    if (!currentUser || !['admin', 'phat'].includes(currentUser.role)) return;
+
+    const voucher = cloudWaitList[voucherId];
+    if (!voucher || !Array.isArray(voucher.items)) return;
+
+    readPersistedDistributionActions()
+      .filter(saved => String(saved.voucherId) === String(voucherId))
+      .forEach(saved => {
+        const idx = Number(saved.idx);
+        const item = voucher.items[idx];
+        if (!item) return;
+        if (saved.itemId && saved.itemId !== item.itemId) return;
+
+        const confirmedDistributed = item.status !== 'Chưa phát';
+        const desiredDistributed = Boolean(saved.desiredDistributed);
+        if (confirmedDistributed === desiredDistributed) return;
+
+        const key = distributionActionKey(voucherId, idx);
+        const state = {
+          key,
+          voucherId: String(voucherId),
+          idx,
+          itemId: item.itemId || '',
+          confirmedDistributed,
+          desiredDistributed,
+          confirmedItemVersion: Number(item.itemVersion || 0),
+          mutationId: saved.mutationId || createMutationId('D'),
+          inFlight: false,
+          retryCount: 0
+        };
+        distributionIntentStates.set(key, state);
+        renderPendingDistributionState(state, 'pending');
+      });
+
+    persistDistributionIntentStates();
+    if (hasPendingDistributionActions(voucherId)) {
+      scheduleDistributionBatch(100);
+    }
+  }
+
+  function clearDistributionRuntimeState() {
+    if (distributionBatchTimer) clearTimeout(distributionBatchTimer);
+    if (distributionRetryTimer) clearTimeout(distributionRetryTimer);
+    distributionBatchTimer = null;
+    distributionRetryTimer = null;
+    distributionBatchRunning = false;
+    distributionIntentStates.clear();
+    updateBatchSaveIndicator();
+  }
+
+  async function toggleItem(idx) {
+    const voucherId = String(activeVoucherId || '');
+    let voucher = cloudWaitList[voucherId];
+    let item = voucher && voucher.items && voucher.items[idx];
+    const row = document.getElementById('tr_' + idx);
+
+    if (!row || !item) {
+      return showMsg(
+        'Không lấy được dữ liệu khoản thuốc. Vui lòng mở lại phiếu.',
+        'Dữ liệu chưa sẵn sàng',
+        'warning'
+      );
+    }
+
+    if (
+      isAdminEditingFinalizedVoucher(voucher) &&
+      !adminFinalizedEditConfirmed
+    ) {
+      const confirmed = await showConfirm(
+        'Phiếu này đã được chốt.\n\nKhi sửa, hệ thống sẽ chuyển phiếu về trạng thái Đang phát và xóa thời điểm chốt cũ. Sau khi sửa xong, Admin cần chốt lại phiếu.\n\nBạn có tiếp tục không?',
+        'Sửa phiếu đã chốt',
+        {
+          type: 'warning',
+          confirmText: 'Mở lại để sửa',
+          cancelText: 'Hủy'
+        }
+      );
+      if (!confirmed) return;
+      adminFinalizedEditConfirmed = true;
+    }
+
+    if (detailRefreshing) {
+      const ready = await waitForDetailFresh(5000);
+      if (!ready) {
+        adminFinalizedEditConfirmed = false;
+        return showMsg(
+          'Dữ liệu phiếu chưa đồng bộ xong. Vui lòng bấm lại sau ít giây.',
+          'Đang đồng bộ',
+          'warning'
+        );
+      }
+      voucher = cloudWaitList[voucherId];
+      item = voucher && voucher.items && voucher.items[idx];
+      if (!item) return;
+    }
+
+    const key = distributionActionKey(voucherId, idx);
+    let state = distributionIntentStates.get(key);
+
+    if (!state) {
+      const confirmedDistributed = item.status !== 'Chưa phát';
+      state = {
+        key,
+        voucherId,
+        idx: Number(idx),
+        itemId: item.itemId || '',
+        confirmedDistributed,
+        desiredDistributed: confirmedDistributed,
+        confirmedItemVersion: Number(item.itemVersion || 0),
+        mutationId: createMutationId('D'),
+        inFlight: false,
+        retryCount: 0
+      };
+      distributionIntentStates.set(key, state);
+    }
+
+    const nextDesiredDistributed = !state.desiredDistributed;
+
+    if (
+      currentUser.role === 'phat' &&
+      !nextDesiredDistributed &&
+      state.confirmedDistributed &&
+      item.dispenserUsername &&
+      item.dispenserUsername.toLowerCase() !== currentUser.username.toLowerCase()
+    ) {
+      return showMsg('Khoản thuốc đã được người khác phát, bạn không có quyền hủy.');
+    }
+
+    state.desiredDistributed = nextDesiredDistributed;
+    state.mutationId = createMutationId('D');
+
+    if (
+      !state.inFlight &&
+      state.desiredDistributed === state.confirmedDistributed
+    ) {
+      renderServerItemState(idx, item);
+      removeDistributionIntentState(state);
+      return;
+    }
+
+    renderPendingDistributionState(
+      state,
+      state.inFlight ? 'saving' : 'pending'
+    );
+    persistDistributionIntentStates();
+
+    if (!state.inFlight) {
+      scheduleDistributionBatch(DISTRIBUTION_BATCH_DELAY_MS);
+    }
+  }
+
+  function checkActionKey(voucherId, idx) {
+    return (
+      String(voucherId || '') +
+      ':' +
+      Number(idx)
+    );
+  }
+
+  function hasPendingCheckActions() {
+    return (
+      checkIntentStates.size > 0 ||
+      checkServerQueue.length > 0 ||
+      checkQueueRunning
+    );
+  }
+
+  function getCheckIntentState(
+    voucherId,
+    idx
+  ) {
+    return checkIntentStates.get(
+      checkActionKey(voucherId, idx)
+    ) || null;
+  }
+
+  function renderPendingCheckState(
+    state,
+    phase = 'undo'
+  ) {
+    if (
+      !state ||
+      state.voucherId !== activeVoucherId
+    ) {
+      return;
+    }
+
+    const voucher =
+      cloudWaitList[state.voucherId];
+
+    const item =
+      voucher &&
+      voucher.items &&
+      voucher.items[state.idx];
+
+    if (!item) return;
+
+    const intendedChecked =
+      Boolean(state.desiredChecked);
+
+    const previewItem = {
+      ...item,
+      checker: intendedChecked
+        ? currentUser.fullName
+        : ''
+    };
+
+    renderServerItemState(
+      state.idx,
+      previewItem
+    );
+
+    const row =
+      document.getElementById(
+        'tr_' + state.idx
+      );
+
+    const status =
+      document.getElementById(
+        'st_' + state.idx
+      );
+
+    if (row) {
+      row.classList.remove(
+        'check-pending',
+        'check-saving'
+      );
+
+      row.classList.add(
+        phase === 'saving'
+          ? 'check-saving'
+          : 'check-pending'
+      );
+
+      row.setAttribute('aria-busy', 'true');
+    }
+
+    if (status) {
+      if (intendedChecked) {
+        status.innerHTML =
+          `<span class="phat-badge" style="background:#87CEFA;color:#333;">` +
+          `${phase === 'saving' ? '⏳' : '↩'} ${currentUser.fullName}` +
+          `</span>` +
+          `<span class="check-undo-hint">` +
+          (
+            phase === 'saving'
+              ? 'Đang lưu • chạm lại để hoàn tác'
+              : 'Chạm lại trong 0,5 giây để hủy'
+          ) +
+          `</span>`;
+      } else {
+        status.innerHTML =
+          `<span class="phat-badge">` +
+          `${phase === 'saving' ? '⏳' : '↩'} Hủy đối chiếu` +
+          `</span>` +
+          `<span class="check-undo-hint">` +
+          (
+            phase === 'saving'
+              ? 'Đang lưu • chạm lại để giữ'
+              : 'Chạm lại trong 0,5 giây để giữ'
+          ) +
+          `</span>`;
+      }
+    }
+  }
+
+  function clearCheckVisualState(
+    voucherId,
+    idx
+  ) {
+    if (voucherId !== activeVoucherId) {
+      return;
+    }
+
+    const row =
+      document.getElementById('tr_' + idx);
+
+    if (row) {
+      row.classList.remove(
+        'check-pending',
+        'check-saving'
+      );
+
+      row.removeAttribute('aria-busy');
+    }
+  }
+
+  function restoreConfirmedCheckState(
+    state
+  ) {
+    if (!state) return;
+
+    if (state.voucherId === activeVoucherId) {
+      const voucher =
+        cloudWaitList[state.voucherId];
+
+      const item =
+        voucher &&
+        voucher.items &&
+        voucher.items[state.idx];
+
+      if (item) {
+        renderServerItemState(
+          state.idx,
+          item
+        );
+      }
+    }
+
+    clearCheckVisualState(
+      state.voucherId,
+      state.idx
+    );
+  }
+
+  function removeCheckIntentState(state) {
+    if (!state) return;
+
+    if (state.timer) {
+      clearTimeout(state.timer);
+      state.timer = null;
+    }
+
+    checkIntentStates.delete(state.key);
+    updateBatchSaveIndicator();
+
+    clearCheckVisualState(
+      state.voucherId,
+      state.idx
+    );
+  }
+
+  function queueCheckCommit(
+    state,
+    immediate = false
+  ) {
+    if (!state) return;
+
+    if (state.timer) {
+      clearTimeout(state.timer);
+      state.timer = null;
+    }
+
+    if (
+      state.inFlight ||
+      state.queued ||
+      state.desiredChecked ===
+        state.confirmedChecked
+    ) {
+      if (
+        !state.inFlight &&
+        !state.queued &&
+        state.desiredChecked ===
+          state.confirmedChecked
+      ) {
+        restoreConfirmedCheckState(state);
+        removeCheckIntentState(state);
+      }
+
+      return;
+    }
+
+    const enqueue = () => {
+      const current =
+        checkIntentStates.get(state.key);
+
+      if (
+        !current ||
+        current.inFlight ||
+        current.queued ||
+        current.desiredChecked ===
+          current.confirmedChecked
+      ) {
+        if (
+          current &&
+          !current.inFlight &&
+          !current.queued &&
+          current.desiredChecked ===
+            current.confirmedChecked
+        ) {
+          restoreConfirmedCheckState(current);
+          removeCheckIntentState(current);
+        }
+
+        return;
+      }
+
+      current.timer = null;
+      current.queued = true;
+      checkServerQueue.push(current.key);
+
+      processCheckServerQueue();
+    };
+
+    if (immediate) {
+      enqueue();
+    } else {
+      state.timer = setTimeout(
+        enqueue,
+        CHECK_UNDO_WINDOW_MS
+      );
+    }
+  }
+
+  function applyCheckResultOutsideActiveDetail(
+    voucherId,
+    result
+  ) {
+    const voucher =
+      cloudWaitList[voucherId];
+
+    if (
+      !voucher ||
+      !voucher.items ||
+      !voucher.items[result.index]
+    ) {
+      return;
+    }
+
+    voucher.items[result.index] = {
+      ...voucher.items[result.index],
+      ...result.item
+    };
+
+    if (result.state) {
+      voucher.state = result.state;
+    }
+
+    voucher.version = Number(
+      result.version ||
+      voucher.version ||
+      0
+    );
+
+    saveVoucherDetailCache(voucher);
+  }
+
+
+  async function processCheckServerQueue() {
+    if (checkQueueRunning) return;
+
+    checkQueueRunning = true;
+    mutationInFlight = true;
+
+    try {
+      while (checkServerQueue.length > 0) {
+        // Cho các timer 0,5 giây gần nhau kịp nhập chung một lô.
+        await new Promise(resolve => setTimeout(resolve, 60));
+
+        const firstKey = checkServerQueue[0];
+        const firstState = checkIntentStates.get(firstKey);
+        if (!firstState) {
+          checkServerQueue.shift();
+          continue;
+        }
+
+        const voucherId = firstState.voucherId;
+        const keys = [];
+        const seen = new Set();
+
+        for (let i = 0; i < checkServerQueue.length && keys.length < ITEM_BATCH_MAX_ACTIONS;) {
+          const key = checkServerQueue[i];
+          const state = checkIntentStates.get(key);
+          if (!state) {
+            checkServerQueue.splice(i, 1);
+            continue;
+          }
+          if (state.voucherId === voucherId && !seen.has(key)) {
+            seen.add(key);
+            keys.push(key);
+            checkServerQueue.splice(i, 1);
+            continue;
+          }
+          i++;
+        }
+
+        const states = keys
+          .map(key => checkIntentStates.get(key))
+          .filter(Boolean);
+
+        const sendStates = [];
+
+        for (const state of states) {
+          state.queued = false;
+
+          if (
+            state.voucherId === activeVoucherId &&
+            detailRefreshing
+          ) {
+            const ready = await waitForDetailFresh(5000);
+            if (!ready) {
+              state.desiredChecked = state.confirmedChecked;
+              restoreConfirmedCheckState(state);
+              removeCheckIntentState(state);
+              continue;
+            }
+          }
+
+          const voucher = cloudWaitList[state.voucherId];
+          const freshItem = voucher && voucher.items && voucher.items[state.idx];
+
+          if (!freshItem || freshItem.status === 'Chưa phát') {
+            state.desiredChecked = state.confirmedChecked;
+            restoreConfirmedCheckState(state);
+            removeCheckIntentState(state);
+            continue;
+          }
+
+          state.confirmedChecked = Boolean(freshItem.checker);
+          state.confirmedItemVersion = Number(freshItem.itemVersion || 0);
+          state.itemId = freshItem.itemId || '';
+
+          if (state.desiredChecked === state.confirmedChecked) {
+            restoreConfirmedCheckState(state);
+            removeCheckIntentState(state);
+            continue;
+          }
+
+          state.inFlight = true;
+          state.sentDesired = state.desiredChecked;
+          state.sentMutationId = createMutationId('C');
+          renderPendingCheckState(state, 'saving');
+          sendStates.push(state);
+        }
+
+        if (!sendStates.length) continue;
+
+        try {
+          const result = await gasCall(
+            'saveItemActionsBatchServer',
+            [
+              voucherId,
+              'check',
+              sendStates.map(state => ({
+                idx: state.idx,
+                itemId: state.itemId || '',
+                desiredChecked: state.sentDesired,
+                expectedItemVersion: Number(state.confirmedItemVersion || 0),
+                mutationId: state.sentMutationId
+              }))
+            ]
+          );
+
+          if (!result || result.success === false) {
+            throw new Error(
+              (result && result.msg) || 'Không thể lưu lô đối chiếu.'
+            );
+          }
+
+          const resultMap = new Map(
+            (result.results || []).map(item => [Number(item.index), item])
+          );
+          const errors = [];
+
+          sendStates.forEach(state => {
+            const itemResult = resultMap.get(state.idx);
+            state.inFlight = false;
+
+            if (!itemResult || itemResult.success === false) {
+              if (itemResult && itemResult.item) {
+                if (state.voucherId === activeVoucherId) {
+                  applyServerItemUpdate(
+                    itemResult.index,
+                    itemResult.item,
+                    result.version,
+                    result.state
+                  );
+                } else {
+                  applyCheckResultOutsideActiveDetail(
+                    state.voucherId,
+                    {
+                      ...itemResult,
+                      version: result.version,
+                      state: result.state
+                    }
+                  );
+                }
+                state.confirmedChecked = Boolean(itemResult.item.checker);
+              }
+
+              state.desiredChecked = state.confirmedChecked;
+              restoreConfirmedCheckState(state);
+              removeCheckIntentState(state);
+              errors.push(
+                (itemResult && itemResult.msg) || 'Một khoản thuốc không đối chiếu được.'
+              );
+              return;
+            }
+
+            if (state.voucherId === activeVoucherId) {
+              applyServerItemUpdate(
+                itemResult.index,
+                itemResult.item,
+                result.version,
+                result.state
+              );
+            } else {
+              applyCheckResultOutsideActiveDetail(
+                state.voucherId,
+                {
+                  ...itemResult,
+                  version: result.version,
+                  state: result.state
+                }
+              );
+            }
+
+            state.confirmedChecked = Boolean(itemResult.item && itemResult.item.checker);
+            state.confirmedItemVersion = Number(
+              itemResult.item && itemResult.item.itemVersion || result.version || 0
+            );
+
+            if (state.desiredChecked !== state.confirmedChecked) {
+              renderPendingCheckState(state, 'saving');
+              queueCheckCommit(state, true);
+            } else {
+              restoreConfirmedCheckState(state);
+              removeCheckIntentState(state);
+            }
+          });
+
+          if (errors.length) {
+            await showMsg(
+              Array.from(new Set(errors)).slice(0, 3).join('\n'),
+              'Một số mục chưa đối chiếu được',
+              'warning'
+            );
+          }
+        } catch (error) {
+          sendStates.forEach(state => {
+            state.inFlight = false;
+            state.desiredChecked = state.confirmedChecked;
+            restoreConfirmedCheckState(state);
+            removeCheckIntentState(state);
+          });
+
+          await showMsg(
+            error.message || String(error),
+            'Không thể đối chiếu',
+            'warning'
+          );
+        }
+
+        updateBatchSaveIndicator();
+      }
+    } finally {
+      checkQueueRunning = false;
+      mutationInFlight = false;
+      updateBatchSaveIndicator();
+    }
+  }
+
+  async function flushPendingCheckActions(
+    timeoutMs = 15000
+  ) {
+    Array.from(
+      checkIntentStates.values()
+    ).forEach(state => {
+      if (
+        !state.inFlight &&
+        !state.queued &&
+        state.desiredChecked !==
+          state.confirmedChecked
+      ) {
+        queueCheckCommit(
+          state,
+          true
+        );
+      }
+    });
+
+    const startedAt = Date.now();
+
+    while (hasPendingCheckActions()) {
+      if (
+        Date.now() - startedAt >= timeoutMs
+      ) {
+        return false;
+      }
+
+      await new Promise(resolve =>
+        setTimeout(resolve, 50)
+      );
+    }
+
+    return true;
+  }
+
+  function clearAllCheckIntentStates() {
+    Array.from(
+      checkIntentStates.values()
+    ).forEach(state => {
+      if (state.timer) {
+        clearTimeout(state.timer);
+      }
+    });
+
+    checkIntentStates.clear();
+    checkServerQueue.length = 0;
+    checkQueueRunning = false;
+    updateBatchSaveIndicator();
+  }
+
+  function toggleCheckItem(idx) {
+    const voucherId =
+      String(activeVoucherId || '');
+
+    const voucher =
+      cloudWaitList[voucherId];
+
+    const item =
+      voucher &&
+      voucher.items &&
+      voucher.items[idx];
+
+    const row =
+      document.getElementById('tr_' + idx);
+
+    if (!row || !item) {
+      return showMsg(
+        'Dữ liệu khoản thuốc chưa sẵn sàng.',
+        'Chưa thể đối chiếu',
+        'warning'
+      );
+    }
+
+    if (item.status === 'Chưa phát') {
+      return showMsg(
+        'Thuốc chưa được phát, không thể đối chiếu!'
+      );
+    }
+
+    const key =
+      checkActionKey(voucherId, idx);
+
+    let state =
+      checkIntentStates.get(key);
+
+    if (!state) {
+      const confirmedChecked =
+        Boolean(item.checker);
+
+      state = {
+        key: key,
+        voucherId: voucherId,
+        idx: Number(idx),
+        confirmedChecked:
+          confirmedChecked,
+        desiredChecked:
+          confirmedChecked,
+        timer: null,
+        queued: false,
+        inFlight: false
+      };
+
+      checkIntentStates.set(key, state);
+    }
+
+    updateBatchSaveIndicator();
+
+    /*
+     * Mỗi lần chạm đảo ý định hiện tại, kể cả lúc server đang lưu.
+     * Vì vậy lần chạm thứ hai luôn có phản hồi.
+     */
+    state.desiredChecked =
+      !state.desiredChecked;
+
+    if (
+      !state.inFlight &&
+      !state.queued &&
+      state.desiredChecked ===
+        state.confirmedChecked
+    ) {
+      restoreConfirmedCheckState(state);
+      removeCheckIntentState(state);
+      return;
+    }
+
+    renderPendingCheckState(
+      state,
+      state.inFlight
+        ? 'saving'
+        : 'undo'
+    );
+
+    if (state.inFlight || state.queued) {
+      return;
+    }
+
+    queueCheckCommit(
+      state,
+      false
+    );
+  }
+
+  function syncDetail(id, isViewer) {
+    if (
+      syncInFlight ||
+      mutationInFlight ||
+      hasPendingDistributionActions(id) ||
+      hasPendingCheckActions() ||
+      detailActionInFlight ||
+      id !== activeVoucherId
+    ) return;
+    syncInFlight = true;
+    google.script.run
+      .withSuccessHandler((delta) => {
+        syncInFlight = false;
+        if (!delta) return;
+        if (delta.deleted) {
+          removeVoucherDetailCache(id);
+          showMsg('Phiếu đã bị xóa hoặc hết thời gian lưu.', 'Phiếu không còn tồn tại', 'warning');
+          switchView('list');
+          return;
+        }
+        if (!delta.changed) {
+          currentVoucherVersion = Number(delta.version || currentVoucherVersion);
+
+          const current = cloudWaitList[id];
+          if (current) {
+            current.version = currentVoucherVersion;
+            saveVoucherDetailCache(current);
+          }
+
+          return;
+        }
+        if (delta.full && delta.voucher) {
+          cloudWaitList[id] = delta.voucher;
+          currentVoucherVersion = Number(delta.version || delta.voucher.version || 0);
+          renderTabs(delta.voucher, !isViewer);
+          saveVoucherDetailCache(delta.voucher);
+          return;
+        }
+        if (delta.item && Number.isInteger(delta.index)) {
+          applyServerItemUpdate(
+            delta.index,
+            delta.item,
+            delta.version,
+            delta.state,
+            delta.finishTime
+          );
+        }
+      })
+      .withFailureHandler((error) => {
+        syncInFlight = false;
+        console.error('Lỗi đồng bộ:', error);
+      })
+      .getVoucherDeltaServer(id, currentVoucherVersion);
+  }
+
+
+  function flattenNotificationResults(value) {
+    const output = [];
+
+    (function walk(item) {
+      if (Array.isArray(item)) {
+        item.forEach(walk);
+        return;
+      }
+
+      if (
+        item &&
+        typeof item === 'object'
+      ) {
+        output.push(item);
+      }
+    })(value);
+
+    return output;
+  }
+
+
+  /* ============================================================
+   * FIX6 - CHỐT PHÁT NỀN
+   *
+   * Người dùng được quay về danh sách ngay sau khi xác nhận.
+   * Yêu cầu chốt được lưu trong localStorage, tự thử lại khi mất
+   * mạng và an toàn khi nhiều thiết bị cùng chốt một phiếu vì
+   * finishVoucherServer là idempotent trong FIX5.
+   * ============================================================ */
+  function backgroundFinishStorageKey() {
+    const username =
+      currentUser && currentUser.username
+        ? String(currentUser.username)
+            .trim()
+            .toLowerCase()
+        : 'guest';
+
+    return (
+      BACKGROUND_FINISH_STORAGE_PREFIX +
+      username
+    );
+  }
+
+  function readBackgroundFinishQueue() {
+    try {
+      const raw = localStorage.getItem(
+        backgroundFinishStorageKey()
+      );
+
+      if (!raw) return {};
+
+      const parsed = JSON.parse(raw);
+      return parsed && typeof parsed === 'object'
+        ? parsed
+        : {};
+    } catch (error) {
+      console.warn(
+        'Không đọc được hàng đợi chốt nền:',
+        error
+      );
+      return {};
+    }
+  }
+
+  function writeBackgroundFinishQueue(queue) {
+    try {
+      const value =
+        queue && typeof queue === 'object'
+          ? queue
+          : {};
+
+      if (Object.keys(value).length) {
+        localStorage.setItem(
+          backgroundFinishStorageKey(),
+          JSON.stringify(value)
+        );
+      } else {
+        localStorage.removeItem(
+          backgroundFinishStorageKey()
+        );
+      }
+    } catch (error) {
+      throw new Error(
+        'Không lưu được hàng đợi chốt nền trên thiết bị. Vui lòng giải phóng dung lượng trình duyệt rồi thử lại.'
+      );
+    }
+  }
+
+  function compactVoucherSnapshotForBackgroundFinish(
+    voucherId,
+    voucher
+  ) {
+    const source = voucher || {};
+
+    return {
+      id: String(voucherId || source.id || ''),
+      khoa: String(source.khoa || ''),
+      time: source.time || new Date().toISOString(),
+      state: String(source.state || 'progress'),
+      finishTime: source.finishTime || '',
+      dateSummary: String(source.dateSummary || ''),
+      voucherSummary: String(source.voucherSummary || ''),
+      warehouseKeys: String(source.warehouseKeys || ''),
+      vouchers: source.vouchers || null
+    };
+  }
+
+  function isBackgroundFinishActiveStatus(status) {
+    return [
+      'pending',
+      'processing',
+      'retrying'
+    ].includes(String(status || ''));
+  }
+
+  function isVoucherFinishingInBackground(voucherId) {
+    const queue = readBackgroundFinishQueue();
+    const entry = queue[String(voucherId || '')];
+
+    return Boolean(
+      entry &&
+      isBackgroundFinishActiveStatus(
+        entry.status
+      )
+    );
+  }
+
+  function backgroundFinishRetryDelay(attempts) {
+    const steps = [
+      1200,
+      2200,
+      4000,
+      7000,
+      10000,
+      15000,
+      20000,
+      30000
+    ];
+
+    const index = Math.min(
+      Math.max(0, Number(attempts || 1) - 1),
+      steps.length - 1
+    );
+
+    return steps[index];
+  }
+
+  function renderBackgroundFinishPanel() {
+    const panel = document.getElementById(
+      'backgroundFinishPanel'
+    );
+
+    if (!panel || !currentUser) return;
+
+    const queue = readBackgroundFinishQueue();
+    const entries = Object.values(queue);
+    const active = entries.filter(entry =>
+      isBackgroundFinishActiveStatus(
+        entry.status
+      )
+    );
+    const failed = entries.filter(entry =>
+      String(entry.status || '') === 'failed'
+    );
+
+    panel.innerHTML = '';
+    panel.classList.toggle(
+      'visible',
+      active.length > 0 || failed.length > 0
+    );
+    panel.classList.toggle(
+      'has-error',
+      failed.length > 0
+    );
+
+    if (!active.length && !failed.length) {
+      return;
+    }
+
+    const title = document.createElement('div');
+    title.className = 'background-finish-title';
+
+    if (failed.length) {
+      title.textContent =
+        '⚠ Có phiếu chốt nền chưa thành công';
+    } else {
+      title.textContent =
+        '⏳ Đang chốt nền ' +
+        active.length +
+        ' phiếu';
+    }
+
+    panel.appendChild(title);
+
+    const note = document.createElement('div');
+    note.textContent = failed.length
+      ? 'Phiếu lỗi đã được trả lại danh sách. Kiểm tra rồi bấm Thử lại.'
+      : 'Bạn có thể tiếp tục mở và phát phiếu khác. Không cần đứng chờ.';
+    panel.appendChild(note);
+
+    const items = document.createElement('div');
+    items.className = 'background-finish-items';
+
+    entries
+      .sort((a, b) =>
+        Number(a.requestedAt || 0) -
+        Number(b.requestedAt || 0)
+      )
+      .forEach(entry => {
+        const row = document.createElement('div');
+        row.className = 'background-finish-item';
+
+        const text = document.createElement('div');
+        text.className =
+          'background-finish-item-text';
+
+        const label =
+          String(
+            entry.khoa ||
+            entry.voucherId ||
+            'Phiếu'
+          );
+
+        if (
+          String(entry.status || '') ===
+          'failed'
+        ) {
+          text.textContent =
+            label +
+            ': ' +
+            String(
+              entry.lastError ||
+              'Chốt nền chưa thành công.'
+            );
+
+          const retry = document.createElement('button');
+          retry.type = 'button';
+          retry.className = 'background-finish-retry';
+          retry.textContent = 'Thử lại';
+          retry.addEventListener('click', () => {
+            retryBackgroundFinish(
+              entry.voucherId
+            );
+          });
+
+          row.appendChild(text);
+          row.appendChild(retry);
+        } else {
+          const attempts = Number(
+            entry.attempts || 0
+          );
+
+          text.textContent =
+            label +
+            (
+              attempts > 1
+                ? ' — đang thử lại lần ' + attempts
+                : ' — đang xử lý'
+            );
+
+          row.appendChild(text);
+        }
+
+        items.appendChild(row);
+      });
+
+    panel.appendChild(items);
+  }
+
+  function queueVoucherFinishInBackground(
+    voucherId,
+    voucher
+  ) {
+    const id = String(voucherId || '').trim();
+    if (!id) {
+      throw new Error('Mã phiếu không hợp lệ.');
+    }
+
+    const queue = readBackgroundFinishQueue();
+    const previous = queue[id] || {};
+    const now = Date.now();
+
+    queue[id] = {
+      voucherId: id,
+      khoa: String(
+        voucher && voucher.khoa ||
+        previous.khoa ||
+        ''
+      ),
+      requestedAt: Number(
+        previous.requestedAt || now
+      ),
+      updatedAt: now,
+      attempts: 0,
+      nextAttemptAt: 0,
+      status: 'pending',
+      lastError: '',
+      snapshot:
+        previous.snapshot ||
+        compactVoucherSnapshotForBackgroundFinish(
+          id,
+          voucher
+        )
+    };
+
+    writeBackgroundFinishQueue(queue);
+    renderBackgroundFinishPanel();
+    scheduleBackgroundFinishWorker(40);
+    return true;
+  }
+
+  function restoreBackgroundFinishSnapshot(entry) {
+    if (
+      !entry ||
+      !entry.voucherId ||
+      !entry.snapshot
+    ) {
+      return;
+    }
+
+    const id = String(entry.voucherId);
+    if (!cloudWaitList[id]) {
+      cloudWaitList[id] = Object.assign(
+        {},
+        entry.snapshot,
+        {
+          id: id,
+          state:
+            entry.snapshot.state ||
+            'progress'
+        }
+      );
+    }
+
+    saveVoucherCardsLocalCache(
+      cloudWaitList
+    );
+  }
+
+  function markBackgroundFinishFailed(
+    queue,
+    entry,
+    message
+  ) {
+    const id = String(entry.voucherId || '');
+    entry.status = 'failed';
+    entry.updatedAt = Date.now();
+    entry.nextAttemptAt = 0;
+    entry.lastError = String(
+      message ||
+      'Không thể chốt phiếu ở chế độ nền.'
+    );
+    queue[id] = entry;
+    writeBackgroundFinishQueue(queue);
+    restoreBackgroundFinishSnapshot(entry);
+  }
+
+  function retryBackgroundFinish(voucherId) {
+    const id = String(voucherId || '').trim();
+    const queue = readBackgroundFinishQueue();
+    const entry = queue[id];
+
+    if (!entry) return;
+
+    entry.status = 'pending';
+    entry.attempts = 0;
+    entry.nextAttemptAt = 0;
+    entry.updatedAt = Date.now();
+    entry.lastError = '';
+    queue[id] = entry;
+
+    writeBackgroundFinishQueue(queue);
+
+    delete cloudWaitList[id];
+    saveVoucherCardsLocalCache(
+      cloudWaitList
+    );
+
+    renderTrackingList();
+    scheduleBackgroundFinishWorker(40);
+  }
+
+  function scheduleBackgroundFinishWorker(
+    delayMs = 100
+  ) {
+    if (!currentUser) return;
+
+    if (backgroundFinishWakeTimer) {
+      clearTimeout(
+        backgroundFinishWakeTimer
+      );
+    }
+
+    backgroundFinishWakeTimer = setTimeout(
+      () => {
+        backgroundFinishWakeTimer = null;
+        processBackgroundFinishQueue();
+      },
+      Math.max(25, Number(delayMs || 100))
+    );
+  }
+
+  function scheduleNextBackgroundFinishAttempt() {
+    const queue = readBackgroundFinishQueue();
+    const now = Date.now();
+    const times = Object.values(queue)
+      .filter(entry =>
+        isBackgroundFinishActiveStatus(
+          entry.status
+        )
+      )
+      .map(entry =>
+        Math.max(
+          now + 250,
+          Number(entry.nextAttemptAt || now)
+        )
+      );
+
+    if (!times.length) return;
+
+    scheduleBackgroundFinishWorker(
+      Math.max(
+        250,
+        Math.min(...times) - now
+      )
+    );
+  }
+
+  async function processBackgroundFinishQueue() {
+    if (
+      backgroundFinishWorkerRunning ||
+      !currentUser
+    ) {
+      return;
+    }
+
+    backgroundFinishWorkerRunning = true;
+    let shouldReloadList = false;
+    const workerUserKey =
+      backgroundFinishStorageKey();
+
+    try {
+      const snapshot = readBackgroundFinishQueue();
+      const now = Date.now();
+      const dueEntries = Object.values(snapshot)
+        .filter(entry =>
+          isBackgroundFinishActiveStatus(
+            entry.status
+          ) &&
+          Number(entry.nextAttemptAt || 0) <= now
+        )
+        .sort((a, b) =>
+          Number(a.requestedAt || 0) -
+          Number(b.requestedAt || 0)
+        );
+
+      for (const dueEntry of dueEntries) {
+        if (
+          !currentUser ||
+          backgroundFinishStorageKey() !==
+            workerUserKey
+        ) {
+          break;
+        }
+
+        const queue = readBackgroundFinishQueue();
+        const id = String(
+          dueEntry.voucherId || ''
+        );
+        const entry = queue[id];
+
+        if (
+          !entry ||
+          !isBackgroundFinishActiveStatus(
+            entry.status
+          )
+        ) {
+          continue;
+        }
+
+        entry.status = 'processing';
+        entry.attempts =
+          Number(entry.attempts || 0) + 1;
+        entry.updatedAt = Date.now();
+        entry.nextAttemptAt = 0;
+        queue[id] = entry;
+        writeBackgroundFinishQueue(queue);
+        renderBackgroundFinishPanel();
+
+        try {
+          const result = await gasCall(
+            'finishVoucherServer',
+            [id],
+            60000
+          );
+
+          if (
+            !currentUser ||
+            backgroundFinishStorageKey() !==
+              workerUserKey
+          ) {
+            return;
+          }
+
+          if (
+            result &&
+            result.success !== false
+          ) {
+            const latest = readBackgroundFinishQueue();
+            delete latest[id];
+            writeBackgroundFinishQueue(latest);
+
+            delete cloudWaitList[id];
+            removeVoucherDetailCache(id);
+            saveVoucherCardsLocalCache(
+              cloudWaitList
+            );
+            shouldReloadList = true;
+            continue;
+          }
+
+          const retryable = Boolean(
+            result &&
+            (
+              result.retryable ||
+              result.incomplete
+            )
+          );
+          const message =
+            result && result.msg
+              ? result.msg
+              : 'Không thể chốt phiếu.';
+
+          const latest = readBackgroundFinishQueue();
+          const current = latest[id] || entry;
+
+          if (
+            retryable &&
+            Number(current.attempts || 0) < 20
+          ) {
+            current.status = 'retrying';
+            current.lastError = String(message);
+            current.updatedAt = Date.now();
+            current.nextAttemptAt =
+              Date.now() +
+              backgroundFinishRetryDelay(
+                current.attempts
+              );
+            latest[id] = current;
+            writeBackgroundFinishQueue(latest);
+          } else {
+            markBackgroundFinishFailed(
+              latest,
+              current,
+              message
+            );
+          }
+        } catch (error) {
+          if (
+            !currentUser ||
+            backgroundFinishStorageKey() !==
+              workerUserKey
+          ) {
+            return;
+          }
+
+          const latest = readBackgroundFinishQueue();
+          const current = latest[id] || entry;
+          const message =
+            error && error.message
+              ? error.message
+              : String(error);
+
+          if (
+            Number(current.attempts || 0) < 20
+          ) {
+            current.status = 'retrying';
+            current.lastError = message;
+            current.updatedAt = Date.now();
+            current.nextAttemptAt =
+              Date.now() +
+              backgroundFinishRetryDelay(
+                current.attempts
+              );
+            latest[id] = current;
+            writeBackgroundFinishQueue(latest);
+          } else {
+            markBackgroundFinishFailed(
+              latest,
+              current,
+              message
+            );
+          }
+        }
+      }
+    } finally {
+      backgroundFinishWorkerRunning = false;
+
+      if (
+        currentUser &&
+        backgroundFinishStorageKey() ===
+          workerUserKey
+      ) {
+        renderBackgroundFinishPanel();
+
+        if (shouldReloadList) {
+          const listView = document.getElementById(
+            'view-list'
+          );
+
+          if (
+            listView &&
+            listView.style.display !== 'none'
+          ) {
+            loadWaitList();
+          }
+        } else {
+          renderTrackingList();
+        }
+
+        scheduleNextBackgroundFinishAttempt();
+      }
+    }
+  }
+
+  function resumeBackgroundFinishQueue() {
+    if (!currentUser) return;
+
+    const queue = readBackgroundFinishQueue();
+
+    Object.values(queue).forEach(entry => {
+      if (
+        isBackgroundFinishActiveStatus(
+          entry.status
+        )
+      ) {
+        delete cloudWaitList[
+          String(entry.voucherId || '')
+        ];
+      } else if (
+        String(entry.status || '') ===
+        'failed'
+      ) {
+        restoreBackgroundFinishSnapshot(
+          entry
+        );
+      }
+    });
+
+    saveVoucherCardsLocalCache(
+      cloudWaitList
+    );
+    renderBackgroundFinishPanel();
+    scheduleBackgroundFinishWorker(100);
+  }
+
+  window.addEventListener('online', () => {
+    scheduleBackgroundFinishWorker(50);
+  });
+
+  document.addEventListener(
+    'visibilitychange',
+    () => {
+      if (
+        document.visibilityState === 'visible'
+      ) {
+        scheduleBackgroundFinishWorker(50);
+      }
+    }
   );
-});
+  /* ===== END FIX6 BACKGROUND FINISH ===== */
+
+  function notificationResultNote(results) {
+    const list =
+      flattenNotificationResults(
+        results
+      );
+
+    if (!list.length) {
+      return '';
+    }
+
+    const sent =
+      list.filter(
+        item =>
+          item.success &&
+          !item.duplicate
+      ).length;
+
+    const duplicate =
+      list.filter(
+        item =>
+          item.success &&
+          item.duplicate
+      ).length;
+
+    const noRecipients =
+      list.filter(
+        item =>
+          item.noRecipients
+      ).length;
+
+    const failed =
+      list.filter(
+        item =>
+          !item.success &&
+          !item.noRecipients &&
+          !item.skipped
+      ).length;
+
+    const skipped =
+      list.filter(
+        item =>
+          item.skipped
+      ).length;
+
+    if (failed > 0) {
+      return (
+        '\n\n⚠ Phiếu đã chốt nhưng có thông báo gửi thất bại.'
+      );
+    }
+
+    if (noRecipients > 0) {
+      return (
+        '\n\nℹ Chưa có tài khoản nhận thông báo cho khoa này.'
+      );
+    }
+
+    if (skipped > 0) {
+      return (
+        '\n\nℹ OneSignal chưa được cấu hình nên chưa gửi thông báo.'
+      );
+    }
+
+    if (
+      sent > 0 ||
+      duplicate > 0
+    ) {
+      return (
+        '\n\n🔔 Thông báo khoa đã được xử lý.'
+      );
+    }
+
+    return '';
+  }
+
+  async function processSplitAndExit(isFinish) {
+    if (detailActionInFlight) return false;
+
+    if (
+      await blockFinalActionWhileDistributionPending(
+        isFinish ? 'Chốt phát' : 'Lưu và thoát'
+      )
+    ) {
+      return false;
+    }
+
+    const voucher =
+      cloudWaitList[activeVoucherId];
+
+    if (
+      !voucher ||
+      !Array.isArray(voucher.items)
+    ) {
+      await showMsg(
+        'Không lấy được dữ liệu phiếu. Vui lòng mở lại phiếu.',
+        'Dữ liệu chưa sẵn sàng',
+        'warning'
+      );
+
+      return false;
+    }
+
+    const sourceVoucherId =
+      activeVoucherId;
+
+    setDetailActionsBusy(
+      true,
+      isFinish
+        ? '⏳ Đang chốt phiếu...'
+        : '⏳ Đang lưu phiếu...'
+    );
+
+    try {
+      const khoKeys = [
+        ...new Set(
+          voucher.items.map(it => it.khoKey)
+        )
+      ];
+
+      let notificationResults = [];
+      let backgroundFinishQueued = false;
+
+      if (khoKeys.length > 1) {
+        showLoading(
+          true,
+          "Đang xử lý tách phiếu đa kho..."
+        );
+
+        const payload = {};
+
+        khoKeys.forEach(kKey => {
+          const kItems =
+            voucher.items.filter(
+              it => it.khoKey === kKey
+            );
+
+          const kVouchers = {};
+
+          if (
+            voucher.vouchers &&
+            voucher.vouchers[kKey]
+          ) {
+            kVouchers[kKey] =
+              voucher.vouchers[kKey];
+          }
+
+          const isAllDone =
+            kItems.every(
+              it => it.status !== 'Chưa phát'
+            );
+
+          const isAllWaiting =
+            kItems.every(
+              it => it.status === 'Chưa phát'
+            );
+
+          const state = isAllDone
+            ? 'done'
+            : (
+                isAllWaiting
+                  ? 'waiting'
+                  : 'progress'
+              );
+
+          const newId =
+            "P_" +
+            Date.now() +
+            "_" +
+            Math.floor(Math.random() * 10000) +
+            "_" +
+            kKey;
+
+          const splitVoucher = {
+            khoa: voucher.khoa,
+            time: voucher.time,
+            vouchers: kVouchers,
+            items: kItems,
+            state: state
+          };
+
+          if (state === 'done') {
+            splitVoucher.finishTime =
+              new Date().toISOString();
+          }
+
+          payload[newId] = splitVoucher;
+        });
+
+        /*
+         * Tạo phiếu tách trước, chỉ xóa phiếu gốc
+         * sau khi server xác nhận đã lưu thành công.
+         */
+        const pushed = await gasCall(
+          'pushVouchersServer',
+          [
+            JSON.stringify(payload),
+            'split'
+          ]
+        );
+
+        if (
+          pushed &&
+          pushed.success === false
+        ) {
+          throw new Error(
+            pushed.msg ||
+            'Không thể lưu các phiếu đã tách.'
+          );
+        }
+
+        notificationResults =
+          pushed &&
+          pushed.notificationResults
+            ? pushed.notificationResults
+            : [];
+
+        const deleted = await gasCall(
+          'deleteVoucherServer',
+          [sourceVoucherId]
+        );
+
+        if (
+          deleted &&
+          deleted.success === false
+        ) {
+          throw new Error(
+            deleted.msg ||
+            'Đã tạo phiếu tách nhưng chưa xóa được phiếu gốc.'
+          );
+        }
+      } else if (isFinish) {
+        /*
+         * FIX6: Phiếu đã tách kho được đưa vào hàng đợi chốt nền.
+         * Không chờ server trả về tại màn hình chi tiết.
+         */
+        queueVoucherFinishInBackground(
+          sourceVoucherId,
+          voucher
+        );
+        backgroundFinishQueued = true;
+      }
+
+      removeVoucherDetailCache(
+        sourceVoucherId
+      );
+
+      if (backgroundFinishQueued) {
+        delete cloudWaitList[
+          sourceVoucherId
+        ];
+        saveVoucherCardsLocalCache(
+          cloudWaitList
+        );
+        activeVoucherId = null;
+        skipNextListReload = true;
+        switchView('list');
+        renderBackgroundFinishPanel();
+        scheduleBackgroundFinishWorker(40);
+        return true;
+      }
+
+      if (isFinish) {
+        await showMsg(
+          (
+            khoKeys.length > 1
+              ? 'Đã CHỐT PHÁT thành công! Phiếu đa kho đã được tách.'
+              : 'Đã CHỐT PHÁT thành công!'
+          ) +
+          notificationResultNote(
+            notificationResults
+          ),
+          'Hoàn tất',
+          'success'
+        );
+      }
+
+      switchView('list');
+      return true;
+    } catch (error) {
+      await showMsg(
+        error.message || String(error),
+        isFinish
+          ? 'Không chốt được phiếu'
+          : 'Không lưu được phiếu',
+        'danger'
+      );
+
+      return false;
+    } finally {
+      forceHideLoading();
+      setDetailActionsBusy(false);
+
+      const current =
+        cloudWaitList[activeVoucherId];
+
+      if (current) {
+        refreshDetailAccessUi(
+          current,
+          false
+        );
+      }
+    }
+  }
+
+  async function closeDetail() {
+    if (
+      detailActionInFlight ||
+      detailPromptInFlight
+    ) {
+      return;
+    }
+
+    forceHideLoading();
+
+    if (
+      currentUser.role !== 'xem' &&
+      await blockFinalActionWhileDistributionPending('Thoát phiếu')
+    ) {
+      return;
+    }
+
+    if (currentUser.role === 'xem') {
+      if (hasPendingCheckActions()) {
+        setDetailActionsBusy(
+          true,
+          '⏳ Đang lưu các mục đối chiếu...'
+        );
+
+        const flushed =
+          await flushPendingCheckActions();
+
+        setDetailActionsBusy(false);
+
+        if (!flushed) {
+          await showMsg(
+            'Một số thao tác đối chiếu chưa lưu xong. Vui lòng thử thoát lại.',
+            'Chưa lưu xong',
+            'warning'
+          );
+
+          return;
+        }
+      }
+
+      switchView('list');
+      return;
+    }
+
+    const voucher =
+      cloudWaitList[activeVoucherId];
+
+    if (
+      !voucher ||
+      !Array.isArray(voucher.items)
+    ) {
+      switchView('list');
+      return;
+    }
+
+    detailPromptInFlight = true;
+
+    try {
+      const myKhos =
+        (
+          currentUser.role === 'admin' ||
+          currentUser.kho === 'Tất cả'
+        )
+          ? null
+          : currentUser.kho
+              .split(',')
+              .map(s =>
+                mapKhoToKey(s.trim())
+              );
+
+      const itemsToProcess = myKhos
+        ? voucher.items.filter(
+            it => myKhos.includes(it.khoKey)
+          )
+        : voucher.items;
+
+      const hasUnfinished =
+        itemsToProcess.some(
+          it => it.status === 'Chưa phát'
+        );
+
+      if (!hasUnfinished) {
+        const shouldFinish =
+          await showConfirm(
+            "Bạn đã phát ĐỦ 100% thuốc!\n\nBạn muốn CHỐT PHÁT phiếu này hay chỉ thoát?",
+            "Hoàn tất phát thuốc",
+            {
+              type: 'success',
+              confirmText: 'Chốt phát',
+              cancelText: 'Chỉ thoát',
+              confirmClass: 'btn-success'
+            }
+          );
+
+        detailPromptInFlight = false;
+
+        if (shouldFinish) {
+          await processSplitAndExit(true);
+        } else {
+          await processSplitAndExit(false);
+        }
+
+        return;
+      }
+
+      const shouldSave =
+        await showConfirm(
+          "Còn thuốc CHƯA PHÁT XONG!\n\nLưu trạng thái 'Đang phát dở', tách phiếu theo kho và thoát?",
+          "Phiếu chưa phát xong",
+          {
+            type: 'warning',
+            confirmText: 'Lưu và thoát'
+          }
+        );
+
+      detailPromptInFlight = false;
+
+      if (shouldSave) {
+        await processSplitAndExit(false);
+      }
+    } finally {
+      detailPromptInFlight = false;
+    }
+  }
+
+  async function finishDistribution() {
+    if (
+      detailActionInFlight ||
+      detailPromptInFlight
+    ) {
+      return;
+    }
+
+    forceHideLoading();
+
+    if (
+      await blockFinalActionWhileDistributionPending('Chốt phát')
+    ) {
+      return;
+    }
+
+    const voucher =
+      cloudWaitList[activeVoucherId];
+
+    if (
+      !voucher ||
+      !Array.isArray(voucher.items)
+    ) {
+      return showMsg(
+        'Không lấy được dữ liệu phiếu. Vui lòng mở lại phiếu.',
+        'Dữ liệu chưa sẵn sàng',
+        'warning'
+      );
+    }
+
+    const myKhos =
+      (
+        currentUser.role === 'admin' ||
+        currentUser.kho === 'Tất cả'
+      )
+        ? null
+        : currentUser.kho
+            .split(',')
+            .map(s =>
+              mapKhoToKey(s.trim())
+            );
+
+    const unfinishedIdx = [];
+
+    voucher.items.forEach((it, idx) => {
+      if (
+        myKhos &&
+        !myKhos.includes(it.khoKey)
+      ) {
+        return;
+      }
+
+      if (it.status === 'Chưa phát') {
+        unfinishedIdx.push(idx);
+
+        const row =
+          document.getElementById(
+            'tr_' + idx
+          );
+
+        if (row) {
+          row.className =
+            "item-row missed-item";
+        }
+      }
+    });
+
+    if (unfinishedIdx.length > 0) {
+      await showMsg(
+        "Còn thuốc CHƯA PHÁT tại kho bạn quản lý!\n\nVui lòng kiểm tra các mục được BÔI ĐỎ đậm.",
+        "Chưa thể chốt phát",
+        "danger"
+      );
+
+      setTimeout(() => {
+        unfinishedIdx.forEach(idx => {
+          const row =
+            document.getElementById(
+              'tr_' + idx
+            );
+
+          if (row) {
+            row.classList.remove(
+              'missed-item'
+            );
+          }
+        });
+      }, 10000);
+
+      return;
+    }
+
+    detailPromptInFlight = true;
+
+    try {
+      const ok = await showConfirm(
+        "Xác nhận đã phát đủ 100% thuốc ở kho bạn quản lý và chốt phiếu này?",
+        "Chốt phát",
+        {
+          type: 'success',
+          confirmText: 'Chốt phát',
+          confirmClass: 'btn-success'
+        }
+      );
+
+      detailPromptInFlight = false;
+
+      if (ok) {
+        await processSplitAndExit(true);
+      }
+    } finally {
+      detailPromptInFlight = false;
+    }
+  }
+
+  async function finishCheck() {
+    if (
+      detailActionInFlight ||
+      detailPromptInFlight
+    ) {
+      return;
+    }
+
+    if (hasPendingCheckActions()) {
+      setDetailActionsBusy(
+        true,
+        '⏳ Đang lưu các mục đối chiếu...'
+      );
+
+      const flushed =
+        await flushPendingCheckActions();
+
+      setDetailActionsBusy(false);
+
+      if (!flushed) {
+        return showMsg(
+          'Một số thao tác đối chiếu chưa lưu xong. Vui lòng bấm chốt lại.',
+          'Chưa lưu xong',
+          'warning'
+        );
+      }
+    }
+
+    const v =
+      cloudWaitList[activeVoucherId];
+
+    if (
+      !v ||
+      !Array.isArray(v.items)
+    ) {
+      return showMsg(
+        'Không lấy được dữ liệu phiếu.',
+        'Không thể chốt đối chiếu',
+        'warning'
+      );
+    }
+
+    let unCheckedCount = 0;
+
+    v.items.forEach(it => {
+      if (!it.checker) {
+        unCheckedCount++;
+      }
+    });
+
+    detailPromptInFlight = true;
+
+    try {
+      let ok;
+
+      if (unCheckedCount > 0) {
+        ok = await showConfirm(
+          `Còn ${unCheckedCount} thuốc chưa đối chiếu. Bạn có chắc chắn muốn chốt không?`,
+          'Cảnh báo đối chiếu',
+          {
+            type: 'warning',
+            confirmText: 'Vẫn chốt'
+          }
+        );
+      } else {
+        ok = await showConfirm(
+          'Xác nhận chốt đối chiếu phiếu này?',
+          'Chốt đối chiếu',
+          {
+            type: 'success',
+            confirmText: 'Chốt đối chiếu',
+            confirmClass: 'btn-success'
+          }
+        );
+      }
+
+      if (!ok) return;
+
+      setDetailActionsBusy(
+        true,
+        '⏳ Đang chốt đối chiếu...'
+      );
+
+      showLoading(
+        true,
+        'Đang chốt đối chiếu...'
+      );
+
+      const result = await gasCall(
+        'finishCheckServer',
+        [activeVoucherId]
+      );
+
+      if (
+        result &&
+        result.success === false
+      ) {
+        throw new Error(
+          result.msg ||
+          'Không thể chốt đối chiếu.'
+        );
+      }
+
+      v.state = 'checked';
+      v.version = Number(
+        result.version || v.version || 0
+      );
+      v.finishTime =
+        result.finishTime ||
+        new Date().toISOString();
+
+      activeVoucherFinalizedHint = true;
+      activeVoucherCheckedHint = true;
+
+      saveVoucherDetailCache(v);
+
+      const cardCache =
+        readVoucherCardsLocalCache() || {};
+
+      if (cardCache[v.id]) {
+        cardCache[v.id].state = 'checked';
+        cardCache[v.id].version = v.version;
+        cardCache[v.id].finishTime =
+          v.finishTime;
+
+        saveVoucherCardsLocalCache(
+          cardCache
+        );
+      }
+
+      clearAllCheckIntentStates();
+
+      await showMsg(
+        'Phiếu đã được chốt đối chiếu và chuyển sang Lịch sử.',
+        'Đã chốt đối chiếu',
+        'success'
+      );
+
+      switchView('history');
+    } catch (error) {
+      await showMsg(
+        error.message || String(error),
+        'Không chốt được đối chiếu',
+        'danger'
+      );
+    } finally {
+      detailPromptInFlight = false;
+      forceHideLoading();
+      setDetailActionsBusy(false);
+    }
+  }
+
+  function buildVoucherHeader(vc) {
+    if(!vc || (vc.TQ.length===0 && vc.BT.length===0 && vc.HT.length===0)) return '';
+    
+    let grouped = {};
+    let noDate = { TQ:[], BT:[], HT:[] };
+    
+    const processGroup = (arr, type) => {
+        arr.forEach(str => {
+            let parts = str.split('|');
+            if (parts.length > 1) {
+                let d = parts[1];
+                if (!grouped[d]) grouped[d] = { TQ:[], BT:[], HT:[] };
+                grouped[d][type].push(parts[0]);
+            } else {
+                noDate[type].push(str);
+            }
+        });
+    };
+    
+    processGroup(vc.TQ, 'TQ');
+    processGroup(vc.BT, 'BT');
+    processGroup(vc.HT, 'HT');
+    
+    let html = `<div class="voucher-header">`;
+    
+    let dateKeys = Object.keys(grouped);
+    dateKeys.forEach(d => {
+        html += `<div style="margin-bottom:8px;"><b>📅 Ngày: ${d}</b>`;
+        if(grouped[d].TQ.length > 0) html += `<br><b>Thường quy:</b> <span class="v-num-mobile">${formatVoucherColors(grouped[d].TQ)}</span>`;
+        if(grouped[d].BT.length > 0) html += `<br><b>Bù trực:</b> <span class="v-num-mobile">${formatVoucherColors(grouped[d].BT)}</span>`;
+        if(grouped[d].HT.length > 0) html += `<br><b>Hoàn trả:</b> <span class="v-num-mobile">${formatVoucherColors(grouped[d].HT)}</span>`;
+        html += `</div>`;
+    });
+    
+    if (noDate.TQ.length > 0 || noDate.BT.length > 0 || noDate.HT.length > 0) {
+        html += `<div style="margin-bottom:8px;"><b>📅 Ngày: Không rõ</b>`;
+        if(noDate.TQ.length > 0) html += `<br><b>Thường quy:</b> <span class="v-num-mobile">${formatVoucherColors(noDate.TQ)}</span>`;
+        if(noDate.BT.length > 0) html += `<br><b>Bù trực:</b> <span class="v-num-mobile">${formatVoucherColors(noDate.BT)}</span>`;
+        if(noDate.HT.length > 0) html += `<br><b>Hoàn trả:</b> <span class="v-num-mobile">${formatVoucherColors(noDate.HT)}</span>`;
+        html += `</div>`;
+    }
+    
+    html += `</div>`;
+    return html;
+  }
+
+
+
+
+  const departmentSearchWidgets =
+    new Map();
+
+  function normalizeDepartmentSearchText(
+    value
+  ) {
+    return String(value || '')
+      .normalize('NFD')
+      .replace(
+        /[\u0300-\u036f]/g,
+        ''
+      )
+      .replace(/đ/g, 'd')
+      .replace(/Đ/g, 'D')
+      .toLowerCase()
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  function closeDepartmentSearchMenus(
+    exceptId = ''
+  ) {
+    departmentSearchWidgets
+      .forEach((widget, selectId) => {
+        if (
+          exceptId &&
+          selectId === exceptId
+        ) {
+          return;
+        }
+
+        widget.wrapper
+          .classList.remove(
+            'open'
+          );
+
+        widget.menu
+          .classList.remove(
+            'open'
+          );
+
+        const selectedOption =
+          widget.select
+            .options[
+              widget.select
+                .selectedIndex
+            ];
+
+        widget.input.value =
+          selectedOption
+            ? selectedOption.text
+            : '';
+      });
+  }
+
+  function renderDepartmentSearchOptions(
+    selectId,
+    query = ''
+  ) {
+    const widget =
+      departmentSearchWidgets.get(
+        selectId
+      );
+
+    if (!widget) {
+      return;
+    }
+
+    const normalizedQuery =
+      normalizeDepartmentSearchText(
+        query
+      );
+
+    const matches =
+      Array.from(
+        widget.select.options
+      )
+        .map((option, optionIndex) => ({
+          option,
+          optionIndex,
+          normalized:
+            normalizeDepartmentSearchText(
+              option.text
+            )
+        }))
+        .filter(item =>
+          !normalizedQuery ||
+          item.normalized.includes(
+            normalizedQuery
+          )
+        );
+
+    widget.menu.innerHTML =
+      matches.length
+        ? matches
+            .map(item => {
+              const selectedClass =
+                item.option.selected
+                  ? ' selected'
+                  : '';
+
+              return (
+                `<button type="button" class="department-search-option${selectedClass}" ` +
+                `data-option-index="${item.optionIndex}" role="option">` +
+                `${escapeHtmlText(item.option.text)}` +
+                `</button>`
+              );
+            })
+            .join('')
+        : (
+            '<div class="department-search-empty">' +
+            'Không tìm thấy khoa phù hợp' +
+            '</div>'
+          );
+
+    widget.wrapper
+      .classList.add(
+        'open'
+      );
+
+    widget.menu
+      .classList.add(
+        'open'
+      );
+  }
+
+  function refreshDepartmentSearchSelect(
+    selectId
+  ) {
+    const widget =
+      departmentSearchWidgets.get(
+        selectId
+      );
+
+    if (!widget) {
+      return;
+    }
+
+    const selectedOption =
+      widget.select
+        .options[
+          widget.select
+            .selectedIndex
+        ];
+
+    widget.input.value =
+      selectedOption
+        ? selectedOption.text
+        : '';
+
+    widget.input.disabled =
+      Boolean(
+        widget.select.disabled
+      );
+
+    if (
+      widget.menu
+        .classList.contains(
+          'open'
+        )
+    ) {
+      renderDepartmentSearchOptions(
+        selectId,
+        ''
+      );
+    }
+  }
+
+  function initializeDepartmentSearchSelect(
+    selectId
+  ) {
+    if (
+      departmentSearchWidgets.has(
+        selectId
+      )
+    ) {
+      refreshDepartmentSearchSelect(
+        selectId
+      );
+      return;
+    }
+
+    const select =
+      document.getElementById(
+        selectId
+      );
+
+    const wrapper =
+      document.querySelector(
+        `.department-search-select[data-select-id="${selectId}"]`
+      );
+
+    if (
+      !select ||
+      !wrapper
+    ) {
+      return;
+    }
+
+    const input =
+      wrapper.querySelector(
+        '.department-search-input'
+      );
+
+    const menu =
+      wrapper.querySelector(
+        '.department-search-menu'
+      );
+
+    const widget = {
+      select,
+      wrapper,
+      input,
+      menu,
+      observer: null
+    };
+
+    departmentSearchWidgets.set(
+      selectId,
+      widget
+    );
+
+    input.addEventListener(
+      'focus',
+      () => {
+        if (input.disabled) {
+          return;
+        }
+
+        closeDepartmentSearchMenus(
+          selectId
+        );
+
+        input.select();
+
+        renderDepartmentSearchOptions(
+          selectId,
+          ''
+        );
+      }
+    );
+
+    input.addEventListener(
+      'input',
+      () => {
+        renderDepartmentSearchOptions(
+          selectId,
+          input.value
+        );
+      }
+    );
+
+    input.addEventListener(
+      'keydown',
+      event => {
+        if (
+          event.key === 'Escape'
+        ) {
+          closeDepartmentSearchMenus();
+          input.blur();
+        }
+
+        if (
+          event.key === 'ArrowDown'
+        ) {
+          event.preventDefault();
+
+          const firstOption =
+            menu.querySelector(
+              '.department-search-option'
+            );
+
+          if (firstOption) {
+            firstOption.focus();
+          }
+        }
+      }
+    );
+
+    menu.addEventListener(
+      'click',
+      event => {
+        const button =
+          event.target.closest(
+            '.department-search-option'
+          );
+
+        if (!button) {
+          return;
+        }
+
+        const optionIndex =
+          Number(
+            button.dataset
+              .optionIndex
+          );
+
+        if (
+          !Number.isInteger(
+            optionIndex
+          ) ||
+          !select.options[
+            optionIndex
+          ]
+        ) {
+          return;
+        }
+
+        select.selectedIndex =
+          optionIndex;
+
+        select.dispatchEvent(
+          new Event(
+            'change',
+            {
+              bubbles: true
+            }
+          )
+        );
+
+        input.value =
+          select.options[
+            optionIndex
+          ].text;
+
+        closeDepartmentSearchMenus();
+      }
+    );
+
+    menu.addEventListener(
+      'keydown',
+      event => {
+        const options =
+          Array.from(
+            menu.querySelectorAll(
+              '.department-search-option'
+            )
+          );
+
+        const currentIndex =
+          options.indexOf(
+            document.activeElement
+          );
+
+        if (
+          event.key === 'ArrowDown'
+        ) {
+          event.preventDefault();
+
+          const next =
+            options[
+              Math.min(
+                currentIndex + 1,
+                options.length - 1
+              )
+            ];
+
+          if (next) {
+            next.focus();
+          }
+        }
+
+        if (
+          event.key === 'ArrowUp'
+        ) {
+          event.preventDefault();
+
+          if (currentIndex <= 0) {
+            input.focus();
+          } else {
+            options[
+              currentIndex - 1
+            ].focus();
+          }
+        }
+
+        if (
+          event.key === 'Escape'
+        ) {
+          closeDepartmentSearchMenus();
+          input.focus();
+        }
+      }
+    );
+
+    widget.observer =
+      new MutationObserver(() => {
+        window.requestAnimationFrame(
+          () => {
+            refreshDepartmentSearchSelect(
+              selectId
+            );
+          }
+        );
+      });
+
+    widget.observer.observe(
+      select,
+      {
+        childList: true,
+        subtree: true,
+        attributes: true,
+        attributeFilter: [
+          'disabled'
+        ]
+      }
+    );
+
+    refreshDepartmentSearchSelect(
+      selectId
+    );
+  }
+
+  function initializeDepartmentSearchSelects() {
+    [
+      'newNotifyKhoa',
+      'editNotifyKhoa',
+      'notifyTargetKhoa'
+    ].forEach(
+      initializeDepartmentSearchSelect
+    );
+
+    document.addEventListener(
+      'click',
+      event => {
+        if (
+          !event.target.closest(
+            '.department-search-select'
+          )
+        ) {
+          closeDepartmentSearchMenus();
+        }
+      }
+    );
+  }
+
+  function notificationDepartmentOptionsHtml(
+    selected = ''
+  ) {
+    const values = [
+      '',
+      'Tất cả các khoa',
+      ...HOSPITAL_DEPARTMENTS
+    ];
+
+    return values
+      .map(name => {
+        const label =
+          name ||
+          '-- Không nhận thông báo --';
+
+        const selectedAttr =
+          name === selected
+            ? ' selected'
+            : '';
+
+        return (
+          `<option value="${escapeHtmlValue(name)}"${selectedAttr}>` +
+          `${escapeHtmlText(label)}` +
+          `</option>`
+        );
+      })
+      .join('');
+  }
+
+  function populateAccountNotificationDepartmentSelects() {
+    [
+      'newNotifyKhoa',
+      'editNotifyKhoa'
+    ].forEach(id => {
+      const select =
+        document.getElementById(id);
+
+      if (select) {
+        select.innerHTML =
+          notificationDepartmentOptionsHtml();
+
+        refreshDepartmentSearchSelect(
+          id
+        );
+      }
+    });
+
+    updateAccountNotificationDepartmentRequirement(
+      'new'
+    );
+  }
+function updateAccountNotificationDepartmentRequirement(
+    mode
+  ) {
+    const prefix =
+      mode === 'edit'
+        ? 'edit'
+        : 'new';
+
+    const role =
+      document
+        .getElementById(
+          prefix + 'Role'
+        )
+        .value;
+
+    const select =
+      document.getElementById(
+        prefix + 'NotifyKhoa'
+      );
+
+    const help =
+      document.getElementById(
+        prefix + 'NotifyKhoaHelp'
+      );
+
+    const typesWrap =
+      document.getElementById(
+        prefix + 'NotifyTypesWrap'
+      );
+
+    const readyInput =
+      document.getElementById(
+        prefix + 'NotifyReady'
+      );
+
+    const doneInput =
+      document.getElementById(
+        prefix + 'NotifyDone'
+      );
+
+    const required =
+      role === 'xem';
+
+    select.required =
+      required;
+
+    help.innerText =
+      required
+        ? (
+            'Tài khoản Người lĩnh bắt buộc chọn đúng một khoa nhận thông báo.'
+          )
+        : (
+            'Có thể để trống nếu tài khoản không cần nhận; chọn “Tất cả các khoa” nếu cần nhận toàn bộ.'
+          );
+
+    if (typesWrap) {
+      typesWrap.style.display =
+        'block';
+    }
+
+    if (
+      readyInput &&
+      doneInput
+    ) {
+      readyInput.disabled = false;
+      doneInput.disabled = false;
+
+      if (
+        required &&
+        !readyInput.checked &&
+        !doneInput.checked
+      ) {
+        readyInput.checked = true;
+        doneInput.checked = true;
+      }
+    }
+  }
+function readAccountNotificationTypes(
+    prefix,
+    role
+  ) {
+    return {
+      notifyReady:
+        Boolean(
+          document
+            .getElementById(
+              prefix + 'NotifyReady'
+            )
+            .checked
+        ),
+      notifyDone:
+        Boolean(
+          document
+            .getElementById(
+              prefix + 'NotifyDone'
+            )
+            .checked
+        )
+    };
+  }
+
+  function notificationTypesDisplay(
+    user
+  ) {
+    const labels = [];
+
+    if (user.notifyReady) {
+      labels.push(
+        '<span class="notification-type-badge">Sẵn sàng phát</span>'
+      );
+    }
+
+    if (user.notifyDone) {
+      labels.push(
+        '<span class="notification-type-badge">Đã phát xong</span>'
+      );
+    }
+
+    return labels.length
+      ? (
+          '<div class="notification-type-badges">' +
+          labels.join('') +
+          '</div>'
+        )
+      : '—';
+  }
+
+  function applyCurrentUserNotificationDepartments(
+    departments
+  ) {
+    if (!currentUser) return;
+
+    const normalized =
+      Array.isArray(departments)
+        ? departments
+            .map(item =>
+              String(item || '').trim()
+            )
+            .filter(Boolean)
+        : [];
+
+    currentUser.notifyDepartments =
+      normalized;
+
+    currentUser.notifyKhoa =
+      normalized.join(', ');
+
+    updatePersistedUser(
+      currentUser
+    );
+  }
+
+  let adminUsersCache = [];
+
+  function normalizeAdminUserSearchText(value) {
+    return String(value || '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  function adminRoleDisplay(role) {
+    return role === 'phat'
+      ? 'Phát thuốc'
+      : (
+          role === 'admin'
+            ? 'Admin'
+            : 'Người Lĩnh'
+        );
+  }
+
+  function adminUserSearchHaystack(user) {
+    const notificationTypes = [
+      user && user.notifyReady ? 'sẵn sàng phát' : '',
+      user && user.notifyDone ? 'đã phát xong' : ''
+    ].filter(Boolean).join(' ');
+
+    return normalizeAdminUserSearchText([
+      user && user.fullName,
+      user && user.username,
+      adminRoleDisplay(user && user.role),
+      user && user.role,
+      user && user.kho,
+      user && user.notifyKhoa,
+      notificationTypes
+    ].join(' '));
+  }
+
+  function renderAdminUsers(users) {
+    const tableBody =
+      document.getElementById('userTableBody');
+
+    const list = Array.isArray(users)
+      ? users
+      : [];
+
+    tableBody.innerHTML = '';
+
+    list.forEach(user => {
+      const roleDisplay =
+        adminRoleDisplay(user.role);
+
+      const editPayload =
+        encodeURIComponent(
+          JSON.stringify({
+            username: user.username,
+            password: user.password || '',
+            fullName: user.fullName,
+            role: user.role,
+            kho: user.kho,
+            notifyKhoa: user.notifyKhoa || '',
+            notifyReady: Boolean(user.notifyReady),
+            notifyDone: Boolean(user.notifyDone)
+          })
+        );
+
+      const safeUsernameForAction =
+        encodeURIComponent(
+          String(user.username || '')
+        );
+
+      tableBody.innerHTML +=
+        `<tr>` +
+        `<td data-label="Tên hiển thị">${escapeHtmlText(user.fullName)}</td>` +
+        `<td data-label="Username"><b>${escapeHtmlText(user.username)}</b></td>` +
+        `<td data-label="Quyền">${escapeHtmlText(roleDisplay)}</td>` +
+        `<td data-label="Kho">${escapeHtmlText(user.kho)}</td>` +
+        `<td data-label="Khoa nhận TB">${escapeHtmlText(user.notifyKhoa || '—')}</td>` +
+        `<td data-label="Loại thông báo">${notificationTypesDisplay(user)}</td>` +
+        `<td data-label="Hành động">` +
+          `<div style="display:flex; gap:5px; justify-content:flex-end;">` +
+            `<button class="btn-warning" style="padding:5px 10px;" onclick="openEditUser('${editPayload}')">Sửa</button>` +
+            (
+              String(user.username || '').toLowerCase() !== 'admin'
+                ? `<button class="btn-danger" style="padding:5px 10px;" onclick="deleteUser(decodeURIComponent('${safeUsernameForAction}'))">Xóa</button>`
+                : ''
+            ) +
+          `</div>` +
+        `</td>` +
+        `</tr>`;
+    });
+
+    if (!list.length) {
+      tableBody.innerHTML =
+        '<tr><td colspan="7" style="text-align:center; padding:20px; color:#607d8b;">Không tìm thấy tài khoản phù hợp.</td></tr>';
+    }
+
+    const count =
+      document.getElementById('adminUserSearchCount');
+
+    if (count) {
+      count.textContent =
+        `${list.length}/${adminUsersCache.length} tài khoản`;
+    }
+  }
+
+  function filterAdminUsers() {
+    const input =
+      document.getElementById('adminUserSearch');
+
+    const query =
+      normalizeAdminUserSearchText(
+        input ? input.value : ''
+      );
+
+    if (!query) {
+      renderAdminUsers(adminUsersCache);
+      return;
+    }
+
+    const terms = query
+      .split(' ')
+      .filter(Boolean);
+
+    const filtered = adminUsersCache.filter(user => {
+      const haystack =
+        adminUserSearchHaystack(user);
+
+      return terms.every(term =>
+        haystack.includes(term)
+      );
+    });
+
+    renderAdminUsers(filtered);
+  }
+
+  function clearAdminUserSearch() {
+    const input =
+      document.getElementById('adminUserSearch');
+
+    if (input) {
+      input.value = '';
+      input.focus();
+    }
+
+    renderAdminUsers(adminUsersCache);
+  }
+
+  function loadAdminUsers() {
+    google.script.run
+      .withSuccessHandler(users => {
+        adminUsersCache = Array.isArray(users)
+          ? users
+          : [];
+
+        filterAdminUsers();
+        showLoading(false);
+      })
+      .getUsersServer();
+  }
+
+  async function deleteUser(un) {
+    const ok = await showConfirm("Bạn có chắc chắn muốn xóa tài khoản " + un + " không?", "Xóa tài khoản", { type: 'danger', confirmText: 'Xóa tài khoản', confirmClass: 'btn-danger' });
+    if(ok) google.script.run.withSuccessHandler(() => loadAdminUsers()).deleteUserServer(un);
+  }
+
+  function createUser() {
+    const role =
+      document
+        .getElementById(
+          'newRole'
+        )
+        .value;
+
+    const notifyKhoa =
+      document
+        .getElementById(
+          'newNotifyKhoa'
+        )
+        .value;
+
+    const notificationTypes =
+      readAccountNotificationTypes(
+        'new',
+        role
+      );
+
+    if (
+      role === 'xem' &&
+      !notifyKhoa
+    ) {
+      return showMsg(
+        'Vui lòng chọn khoa nhận thông báo cho tài khoản Người lĩnh.',
+        'Chưa chọn khoa',
+        'warning'
+      );
+    }
+
+    if (
+      role === 'xem' &&
+      !notificationTypes.notifyReady &&
+      !notificationTypes.notifyDone
+    ) {
+      return showMsg(
+        'Vui lòng chọn ít nhất một loại thông báo tự động.',
+        'Chưa chọn loại thông báo',
+        'warning'
+      );
+    }
+
+    showLoading(
+      true,
+      'Đang tạo tài khoản...'
+    );
+
+    const selectedKhos =
+      Array.from(
+        document
+          .getElementById(
+            'newKho'
+          )
+          .selectedOptions
+      )
+        .map(option =>
+          option.value
+        )
+        .join(', ');
+
+    google.script.run
+      .withSuccessHandler(result => {
+        if (
+          result &&
+          result.success === false
+        ) {
+          showLoading(false);
+
+          showMsg(
+            result.msg,
+            'Không tạo được tài khoản',
+            'warning'
+          );
+
+          return;
+        }
+
+        document
+          .getElementById(
+            'newNotifyKhoa'
+          )
+          .value = '';
+
+        refreshDepartmentSearchSelect(
+          'newNotifyKhoa'
+        );
+
+        document
+          .getElementById(
+            'newNotifyReady'
+          )
+          .checked = true;
+
+        document
+          .getElementById(
+            'newNotifyDone'
+          )
+          .checked = true;
+
+        loadAdminUsers();
+      })
+      .createUserServer({
+        fullName:
+          document
+            .getElementById(
+              'newFullName'
+            )
+            .value,
+        username:
+          document
+            .getElementById(
+              'newUsername'
+            )
+            .value,
+        password:
+          document
+            .getElementById(
+              'newPassword'
+            )
+            .value,
+        role:
+          role,
+        kho:
+          selectedKhos,
+        notifyKhoa:
+          notifyKhoa,
+        notifyReady:
+          notificationTypes.notifyReady,
+        notifyDone:
+          notificationTypes.notifyDone
+      });
+  }
+
+  function openEditUser(encodedPayload) {
+    const data =
+      JSON.parse(
+        decodeURIComponent(
+          encodedPayload
+        )
+      );
+
+    document
+      .getElementById(
+        'editOldUsername'
+      )
+      .value =
+        data.username;
+
+    document
+      .getElementById(
+        'editUsername'
+      )
+      .value =
+        data.username;
+
+    document
+      .getElementById(
+        'editPassword'
+      )
+      .value =
+        data.password || '';
+
+    document
+      .getElementById(
+        'editFullName'
+      )
+      .value =
+        data.fullName || '';
+
+    document
+      .getElementById(
+        'editRole'
+      )
+      .value =
+        data.role || 'xem';
+
+    document
+      .getElementById(
+        'editNotifyReady'
+      )
+      .checked =
+        data.notifyReady !== false;
+
+    document
+      .getElementById(
+        'editNotifyDone'
+      )
+      .checked =
+        data.notifyDone !== false;
+
+    document
+      .getElementById(
+        'editNotifyKhoa'
+      )
+      .innerHTML =
+        notificationDepartmentOptionsHtml(
+          data.notifyKhoa || ''
+        );
+
+    document
+      .getElementById(
+        'editNotifyKhoa'
+      )
+      .value =
+        data.notifyKhoa || '';
+
+    refreshDepartmentSearchSelect(
+      'editNotifyKhoa'
+    );
+
+    updateAccountNotificationDepartmentRequirement(
+      'edit'
+    );
+
+    const khoArray =
+      String(data.kho || '')
+        .split(',')
+        .map(value =>
+          value.trim()
+        );
+
+    Array.from(
+      document
+        .getElementById(
+          'editKho'
+        )
+        .options
+    ).forEach(option => {
+      option.selected =
+        khoArray.includes(
+          option.value
+        );
+    });
+
+    document
+      .getElementById(
+        'editUserModal'
+      )
+      .style.display = 'flex';
+  }
+
+  function submitEditUser() {
+    const role =
+      document
+        .getElementById(
+          'editRole'
+        )
+        .value;
+
+    const notifyKhoa =
+      document
+        .getElementById(
+          'editNotifyKhoa'
+        )
+        .value;
+
+    const notificationTypes =
+      readAccountNotificationTypes(
+        'edit',
+        role
+      );
+
+    if (
+      role === 'xem' &&
+      !notifyKhoa
+    ) {
+      return showMsg(
+        'Vui lòng chọn khoa nhận thông báo cho tài khoản Người lĩnh.',
+        'Chưa chọn khoa',
+        'warning'
+      );
+    }
+
+    if (
+      role === 'xem' &&
+      !notificationTypes.notifyReady &&
+      !notificationTypes.notifyDone
+    ) {
+      return showMsg(
+        'Vui lòng chọn ít nhất một loại thông báo tự động.',
+        'Chưa chọn loại thông báo',
+        'warning'
+      );
+    }
+
+    const selectedKhos =
+      Array.from(
+        document
+          .getElementById(
+            'editKho'
+          )
+          .selectedOptions
+      )
+        .map(option =>
+          option.value
+        )
+        .join(', ');
+
+    google.script.run
+      .withSuccessHandler(result => {
+        if (
+          result &&
+          result.success === false
+        ) {
+          showMsg(
+            result.msg,
+            'Không lưu được tài khoản',
+            'warning'
+          );
+
+          return;
+        }
+
+        document
+          .getElementById(
+            'editUserModal'
+          )
+          .style.display = 'none';
+
+        loadAdminUsers();
+      })
+      .editUserServer(
+        document
+          .getElementById(
+            'editOldUsername'
+          )
+          .value,
+        {
+          fullName:
+            document
+              .getElementById(
+                'editFullName'
+              )
+              .value,
+          username:
+            document
+              .getElementById(
+                'editUsername'
+              )
+              .value,
+          password:
+            document
+              .getElementById(
+                'editPassword'
+              )
+              .value,
+          role:
+            role,
+          kho:
+            selectedKhos,
+          notifyKhoa:
+            notifyKhoa,
+          notifyReady:
+            notificationTypes.notifyReady,
+          notifyDone:
+            notificationTypes.notifyDone
+        }
+      );
+  }
+
+  function openChangePassModal() { document.getElementById('changePassModal').style.display = 'flex'; }
+  function submitChangePass() { google.script.run.withSuccessHandler(r => { if(r.success) document.getElementById('changePassModal').style.display='none'; else showMsg(r.msg); }).changePassServer(currentUser.username, document.getElementById('oldPass').value, document.getElementById('newPass').value); }
+</script>
+</body>
+</html>
