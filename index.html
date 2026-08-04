@@ -1936,7 +1936,30 @@
     color: #37474f;
   }
 
-  /* FIX12: nút chọn kho tự co theo nội dung, căn chữ cân đối */
+  /* FIX13: thêm wrapper và mũi tên giả ổn định cho nút chọn kho */
+  .warehouse-select-wrap {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    flex: 0 0 auto;
+    max-width: 220px;
+  }
+
+  .warehouse-select-wrap::after {
+    content: "";
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    width: 8px;
+    height: 8px;
+    margin-top: -6px;
+    border-right: 2px solid #5b6b79;
+    border-bottom: 2px solid #5b6b79;
+    transform: rotate(45deg);
+    pointer-events: none;
+    opacity: .95;
+  }
+
   .compact-warehouse-select {
     width: 116px;
     max-width: 220px;
@@ -1961,10 +1984,8 @@
     box-shadow: 0 1px 3px rgba(15, 23, 42, .08);
     appearance: none;
     -webkit-appearance: none;
-    background-repeat: no-repeat;
-    background-position: right 11px center;
-    background-size: 10px 6px;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath fill='%235b6b79' d='M5 6 .67.75h8.66z'/%3E%3C/svg%3E");
+    background-image: none;
+    padding-right: 34px !important;
     transition: width .14s ease, background .18s ease, border-color .18s ease, box-shadow .18s ease;
   }
 
@@ -1990,6 +2011,11 @@
   .list-toolbar-controls .compact-warehouse-select {
     height: 36px !important;
     min-height: 36px !important;
+  }
+
+  .list-toolbar-bottom-row .warehouse-select-wrap,
+  #view-history .warehouse-select-wrap {
+    align-self: center;
   }
 
   @media (max-width: 700px) {
@@ -2182,16 +2208,17 @@
       </div>
 
       <div class="list-toolbar-bottom-row">
-        <select
-          id="filterWarehouse"
-          class="compact-warehouse-select active-warehouse"
-          style="display:none;"
-          onchange="handleAdminWarehouseFilterChange('active')"
-          title="Tất cả kho"
-          aria-label="Lọc danh sách phiếu theo kho"
-        >
-          <option value="__all__">Tất cả kho</option>
-        </select>
+        <span class="warehouse-select-wrap" style="display:none;" id="filterWarehouseWrap">
+          <select
+            id="filterWarehouse"
+            class="compact-warehouse-select active-warehouse"
+            onchange="handleAdminWarehouseFilterChange('active')"
+            title="Tất cả kho"
+            aria-label="Lọc danh sách phiếu theo kho"
+          >
+            <option value="__all__">Tất cả kho</option>
+          </select>
+        </span>
         <button id="btnBulkDelete" class="btn-danger toolbar-standard-action" style="display:none;" onclick="deleteSelectedVouchers()">🗑️ Xóa đã chọn</button>
       </div>
     </div>
@@ -2220,16 +2247,17 @@
         <option value="Tất cả các khoa">Tất cả</option>
       </select>
 
-      <select
-        id="filterHistoryWarehouse"
-        class="compact-warehouse-select history-warehouse"
-        style="display:none;"
-        onchange="handleAdminWarehouseFilterChange('history')"
-        title="Tất cả kho"
-        aria-label="Lọc lịch sử phiếu theo kho"
-      >
-        <option value="__all__">Tất cả kho</option>
-      </select>
+      <span class="warehouse-select-wrap" style="display:none;" id="filterHistoryWarehouseWrap">
+        <select
+          id="filterHistoryWarehouse"
+          class="compact-warehouse-select history-warehouse"
+          onchange="handleAdminWarehouseFilterChange('history')"
+          title="Tất cả kho"
+          aria-label="Lọc lịch sử phiếu theo kho"
+        >
+          <option value="__all__">Tất cả kho</option>
+        </select>
+      </span>
 
       <select
         id="filterHistoryDate"
@@ -3174,7 +3202,7 @@
     ).includes(warehouseKey);
   }
 
-  /* FIX12: co chiều rộng nút theo đúng lựa chọn hiện tại */
+  /* FIX13: co chiều rộng nút theo đúng lựa chọn hiện tại */
   function resizeAdminWarehouseSelect(select) {
     if (!select) return;
 
@@ -8702,7 +8730,7 @@ let d = new Date(v.time);
       .getVoucherCardsServer();
   }
 
-  /* FIX12: nhận biết ngày ISO và ngày Việt Nam, không để trình duyệt tự đoán sai tháng/ngày */
+  /* FIX13: nhận biết ngày ISO và ngày Việt Nam, không để trình duyệt tự đoán sai tháng/ngày */
   function getHistoryLocalDateKey(value) {
     if (value === null || value === undefined || value === '') return '';
 
