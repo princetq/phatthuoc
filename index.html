@@ -1771,7 +1771,7 @@
         min-width:36px;
         flex:0 0 36px;
       }
-      /* FIX14: trên mobile canh nhóm nút ở Lịch sử sang bên phải */
+      /* FIX15: trên mobile canh nhóm nút ở Lịch sử sang bên phải */
       #view-history > div:first-child {
         align-items:flex-start !important;
       }
@@ -1954,37 +1954,27 @@
     color: #37474f;
   }
 
-  /* FIX14: thêm wrapper và mũi tên giả ổn định cho nút chọn kho */
+  /* FIX15: bỏ mũi tên ở nút chọn kho, thu gọn kích thước cho cân đối */
   .warehouse-select-wrap {
     position: relative;
     display: inline-flex;
     align-items: center;
     flex: 0 0 auto;
-    max-width: 220px;
+    max-width: 200px;
   }
 
   .warehouse-select-wrap::after {
-    content: "";
-    position: absolute;
-    right: 12px;
-    top: 50%;
-    width: 8px;
-    height: 8px;
-    margin-top: -6px;
-    border-right: 2px solid #5b6b79;
-    border-bottom: 2px solid #5b6b79;
-    transform: rotate(45deg);
-    pointer-events: none;
-    opacity: .95;
+    content: none;
+    display: none;
   }
 
   .compact-warehouse-select {
-    width: 116px;
-    max-width: 220px;
-    min-width: 112px;
+    width: 108px;
+    max-width: 200px;
+    min-width: 104px;
     min-height: 38px;
     margin: 0 !important;
-    padding: 8px 30px 8px 13px !important;
+    padding: 8px 14px !important;
     border: 1px solid #cfd8dc;
     border-radius: 14px;
     background: linear-gradient(180deg, #ffffff 0%, #f5f8fb 100%);
@@ -1993,8 +1983,8 @@
     font-weight: 800;
     line-height: 1.2;
     cursor: pointer;
-    text-align: left;
-    text-align-last: left;
+    text-align: center;
+    text-align-last: center;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -2003,7 +1993,6 @@
     appearance: none;
     -webkit-appearance: none;
     background-image: none;
-    padding-right: 34px !important;
     transition: width .14s ease, background .18s ease, border-color .18s ease, box-shadow .18s ease;
   }
 
@@ -3220,7 +3209,7 @@
     ).includes(warehouseKey);
   }
 
-  /* FIX14: co chiều rộng nút theo đúng lựa chọn hiện tại */
+  /* FIX15: co chiều rộng nút theo đúng lựa chọn hiện tại */
   function resizeAdminWarehouseSelect(select) {
     if (!select) return;
 
@@ -3256,8 +3245,8 @@
     }
 
     const targetWidth = Math.max(
-      112,
-      Math.min(220, Math.ceil(measuredWidth + 49))
+      104,
+      Math.min(200, Math.ceil(measuredWidth + 28))
     );
 
     select.style.width = targetWidth + 'px';
@@ -8763,7 +8752,7 @@ let d = new Date(v.time);
       .getVoucherCardsServer();
   }
 
-  /* FIX14: nhận biết ngày ISO và ngày Việt Nam, không để trình duyệt tự đoán sai tháng/ngày */
+  /* FIX15: nhận biết ngày ISO và ngày Việt Nam, không để trình duyệt tự đoán sai tháng/ngày */
   function getHistoryLocalDateKey(value) {
     if (value === null || value === undefined || value === '') return '';
 
