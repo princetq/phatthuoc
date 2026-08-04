@@ -1,4 +1,4 @@
-const CACHE_NAME = 'phat-thuoc-pwa-v42-5-9-fix13';
+const CACHE_NAME = 'phat-thuoc-pwa-v42-5-9-fix14';
 
 const APP_SHELL = [
   '/',
