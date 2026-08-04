@@ -1818,38 +1818,133 @@
 
 
 
-  /* ===== FIX7: TÌM KIẾM TÀI KHOẢN ADMIN ===== */
+  /* ===== FIX8: TÌM KIẾM TÀI KHOẢN RÕ HƠN + LỌC KHO CHO ADMIN ===== */
   .admin-user-searchbar {
     display: grid;
-    grid-template-columns: minmax(220px, 1fr) auto auto;
-    gap: 8px;
+    grid-template-columns: minmax(260px, 1fr) auto auto;
+    gap: 10px;
     align-items: center;
-    margin-bottom: 12px;
+    margin-bottom: 14px;
   }
 
   .admin-user-searchbar input {
     margin: 0;
+    min-height: 48px;
+    padding: 11px 14px;
+    border: 2px solid #5c7c68;
+    border-radius: 10px;
+    background: #fff;
+    color: #1f2d24;
+    font-size: 17px !important;
+    font-weight: 700;
+    line-height: 1.35;
+  }
+
+  .admin-user-searchbar input::placeholder {
+    color: #607d6a;
+    font-size: 16px;
+    opacity: 1;
+  }
+
+  .admin-user-searchbar input:focus {
+    border-color: var(--green);
+    box-shadow: 0 0 0 3px rgba(40, 167, 69, .16);
+    outline: none;
+  }
+
+  .admin-user-search-clear {
+    min-height: 48px;
+    padding: 10px 16px;
+    border: 2px solid #8f1f2c;
+    border-radius: 10px;
+    background: #b02a37;
+    color: #fff;
+    font-size: 16px;
+    font-weight: 900;
+    line-height: 1.2;
+    white-space: nowrap;
+    box-shadow: 0 2px 6px rgba(176, 42, 55, .22);
+  }
+
+  .admin-user-search-clear:hover,
+  .admin-user-search-clear:focus {
+    background: #8f1f2c;
+    color: #fff;
+    opacity: 1;
+    transform: none;
+    outline: 3px solid rgba(176, 42, 55, .18);
   }
 
   .admin-user-search-count {
-    min-width: 92px;
+    min-width: 110px;
     text-align: right;
-    font-size: 13px;
-    font-weight: 700;
-    color: #546e7a;
+    font-size: 15px;
+    font-weight: 900;
+    color: #37474f;
+  }
+
+  .compact-warehouse-select {
+    width: 162px !important;
+    max-width: 162px;
+    min-width: 162px;
+    min-height: 36px;
+    margin: 0 !important;
+    padding: 8px 28px 8px 10px !important;
+    border: none;
+    border-radius: 18px;
+    color: #fff;
+    font-size: 14px !important;
+    font-weight: 900;
+    line-height: 1.2;
+    cursor: pointer;
+    text-align: center;
+    text-align-last: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    box-sizing: border-box;
+  }
+
+  .compact-warehouse-select.active-warehouse {
+    background: #455a64;
+  }
+
+  .compact-warehouse-select.history-warehouse {
+    background: #6a1b9a;
+  }
+
+  .list-toolbar-controls .compact-warehouse-select {
+    height: 36px !important;
+    min-height: 36px !important;
   }
 
   @media (max-width: 700px) {
     .admin-user-searchbar {
-      grid-template-columns: 1fr auto;
+      grid-template-columns: minmax(0, 1fr) auto;
+    }
+
+    .admin-user-searchbar input {
+      font-size: 17px !important;
+    }
+
+    .admin-user-search-clear {
+      padding-left: 13px;
+      padding-right: 13px;
     }
 
     .admin-user-search-count {
       grid-column: 1 / -1;
       text-align: left;
+      font-size: 15px;
+    }
+
+    #view-list #filterWarehouse {
+      width: 150px !important;
+      min-width: 150px !important;
+      max-width: 150px !important;
     }
   }
-  /* ===== END FIX7 USER SEARCH ===== */
+  /* ===== END FIX8 ===== */
 </style>
 </head>
 <body>
@@ -2013,6 +2108,16 @@
       </div>
 
       <div class="list-toolbar-bottom-row">
+        <select
+          id="filterWarehouse"
+          class="compact-warehouse-select active-warehouse"
+          style="display:none;"
+          onchange="handleAdminWarehouseFilterChange('active')"
+          title="Tất cả kho"
+          aria-label="Lọc danh sách phiếu theo kho"
+        >
+          <option value="__all__">Tất cả kho</option>
+        </select>
         <button id="btnBulkDelete" class="btn-danger" style="display:none;" onclick="deleteSelectedVouchers()">🗑️ Xóa đã chọn</button>
       </div>
     </div>
@@ -2039,6 +2144,17 @@
 
       <select id="filterHistoryKhoa" class="compact-khoa-select history-khoa" onchange="handleSelectChange('history')" title="Tất cả các khoa">
         <option value="Tất cả các khoa">Tất cả</option>
+      </select>
+
+      <select
+        id="filterHistoryWarehouse"
+        class="compact-warehouse-select history-warehouse"
+        style="display:none;"
+        onchange="handleAdminWarehouseFilterChange('history')"
+        title="Tất cả kho"
+        aria-label="Lọc lịch sử phiếu theo kho"
+      >
+        <option value="__all__">Tất cả kho</option>
       </select>
 
       <button class="btn-pink" style="font-size: 18px; border-radius: 20px;" onclick="loadHistoryList()">🔄 Tải lại Lịch sử</button>
@@ -2126,9 +2242,10 @@
       >
       <button
         type="button"
-        class="btn-secondary"
+        class="admin-user-search-clear"
         onclick="clearAdminUserSearch()"
-      >Xóa tìm kiếm</button>
+        aria-label="Xóa nội dung tìm kiếm tài khoản"
+      >✕ Xóa tìm kiếm</button>
       <span id="adminUserSearchCount" class="admin-user-search-count"></span>
     </div>
     <table style="margin-top:0;">
@@ -2917,6 +3034,186 @@
       '--voucher-accent-shadow:' + hexToRgba(firstAccent, 0.18)
     ].join('; ');
   }
+
+
+  /* ===== FIX8: BỘ LỌC KHO RIÊNG CHO ADMIN ===== */
+  function getVoucherWarehouseKeysForFilter(voucher) {
+    const rawKeys = String(
+      voucher && voucher.warehouseKeys
+        ? voucher.warehouseKeys
+        : ''
+    )
+      .split(',')
+      .map(item => item.trim())
+      .filter(Boolean);
+
+    if (rawKeys.length) {
+      return uniqueWarehouseKeys(rawKeys);
+    }
+
+    const legacyVouchers =
+      voucher && voucher.vouchers &&
+      typeof voucher.vouchers === 'object'
+        ? voucher.vouchers
+        : null;
+
+    if (!legacyVouchers) {
+      return [];
+    }
+
+    const keys = [];
+
+    Object.keys(legacyVouchers).forEach(key => {
+      const data = legacyVouchers[key] || {};
+      const hasData =
+        ['TQ', 'BT', 'HT', 'dates'].some(field =>
+          Array.isArray(data[field]) &&
+          data[field].length > 0
+        );
+
+      if (hasData) {
+        keys.push(key);
+      }
+    });
+
+    return uniqueWarehouseKeys(keys);
+  }
+
+  function voucherMatchesAdminWarehouseFilter(
+    voucher,
+    warehouseKey
+  ) {
+    if (!warehouseKey) return true;
+
+    return getVoucherWarehouseKeysForFilter(
+      voucher
+    ).includes(warehouseKey);
+  }
+
+  function updateAdminWarehouseFilterOptions(
+    type,
+    vouchers
+  ) {
+    const selectId =
+      type === 'history'
+        ? 'filterHistoryWarehouse'
+        : 'filterWarehouse';
+
+    const select =
+      document.getElementById(selectId);
+
+    if (!select) return '';
+
+    const isAdmin =
+      currentUser &&
+      currentUser.role === 'admin';
+
+    select.style.display =
+      isAdmin
+        ? 'inline-block'
+        : 'none';
+
+    if (!isAdmin) {
+      select.value = '__all__';
+      return '';
+    }
+
+    const warehouseKeys =
+      uniqueWarehouseKeys(
+        (vouchers || []).flatMap(
+          getVoucherWarehouseKeysForFilter
+        )
+      )
+        .sort((a, b) =>
+          getWarehouseDisplayNameByKey(a)
+            .localeCompare(
+              getWarehouseDisplayNameByKey(b),
+              'vi'
+            )
+        );
+
+    const previous =
+      String(select.value || '__all__');
+
+    const optionsHtml =
+      '<option value="__all__">Tất cả kho</option>' +
+      warehouseKeys
+        .map(key => {
+          const label =
+            getWarehouseDisplayNameByKey(key) ||
+            key;
+
+          return (
+            '<option value="' +
+            escapeHtmlText(key) +
+            '">' +
+            escapeHtmlText(label) +
+            '</option>'
+          );
+        })
+        .join('');
+
+    if (select.innerHTML !== optionsHtml) {
+      select.innerHTML = optionsHtml;
+    }
+
+    select.value =
+      previous === '__all__' ||
+      warehouseKeys.includes(previous)
+        ? previous
+        : '__all__';
+
+    select.title =
+      select.options[select.selectedIndex]
+        ? select.options[select.selectedIndex].text
+        : 'Tất cả kho';
+
+    return select.value === '__all__'
+      ? ''
+      : select.value;
+  }
+
+  function handleAdminWarehouseFilterChange(type) {
+    const select = document.getElementById(
+      type === 'history'
+        ? 'filterHistoryWarehouse'
+        : 'filterWarehouse'
+    );
+
+    if (select) {
+      select.title =
+        select.options[select.selectedIndex]
+          ? select.options[select.selectedIndex].text
+          : 'Tất cả kho';
+    }
+
+    if (type === 'history') {
+      renderHistoryList();
+    } else {
+      renderTrackingList();
+    }
+  }
+
+  function resetAdminWarehouseFiltersForAccount() {
+    [
+      'filterWarehouse',
+      'filterHistoryWarehouse'
+    ].forEach(id => {
+      const select =
+        document.getElementById(id);
+
+      if (select) {
+        select.value = '__all__';
+        select.title = 'Tất cả kho';
+        select.style.display =
+          currentUser &&
+          currentUser.role === 'admin'
+            ? 'inline-block'
+            : 'none';
+      }
+    });
+  }
+  /* ===== END FIX8 ADMIN WAREHOUSE FILTER ===== */
 
 
   let currentUser = null;
@@ -6135,6 +6432,7 @@
     updateInstallButton();
     updateLowVisionSettingsButton();
     resetVoucherDepartmentFiltersForAccount();
+    resetAdminWarehouseFiltersForAccount();
     startAdminSessionValidation();
     resumeBackgroundFinishQueue();
 
@@ -8047,6 +8345,21 @@ let d = new Date(v.time);
       return v.state === 'waiting' || v.state === 'progress';
     });
 
+    const adminWarehouseFilter =
+      updateAdminWarehouseFilterOptions(
+        'active',
+        visibleArr
+      );
+
+    if (adminWarehouseFilter) {
+      visibleArr = visibleArr.filter(voucher =>
+        voucherMatchesAdminWarehouseFilter(
+          voucher,
+          adminWarehouseFilter
+        )
+      );
+    }
+
     let searchInput = document.getElementById('searchKhoa');
     let selectBtn = document.getElementById('filterKhoa');
 
@@ -8261,6 +8574,21 @@ let d = new Date(v.time);
     if (bulkBtn) bulkBtn.style.display = (currentUser && currentUser.role === 'admin') ? 'inline-block' : 'none';
     let c = document.getElementById('historyListContainer'); c.innerHTML = "";
     let arr = cloudHistoryData;
+
+    const adminWarehouseFilter =
+      updateAdminWarehouseFilterOptions(
+        'history',
+        arr
+      );
+
+    if (adminWarehouseFilter) {
+      arr = arr.filter(voucher =>
+        voucherMatchesAdminWarehouseFilter(
+          voucher,
+          adminWarehouseFilter
+        )
+      );
+    }
     
     let searchInput = document.getElementById('searchHistoryKhoa');
     let selectBtn = document.getElementById('filterHistoryKhoa');
