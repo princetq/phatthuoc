@@ -1816,6 +1816,40 @@
     }
     /* ===== END FIX6 ===== */
 
+
+
+  /* ===== FIX7: TÌM KIẾM TÀI KHOẢN ADMIN ===== */
+  .admin-user-searchbar {
+    display: grid;
+    grid-template-columns: minmax(220px, 1fr) auto auto;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+
+  .admin-user-searchbar input {
+    margin: 0;
+  }
+
+  .admin-user-search-count {
+    min-width: 92px;
+    text-align: right;
+    font-size: 13px;
+    font-weight: 700;
+    color: #546e7a;
+  }
+
+  @media (max-width: 700px) {
+    .admin-user-searchbar {
+      grid-template-columns: 1fr auto;
+    }
+
+    .admin-user-search-count {
+      grid-column: 1 / -1;
+      text-align: left;
+    }
+  }
+  /* ===== END FIX7 USER SEARCH ===== */
 </style>
 </head>
 <body>
@@ -2081,6 +2115,22 @@
     </div>
   </div>
   <div class="card table-wrap">
+    <div class="admin-user-searchbar">
+      <input
+        type="search"
+        id="adminUserSearch"
+        placeholder="Tìm tên, username, vai trò, kho hoặc khoa..."
+        autocomplete="off"
+        oninput="filterAdminUsers()"
+        aria-label="Tìm kiếm tài khoản"
+      >
+      <button
+        type="button"
+        class="btn-secondary"
+        onclick="clearAdminUserSearch()"
+      >Xóa tìm kiếm</button>
+      <span id="adminUserSearchCount" class="admin-user-search-count"></span>
+    </div>
     <table style="margin-top:0;">
       <thead><tr><th>Tên hiển thị</th><th>Username</th><th>Quyền</th><th>Kho</th><th>Khoa nhận TB</th><th>Loại thông báo</th><th>Hành động</th></tr></thead>
       <tbody id="userTableBody"></tbody>
@@ -2882,7 +2932,7 @@
   let currentVoucherVersion = 0;
   let syncInFlight = false;
   let mutationInFlight = false;
-  let detailSyncIntervalMs = 700;
+  let detailSyncIntervalMs = 1500;
   let skipNextListReload = false;
   let detailRefreshing = false;
   let adminFinalizedEditConfirmed = false;
@@ -5688,8 +5738,8 @@
         currentUser = res.user;
 
         detailSyncIntervalMs = Math.max(
-          500,
-          Number(res.syncIntervalMs || 700)
+          1500,
+          Number(res.syncIntervalMs || 1500)
         );
 
         sessionStorage.setItem(
@@ -12432,73 +12482,162 @@ function readAccountNotificationTypes(
     );
   }
 
+  let adminUsersCache = [];
+
+  function normalizeAdminUserSearchText(value) {
+    return String(value || '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  function adminRoleDisplay(role) {
+    return role === 'phat'
+      ? 'Phát thuốc'
+      : (
+          role === 'admin'
+            ? 'Admin'
+            : 'Người Lĩnh'
+        );
+  }
+
+  function adminUserSearchHaystack(user) {
+    const notificationTypes = [
+      user && user.notifyReady ? 'sẵn sàng phát' : '',
+      user && user.notifyDone ? 'đã phát xong' : ''
+    ].filter(Boolean).join(' ');
+
+    return normalizeAdminUserSearchText([
+      user && user.fullName,
+      user && user.username,
+      adminRoleDisplay(user && user.role),
+      user && user.role,
+      user && user.kho,
+      user && user.notifyKhoa,
+      notificationTypes
+    ].join(' '));
+  }
+
+  function renderAdminUsers(users) {
+    const tableBody =
+      document.getElementById('userTableBody');
+
+    const list = Array.isArray(users)
+      ? users
+      : [];
+
+    tableBody.innerHTML = '';
+
+    list.forEach(user => {
+      const roleDisplay =
+        adminRoleDisplay(user.role);
+
+      const editPayload =
+        encodeURIComponent(
+          JSON.stringify({
+            username: user.username,
+            password: user.password || '',
+            fullName: user.fullName,
+            role: user.role,
+            kho: user.kho,
+            notifyKhoa: user.notifyKhoa || '',
+            notifyReady: Boolean(user.notifyReady),
+            notifyDone: Boolean(user.notifyDone)
+          })
+        );
+
+      const safeUsernameForAction =
+        encodeURIComponent(
+          String(user.username || '')
+        );
+
+      tableBody.innerHTML +=
+        `<tr>` +
+        `<td data-label="Tên hiển thị">${escapeHtmlText(user.fullName)}</td>` +
+        `<td data-label="Username"><b>${escapeHtmlText(user.username)}</b></td>` +
+        `<td data-label="Quyền">${escapeHtmlText(roleDisplay)}</td>` +
+        `<td data-label="Kho">${escapeHtmlText(user.kho)}</td>` +
+        `<td data-label="Khoa nhận TB">${escapeHtmlText(user.notifyKhoa || '—')}</td>` +
+        `<td data-label="Loại thông báo">${notificationTypesDisplay(user)}</td>` +
+        `<td data-label="Hành động">` +
+          `<div style="display:flex; gap:5px; justify-content:flex-end;">` +
+            `<button class="btn-warning" style="padding:5px 10px;" onclick="openEditUser('${editPayload}')">Sửa</button>` +
+            (
+              String(user.username || '').toLowerCase() !== 'admin'
+                ? `<button class="btn-danger" style="padding:5px 10px;" onclick="deleteUser(decodeURIComponent('${safeUsernameForAction}'))">Xóa</button>`
+                : ''
+            ) +
+          `</div>` +
+        `</td>` +
+        `</tr>`;
+    });
+
+    if (!list.length) {
+      tableBody.innerHTML =
+        '<tr><td colspan="7" style="text-align:center; padding:20px; color:#607d8b;">Không tìm thấy tài khoản phù hợp.</td></tr>';
+    }
+
+    const count =
+      document.getElementById('adminUserSearchCount');
+
+    if (count) {
+      count.textContent =
+        `${list.length}/${adminUsersCache.length} tài khoản`;
+    }
+  }
+
+  function filterAdminUsers() {
+    const input =
+      document.getElementById('adminUserSearch');
+
+    const query =
+      normalizeAdminUserSearchText(
+        input ? input.value : ''
+      );
+
+    if (!query) {
+      renderAdminUsers(adminUsersCache);
+      return;
+    }
+
+    const terms = query
+      .split(' ')
+      .filter(Boolean);
+
+    const filtered = adminUsersCache.filter(user => {
+      const haystack =
+        adminUserSearchHaystack(user);
+
+      return terms.every(term =>
+        haystack.includes(term)
+      );
+    });
+
+    renderAdminUsers(filtered);
+  }
+
+  function clearAdminUserSearch() {
+    const input =
+      document.getElementById('adminUserSearch');
+
+    if (input) {
+      input.value = '';
+      input.focus();
+    }
+
+    renderAdminUsers(adminUsersCache);
+  }
+
   function loadAdminUsers() {
     google.script.run
       .withSuccessHandler(users => {
-        const tableBody =
-          document.getElementById(
-            'userTableBody'
-          );
+        adminUsersCache = Array.isArray(users)
+          ? users
+          : [];
 
-        tableBody.innerHTML = '';
-
-        users.forEach(user => {
-          const roleDisplay =
-            user.role === 'phat'
-              ? 'Phát thuốc'
-              : (
-                  user.role === 'admin'
-                    ? 'Admin'
-                    : 'Người Lĩnh'
-                );
-
-          const editPayload =
-            encodeURIComponent(
-              JSON.stringify({
-                username:
-                  user.username,
-                password:
-                  user.password || '',
-                fullName:
-                  user.fullName,
-                role:
-                  user.role,
-                kho:
-                  user.kho,
-                notifyKhoa:
-                  user.notifyKhoa || '',
-                notifyReady:
-                  Boolean(
-                    user.notifyReady
-                  ),
-                notifyDone:
-                  Boolean(
-                    user.notifyDone
-                  )
-              })
-            );
-
-          tableBody.innerHTML +=
-            `<tr>` +
-            `<td data-label="Tên hiển thị">${escapeHtmlText(user.fullName)}</td>` +
-            `<td data-label="Username"><b>${escapeHtmlText(user.username)}</b></td>` +
-            `<td data-label="Quyền">${roleDisplay}</td>` +
-            `<td data-label="Kho">${escapeHtmlText(user.kho)}</td>` +
-            `<td data-label="Khoa nhận TB">${escapeHtmlText(user.notifyKhoa || '—')}</td>` +
-            `<td data-label="Loại thông báo">${notificationTypesDisplay(user)}</td>` +
-            `<td data-label="Hành động">` +
-              `<div style="display:flex; gap:5px; justify-content:flex-end;">` +
-                `<button class="btn-warning" style="padding:5px 10px;" onclick="openEditUser('${editPayload}')">Sửa</button>` +
-                (
-                  user.username.toLowerCase() !== 'admin'
-                    ? `<button class="btn-danger" style="padding:5px 10px;" onclick="deleteUser('${user.username}')">Xóa</button>`
-                    : ''
-                ) +
-              `</div>` +
-            `</td>` +
-            `</tr>`;
-        });
-
+        filterAdminUsers();
         showLoading(false);
       })
       .getUsersServer();
