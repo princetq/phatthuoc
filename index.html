@@ -978,6 +978,59 @@
     .list-toolbar-controls .search-container.active-search .s-icon.clear-icon.show { width:36px; }
     .list-toolbar-controls .status-filter-button { padding:7px 11px !important; }
 
+    /* FIX11: bộ chọn ngày trong Lịch sử */
+    .history-date-select {
+      width: 148px !important;
+      max-width: 148px;
+      min-width: 148px;
+      height: 36px !important;
+      min-height: 36px !important;
+      margin: 0 !important;
+      padding: 7px 30px 7px 11px !important;
+      border: 1px solid #f2b8c6;
+      border-radius: 18px;
+      background-color: #fff7fa;
+      color: #8f2440;
+      font-size: 14px !important;
+      font-weight: 900;
+      line-height: 1.2;
+      text-align: center;
+      text-align-last: center;
+      cursor: pointer;
+      box-sizing: border-box;
+      appearance: none;
+      -webkit-appearance: none;
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+      background-size: 10px 6px;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath fill='%238f2440' d='M5 6 .67.75h8.66z'/%3E%3C/svg%3E");
+      box-shadow: 0 1px 3px rgba(143, 36, 64, .08);
+    }
+
+    .history-date-select:hover,
+    .history-date-select:focus {
+      border-color: #d97891;
+      background-color: #fff0f5;
+      box-shadow: 0 3px 10px rgba(143, 36, 64, .12);
+      outline: none;
+    }
+
+    /* FIX11: bốn nút Làm mới/Xóa đã chọn ở Danh sách và Lịch sử dùng đúng cùng kích thước */
+    .toolbar-standard-action {
+      height:36px !important;
+      min-height:36px !important;
+      padding:7px 11px !important;
+      border-radius:18px !important;
+      font-size:14px !important;
+      line-height:1.2 !important;
+      box-sizing:border-box !important;
+      display:inline-flex !important;
+      align-items:center !important;
+      justify-content:center !important;
+      white-space:nowrap !important;
+      margin:0 !important;
+    }
+
     .status-filter-wrap { position:relative; }
     .status-filter-button { min-height:36px; padding:7px 11px; border-radius:18px; background:#f3faf5; color:#24633b; border:1px solid #9dccab; box-shadow:0 1px 3px rgba(40,167,69,.08); font-size:14px; font-weight:900; display:flex; align-items:center; gap:5px; white-space:nowrap; }
     .status-filter-button:hover { transform:none; opacity:1; background:#eaf6ed; border-color:#67b77d; }
@@ -1818,7 +1871,7 @@
 
 
 
-  /* ===== FIX8: TÌM KIẾM TÀI KHOẢN RÕ HƠN + LỌC KHO CHO ADMIN ===== */
+  /* ===== FIX11: TÌM KIẾM TÀI KHOẢN RÕ HƠN + LỌC KHO CHO ADMIN ===== */
   .admin-user-searchbar {
     display: grid;
     grid-template-columns: minmax(260px, 1fr) auto auto;
@@ -1884,17 +1937,18 @@
   }
 
   .compact-warehouse-select {
-    width: 162px !important;
-    max-width: 162px;
-    min-width: 162px;
-    min-height: 36px;
+    width: 168px !important;
+    max-width: 168px;
+    min-width: 168px;
+    min-height: 38px;
     margin: 0 !important;
-    padding: 8px 28px 8px 10px !important;
-    border: none;
-    border-radius: 18px;
-    color: #fff;
+    padding: 8px 32px 8px 12px !important;
+    border: 1px solid #cfd8dc;
+    border-radius: 14px;
+    background: linear-gradient(180deg, #ffffff 0%, #f5f8fb 100%);
+    color: #1f2937;
     font-size: 14px !important;
-    font-weight: 900;
+    font-weight: 800;
     line-height: 1.2;
     cursor: pointer;
     text-align: center;
@@ -1903,14 +1957,33 @@
     text-overflow: ellipsis;
     white-space: nowrap;
     box-sizing: border-box;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, .08);
+    appearance: none;
+    -webkit-appearance: none;
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 10px 6px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath fill='%235b6b79' d='M5 6 .67.75h8.66z'/%3E%3C/svg%3E");
+    transition: background .18s ease, border-color .18s ease, box-shadow .18s ease, transform .18s ease;
+  }
+
+  .compact-warehouse-select:hover,
+  .compact-warehouse-select:focus {
+    border-color: #90a4ae;
+    box-shadow: 0 3px 10px rgba(15, 23, 42, .12);
+    outline: none;
   }
 
   .compact-warehouse-select.active-warehouse {
-    background: #455a64;
+    border-color: #90caf9;
+    background: linear-gradient(180deg, #eff7ff 0%, #dbeafe 100%);
+    color: #0f3d75;
   }
 
   .compact-warehouse-select.history-warehouse {
-    background: #6a1b9a;
+    border-color: #a7f3d0;
+    background: linear-gradient(180deg, #eefcf6 0%, #d1fae5 100%);
+    color: #065f46;
   }
 
   .list-toolbar-controls .compact-warehouse-select {
@@ -1944,7 +2017,7 @@
       max-width: 150px !important;
     }
   }
-  /* ===== END FIX8 ===== */
+  /* ===== END FIX11 ===== */
 </style>
 </head>
 <body>
@@ -2104,7 +2177,7 @@
           </div>
         </div>
 
-        <button class="btn-success toolbar-refresh-button" onclick="loadWaitList()">🔄 Làm mới</button>
+        <button class="btn-success toolbar-refresh-button toolbar-standard-action" onclick="loadWaitList()">🔄 Làm mới</button>
       </div>
 
       <div class="list-toolbar-bottom-row">
@@ -2118,7 +2191,7 @@
         >
           <option value="__all__">Tất cả kho</option>
         </select>
-        <button id="btnBulkDelete" class="btn-danger" style="display:none;" onclick="deleteSelectedVouchers()">🗑️ Xóa đã chọn</button>
+        <button id="btnBulkDelete" class="btn-danger toolbar-standard-action" style="display:none;" onclick="deleteSelectedVouchers()">🗑️ Xóa đã chọn</button>
       </div>
     </div>
   </div>
@@ -2157,8 +2230,18 @@
         <option value="__all__">Tất cả kho</option>
       </select>
 
-      <button class="btn-pink" style="font-size: 18px; border-radius: 20px;" onclick="loadHistoryList()">🔄 Tải lại Lịch sử</button>
-      <button id="btnBulkDeleteHistory" class="btn-danger" style="display:none; font-size: 18px; border-radius: 20px;" onclick="deleteSelectedVouchers()">🗑️ Xóa đã chọn</button>
+      <select
+        id="filterHistoryDate"
+        class="history-date-select"
+        onchange="handleHistoryDateFilterChange()"
+        title="Tất cả ngày"
+        aria-label="Lọc lịch sử phiếu theo ngày"
+      >
+        <option value="__all__">📅 Tất cả ngày</option>
+      </select>
+
+      <button class="btn-pink toolbar-standard-action" onclick="loadHistoryList()" title="Tải lại lịch sử">🔄 Làm mới</button>
+      <button id="btnBulkDeleteHistory" class="btn-danger toolbar-standard-action" style="display:none;" onclick="deleteSelectedVouchers()">🗑️ Xóa đã chọn</button>
     </div>
   </div>
   <div id="historyListContainer"></div>
@@ -3036,7 +3119,7 @@
   }
 
 
-  /* ===== FIX8: BỘ LỌC KHO RIÊNG CHO ADMIN ===== */
+  /* ===== FIX11: BỘ LỌC KHO RIÊNG CHO ADMIN ===== */
   function getVoucherWarehouseKeysForFilter(voucher) {
     const rawKeys = String(
       voucher && voucher.warehouseKeys
@@ -3213,7 +3296,7 @@
       }
     });
   }
-  /* ===== END FIX8 ADMIN WAREHOUSE FILTER ===== */
+  /* ===== END FIX11 ADMIN WAREHOUSE FILTER ===== */
 
 
   let currentUser = null;
@@ -8569,6 +8652,66 @@ let d = new Date(v.time);
       .getVoucherCardsServer();
   }
 
+  function getHistoryLocalDateKey(value) {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '';
+
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  function formatHistoryDateKey(dateKey) {
+    const match = String(dateKey || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!match) return String(dateKey || '');
+    return `${match[3]}/${match[2]}/${match[1]}`;
+  }
+
+  function updateHistoryDateFilterOptions(vouchers) {
+    const select = document.getElementById('filterHistoryDate');
+    if (!select) return '__all__';
+
+    const dateKeys = [...new Set(
+      (Array.isArray(vouchers) ? vouchers : [])
+        .map(voucher => getHistoryLocalDateKey(voucher && voucher.time))
+        .filter(Boolean)
+    )].sort((a, b) => b.localeCompare(a));
+
+    const previousValue = String(select.value || '__all__');
+    const optionsHtml =
+      '<option value="__all__">📅 Tất cả ngày</option>' +
+      dateKeys
+        .map(dateKey =>
+          `<option value="${dateKey}">📅 ${formatHistoryDateKey(dateKey)}</option>`
+        )
+        .join('');
+
+    if (select.innerHTML !== optionsHtml) {
+      select.innerHTML = optionsHtml;
+    }
+
+    select.value = dateKeys.includes(previousValue)
+      ? previousValue
+      : '__all__';
+
+    select.title = select.value === '__all__'
+      ? 'Tất cả ngày'
+      : formatHistoryDateKey(select.value);
+
+    return select.value;
+  }
+
+  function handleHistoryDateFilterChange() {
+    const select = document.getElementById('filterHistoryDate');
+    if (select) {
+      select.title = select.value === '__all__'
+        ? 'Tất cả ngày'
+        : formatHistoryDateKey(select.value);
+    }
+    renderHistoryList();
+  }
+
   function renderHistoryList() {
     let bulkBtn = document.getElementById('btnBulkDeleteHistory');
     if (bulkBtn) bulkBtn.style.display = (currentUser && currentUser.role === 'admin') ? 'inline-block' : 'none';
@@ -8656,10 +8799,24 @@ let d = new Date(v.time);
     if(currentFilter !== '') {
       arr = arr.filter(v => v.khoa.toLowerCase().includes(currentFilter.toLowerCase()));
     }
-    
-    let historyByDate = {};
-    arr.forEach(v => { let d = new Date(v.time).toLocaleDateString('vi-VN'); if(!historyByDate[d]) historyByDate[d] = []; historyByDate[d].push(v); });
-    for(let dateKey in historyByDate) {
+
+    const historyDateFilter = updateHistoryDateFilterOptions(arr);
+    if (historyDateFilter && historyDateFilter !== '__all__') {
+      arr = arr.filter(voucher =>
+        getHistoryLocalDateKey(voucher && voucher.time) === historyDateFilter
+      );
+    }
+
+    const historyByDate = {};
+    arr.forEach(voucher => {
+      const dateKey = getHistoryLocalDateKey(voucher && voucher.time);
+      if (!dateKey) return;
+      if (!historyByDate[dateKey]) historyByDate[dateKey] = [];
+      historyByDate[dateKey].push(voucher);
+    });
+
+    const historyDateKeys = Object.keys(historyByDate).sort((a, b) => b.localeCompare(a));
+    historyDateKeys.forEach(dateKey => {
       const hasChecked =
         historyByDate[dateKey].some(
           v => v.state === 'checked'
@@ -8672,6 +8829,10 @@ let d = new Date(v.time);
           .map(v => buildCardHTML(v.id, v))
           .join("") +
         `</div>`;
+    });
+
+    if (!arr.length) {
+      c.innerHTML = '<div class="empty-state">Không có phiếu trong ngày đã chọn.</div>';
     }
   }
 
