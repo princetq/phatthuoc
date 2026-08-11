@@ -2052,6 +2052,31 @@
     }
   }
   /* ===== END FIX11 ===== */
+
+  .history-admin-notice {
+    margin-top: 10px;
+    padding: 9px 11px;
+    border-radius: 8px;
+    background: #fff8e1;
+    border: 1px solid #f2c94c;
+    color: #7a5200;
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 1.4;
+  }
+  .history-admin-notice.no-reimport {
+    background: #ffebee;
+    border-color: #ef9a9a;
+    color: #b71c1c;
+  }
+  .history-purge-time {
+    display: block;
+    margin-top: 4px;
+    color: #666;
+    font-size: 13px;
+    font-weight: 500;
+  }
+
 </style>
 </head>
 <body>
@@ -6779,6 +6804,60 @@
       .trim();
   }
 
+
+  function isSuppressedDeletedVoucher(khoa) {
+    const status = parsedDuplicateStatus[String(khoa || '')];
+    return Boolean(status && status.suppressed);
+  }
+
+  function getSuppressionNoticesForKhoa(khoa) {
+    const status = parsedDuplicateStatus[String(khoa || '')] || {};
+    return Array.isArray(status.suppressionNotices) ? status.suppressionNotices : [];
+  }
+
+  function formatSuppressionNoticeForImport(khoa) {
+    const notices = getSuppressionNoticesForKhoa(khoa);
+    if (!notices.length) {
+      return `${khoa}: phiếu này đã được Admin xóa với lựa chọn “Không phát nữa”.`;
+    }
+    return notices.map(item => {
+      const state = String(item.originalState || '') === 'progress' ? 'Đang phát dở' : 'Chưa phát';
+      const when = item.deletedAt ? ` lúc ${new Date(item.deletedAt).toLocaleString('vi-VN')}` : '';
+      const by = item.deletedByName || item.deletedBy ? ` bởi ${item.deletedByName || item.deletedBy}` : '';
+      return `${khoa}: phiếu ${state} đã bị xóa không phát nữa${by}${when}.`;
+    }).join('\n');
+  }
+
+  function autoSkipSuppressedForDispenser() {
+    if (!currentUser || currentUser.role !== 'phat') return [];
+    const skipped = [];
+    Object.keys(parsedFileData || {}).forEach(khoa => {
+      const status = parsedDuplicateStatus[khoa] || {};
+      if (!status.suppressed) return;
+      const warehouseKeys = Array.isArray(status.suppressedWarehouseKeys) ? status.suppressedWarehouseKeys : [];
+      if (warehouseKeys.length) {
+        removeWarehouseKeysFromImportData(parsedFileData[khoa], warehouseKeys);
+      } else {
+        delete parsedFileData[khoa];
+      }
+      if (!parsedFileData[khoa] || !hasImportData(parsedFileData[khoa])) {
+        delete parsedFileData[khoa];
+        delete parsedDuplicateStatus[khoa];
+      } else {
+        parsedDuplicateStatus[khoa] = {
+          duplicate:false, partial:false, hasOverlap:false,
+          matchedCount:0, tokenCount:0,
+          duplicateWarehouseKeys:[], partialWarehouseKeys:[],
+          newWarehouseKeys:Object.keys(parsedFileData[khoa].vouchers || {}),
+          suppressed:false, suppressedWarehouseKeys:[], suppressionNotices:[]
+        };
+      }
+      skipped.push(khoa);
+    });
+    return skipped;
+  }
+
+
   function isDuplicateVoucher(khoa) {
     const status = parsedDuplicateStatus[String(khoa || '')];
     return Boolean(status && status.duplicate);
@@ -6833,7 +6912,7 @@
       const results=await requestDuplicateCheckCandidates(candidates);
       if (!khoaKeys) parsedDuplicateStatus={};
       candidates.forEach(candidate => {
-        parsedDuplicateStatus[candidate.key]=results[candidate.key] || {duplicate:false,partial:false,hasOverlap:false,matchedCount:0,tokenCount:0,duplicateWarehouseKeys:[],partialWarehouseKeys:[],newWarehouseKeys:[]};
+        parsedDuplicateStatus[candidate.key]=results[candidate.key] || {duplicate:false,partial:false,hasOverlap:false,matchedCount:0,tokenCount:0,duplicateWarehouseKeys:[],partialWarehouseKeys:[],newWarehouseKeys:[],suppressed:false,suppressedWarehouseKeys:[],suppressionNotices:[]};
       });
       return results;
     } catch(error) {
@@ -7187,7 +7266,7 @@
     if (!element) return;
     if (!folderImportSummary || !isFolderAutoLoad) { element.style.display='none'; element.innerText=''; return; }
     const s=folderImportSummary;
-    element.innerText='Đã đọc '+s.filesRead+'/'+s.totalFiles+' file. Có '+s.newUnits+' nhóm phiếu mới; tự bỏ qua '+s.duplicateWarehouses+' phần kho trùng hoàn toàn'+(s.partialWarehouses>0 ? '; bỏ qua '+s.partialWarehouses+' phần kho chồng lấp cần nạp bằng file đơn' : '')+(s.failedFiles>0 ? '; '+s.failedFiles+' file không đọc được' : '')+'.';
+    element.innerText='Đã đọc '+s.filesRead+'/'+s.totalFiles+' file. Có '+s.newUnits+' nhóm phiếu mới; tự bỏ qua '+s.duplicateWarehouses+' phần kho trùng hoàn toàn'+(s.partialWarehouses>0 ? '; bỏ qua '+s.partialWarehouses+' phần kho chồng lấp cần nạp bằng file đơn' : '')+(Number(s.suppressedWarehouses || 0)>0 ? '; tự bỏ qua '+s.suppressedWarehouses+' phần kho đã xóa không phát nữa' : '')+(s.failedFiles>0 ? '; '+s.failedFiles+' file không đọc được' : '')+'.';
     element.style.display='block';
   }
 
@@ -7217,26 +7296,66 @@
       let results={};
       try { results=await requestDuplicateCheckCandidates(candidates); }
       catch(error){ console.error('Không kiểm tra được phiếu trùng từ thư mục:',error.message || String(error)); }
-      let duplicateWarehouses=0,partialWarehouses=0,newUnits=0;
+      let duplicateWarehouses=0,partialWarehouses=0,suppressedWarehouses=0,newUnits=0;
       candidates.forEach(candidate=>{
         const meta=candidateMeta[candidate.key];
         const result=results[candidate.key] || {};
         const exactKeys=Array.isArray(result.duplicateWarehouseKeys) ? result.duplicateWarehouseKeys : [];
         const partialKeys=Array.isArray(result.partialWarehouseKeys) ? result.partialWarehouseKeys : [];
+        const suppressedKeys=Array.isArray(result.suppressedWarehouseKeys) ? result.suppressedWarehouseKeys : [];
         duplicateWarehouses+=exactKeys.length;
         partialWarehouses+=partialKeys.length;
-        removeWarehouseKeysFromImportData(meta.unit.data[meta.khoa],exactKeys.concat(partialKeys));
+        suppressedWarehouses+=suppressedKeys.length;
+
+        if (currentUser && currentUser.role === 'admin' && result.suppressed) {
+          mergeParsedImportData(parsedFileData,{[meta.khoa]:meta.unit.data[meta.khoa]});
+          parsedDuplicateStatus[meta.khoa]=result;
+          newUnits++;
+          return;
+        }
+
+        removeWarehouseKeysFromImportData(
+          meta.unit.data[meta.khoa],
+          exactKeys
+            .concat(partialKeys)
+            .concat(currentUser && currentUser.role === 'phat' ? suppressedKeys : [])
+        );
         const remaining=meta.unit.data[meta.khoa];
         if(!hasImportData(remaining)) return;
         mergeParsedImportData(parsedFileData,{[meta.khoa]:remaining});
-        parsedDuplicateStatus[meta.khoa]={duplicate:false,partial:false,hasOverlap:false,matchedCount:0,tokenCount:0,duplicateWarehouseKeys:[],partialWarehouseKeys:[],newWarehouseKeys:Object.keys(remaining.vouchers || {})};
+        parsedDuplicateStatus[meta.khoa]={duplicate:false,partial:false,hasOverlap:false,matchedCount:0,tokenCount:0,duplicateWarehouseKeys:[],partialWarehouseKeys:[],newWarehouseKeys:Object.keys(remaining.vouchers || {}),suppressed:false,suppressedWarehouseKeys:[],suppressionNotices:[]};
         newUnits++;
       });
-      folderImportSummary={totalFiles:fileList.length,filesRead:validUnits.length,newUnits:newUnits,duplicateWarehouses:duplicateWarehouses,partialWarehouses:partialWarehouses,failedFiles:failedCount};
+      folderImportSummary={totalFiles:fileList.length,filesRead:validUnits.length,newUnits:newUnits,duplicateWarehouses:duplicateWarehouses,partialWarehouses:partialWarehouses,suppressedWarehouses:suppressedWarehouses,failedFiles:failedCount};
       renderFolderImportSummary();
+      if (currentUser && currentUser.role === 'admin') {
+        const folderSuppressed = Object.keys(parsedFileData).filter(isSuppressedDeletedVoucher);
+        if (folderSuppressed.length) {
+          await showMsg(
+            'Trong thư mục có phiếu đã bị xóa không phát nữa:\n\n' + folderSuppressed.map(formatSuppressionNoticeForImport).join('\n\n') + '\n\nHệ thống không tự nạp các phiếu này. Admin có thể tích chọn và xác nhận nếu thực sự muốn nạp lại.',
+            'Cảnh báo phiếu không phát nữa',
+            'warning'
+          );
+        }
+      }
     } else {
       validUnits.forEach(unit=>mergeParsedImportData(parsedFileData,unit.data));
       await refreshParsedDuplicateStatus();
+      const suppressedKhoas=Object.keys(parsedFileData).filter(isSuppressedDeletedVoucher);
+      if (currentUser && currentUser.role === 'phat' && suppressedKhoas.length) {
+        await showMsg(
+          'Phát hiện phiếu từng bị Admin xóa với lựa chọn “Không phát nữa”:\n\n' + suppressedKhoas.map(formatSuppressionNoticeForImport).join('\n\n') + '\n\nVì bạn đang nạp bằng FILE riêng lẻ, phiếu được bỏ tích mặc định nhưng Người phát có thể tích chọn và xác nhận “Vẫn nạp lại”. Nếu nạp bằng THƯ MỤC thì hệ thống sẽ tự bỏ qua như phiếu trùng.',
+          'Phiếu đã xóa không phát nữa',
+          'warning'
+        );
+      }
+      if (currentUser && currentUser.role === 'admin' && suppressedKhoas.length) {
+        await showMsg(
+          'Phát hiện phiếu từng bị xóa không phát nữa:\n\n' + suppressedKhoas.map(formatSuppressionNoticeForImport).join('\n\n') + '\n\nCác phiếu này được bỏ tích mặc định. Admin vẫn có thể tích chọn và nạp lại sau khi xác nhận.',
+          'Phiếu đã xóa không phát nữa',
+          'warning'
+        );
+      }
       const duplicateKhoas=Object.keys(parsedFileData).filter(isDuplicateVoucher);
       const partialKhoas=Object.keys(parsedFileData).filter(isPartialDuplicateVoucher);
       if(duplicateKhoas.length || partialKhoas.length){
@@ -7315,13 +7434,13 @@
     keys.forEach(khoa=>{
       let total=parsedFileData[khoa].items.length,allDates=new Set(),allVouchers=new Set();
       for(let kKey in parsedFileData[khoa].vouchers){ let vc=parsedFileData[khoa].vouchers[kKey]; (vc.dates || []).forEach(d=>allDates.add(d)); ['TQ','BT','HT'].forEach(type=>(vc[type] || []).forEach(v=>allVouchers.add(String(v).split('|')[0]))); }
-      let isDup=isDuplicateVoucher(khoa),isPartial=isPartialDuplicateVoucher(khoa);
-      let borderCard=isDup?'border:2px solid var(--danger);':(isPartial?'border:2px solid #ef6c00;':'border:1px solid #ccc;');
-      let bgHeader=isDup?'#ffebee':(isPartial?'#fff3e0':'#f0f0f0');
-      let colorHeader=isDup?'var(--danger)':(isPartial?'#e65100':'var(--green)');
-      let statusTag=isDup?' <span style="font-size:14px; font-style:italic;">(trùng hoàn toàn)</span>':(isPartial?' <span style="font-size:14px; font-style:italic;">(chồng lấp một phần – cần kiểm tra)</span>':'');
-      let bgBody=isDup?'#fff9f9':(isPartial?'#fffaf2':'#fff');
-      const checked=(isDup || isPartial)?'':'checked';
+      let isDup=isDuplicateVoucher(khoa),isPartial=isPartialDuplicateVoucher(khoa),isSuppressed=isSuppressedDeletedVoucher(khoa);
+      let borderCard=isSuppressed?'border:3px solid #c62828;':(isDup?'border:2px solid var(--danger);':(isPartial?'border:2px solid #ef6c00;':'border:1px solid #ccc;'));
+      let bgHeader=isSuppressed?'#ffcdd2':(isDup?'#ffebee':(isPartial?'#fff3e0':'#f0f0f0'));
+      let colorHeader=isSuppressed?'#b71c1c':(isDup?'var(--danger)':(isPartial?'#e65100':'var(--green)'));
+      let statusTag=isSuppressed?' <span style="font-size:14px; font-style:italic;">(đã xóa – không phát nữa)</span>':(isDup?' <span style="font-size:14px; font-style:italic;">(trùng hoàn toàn)</span>':(isPartial?' <span style="font-size:14px; font-style:italic;">(chồng lấp một phần – cần kiểm tra)</span>':''));
+      let bgBody=isSuppressed?'#fff5f5':(isDup?'#fff9f9':(isPartial?'#fffaf2':'#fff'));
+      const checked=(isDup || isPartial || isSuppressed)?'':'checked';
       container.innerHTML+=`<div style="${borderCard} margin-bottom:15px; border-radius:8px; overflow:hidden;"><div style="background:${bgHeader}; padding:15px; font-weight:bold; font-size:20px; color:${colorHeader}; display:flex; justify-content:space-between; align-items:center;"><label style="display:flex; align-items:center; flex-wrap:wrap;"><input type="checkbox" class="v-chk" value="${escapeHtmlValue(khoa)}" ${checked} style="width:20px; height:20px; margin:0 10px 0 0;">${escapeHtmlText(khoa)}${statusTag}</label><div style="display:flex; align-items:center; gap:15px;"><span style="color:var(--danger); font-size:18px; white-space:nowrap;">${total} khoản</span><button onclick="removeUploadItem('${String(khoa).replace(/'/g,"\\'")}')" style="background:transparent; border:none; color:var(--danger); font-size:22px; padding:0; cursor:pointer; line-height:1;" title="Xóa khoa này">✖</button></div></div><div style="padding:15px; background:${bgBody}; font-size:16px;"><div style="margin-bottom:8px; font-size:18px;"><b>📅 Ngày:</b> <span style="color:var(--danger); font-weight:bold;">${escapeHtmlText(Array.from(allDates).join(', '))}</span></div><div><b>🧾 Các phiếu:</b><br>${formatVoucherColors(Array.from(allVouchers))}</div></div></div>`;
     });
     document.getElementById('uploadResultArea').style.display='block';
@@ -7337,12 +7456,57 @@
      * Backend vẫn kiểm tra lại ngay trong pushVouchersServer
      * trước khi ghi nên không giảm độ an toàn.
      */
+    let suppressedKhoas = checks.map(cb => cb.value).filter(isSuppressedDeletedVoucher);
+    let acceptedSuppressedKhoas = [];
+
+    if (suppressedKhoas.length && currentUser && currentUser.role === 'phat' && isFolderAutoLoad) {
+      suppressedKhoas.forEach(khoa => {
+        delete parsedFileData[khoa];
+        delete parsedDuplicateStatus[khoa];
+      });
+      checks = checks.filter(cb => !suppressedKhoas.includes(cb.value));
+      renderUploadList();
+      await showMsg(
+        'Đã tự động bỏ qua phiếu mà Admin đã đánh dấu “Không phát nữa”. Khi nạp bằng THƯ MỤC, tài khoản phát thuốc không được ép nạp các phiếu này.',
+        'Đã bỏ qua phiếu không phát nữa',
+        'warning'
+      );
+      if (!checks.length) return;
+      suppressedKhoas = [];
+    }
+
+    if (suppressedKhoas.length && currentUser && currentUser.role === 'phat' && !isFolderAutoLoad) {
+      const acceptSuppressedByDispenser = await showConfirm(
+        'Các phiếu sau từng bị Admin xóa khi chưa phát hoặc đang phát dở và được đánh dấu KHÔNG PHÁT NỮA:\n\n' + suppressedKhoas.map(formatSuppressionNoticeForImport).join('\n\n') + '\n\nBạn đang nạp bằng FILE riêng lẻ. Nếu thực sự cần phục hồi phiếu, Người phát được phép ép nạp lại. Sau khi nạp thành công, dấu “Không phát nữa” tương ứng sẽ được gỡ.',
+        'Xác nhận ép nạp phiếu đã xóa',
+        { type: 'danger', confirmText: 'Vẫn nạp lại', cancelText: 'Không nạp', confirmClass: 'btn-danger' }
+      );
+      if (!acceptSuppressedByDispenser) {
+        renderUploadList();
+        return;
+      }
+      acceptedSuppressedKhoas = suppressedKhoas.slice();
+    }
+
+    if (suppressedKhoas.length && currentUser && currentUser.role === 'admin') {
+      const acceptSuppressed = await showConfirm(
+        'Các phiếu sau từng bị xóa khi chưa phát hoặc đang phát dở và được đánh dấu KHÔNG PHÁT NỮA:\n\n' + suppressedKhoas.map(formatSuppressionNoticeForImport).join('\n\n') + '\n\nNếu tiếp tục, hệ thống sẽ cho phép nạp lại và gỡ chặn “không phát nữa” cho đúng nội dung phiếu vừa nạp.',
+        'Admin xác nhận nạp lại phiếu đã xóa',
+        { type: 'danger', confirmText: 'Vẫn nạp lại', cancelText: 'Không nạp', confirmClass: 'btn-danger' }
+      );
+      if (!acceptSuppressed) {
+        renderUploadList();
+        return;
+      }
+      acceptedSuppressedKhoas = suppressedKhoas.slice();
+    }
+
     let duplicateKhoas =
       checks
         .map(cb => cb.value)
         .filter(khoa =>
-          isDuplicateVoucher(khoa) ||
-          isPartialDuplicateVoucher(khoa)
+          !acceptedSuppressedKhoas.includes(khoa) &&
+          (isDuplicateVoucher(khoa) || isPartialDuplicateVoucher(khoa))
         );
 
     if (
@@ -7393,8 +7557,11 @@
     checks.forEach(cb => {
       let k = cb.value;
 
+      const allowSuppressedReimport =
+        acceptedSuppressedKhoas.includes(k);
+
       const allowDuplicate =
-        duplicateKhoas.includes(k);
+        allowSuppressedReimport || duplicateKhoas.includes(k);
 
       let finalKhoa =
         allowDuplicate
@@ -7415,6 +7582,8 @@
           uploadMode,
         allowDuplicate:
           allowDuplicate,
+        allowSuppressedReimport:
+          allowSuppressedReimport,
         khoa:
           finalKhoa,
         time:
@@ -7441,9 +7610,21 @@
             ? r.blockedDuplicates
             : [];
 
+        const blockedSuppressed =
+          Array.isArray(
+            r.blockedSuppressed
+          )
+            ? r.blockedSuppressed
+            : [];
+
+        const blockedSuppressedKeys =
+          blockedSuppressed
+            .map(item => String((item && item.sourceKey) || ''))
+            .filter(Boolean);
+
         const blockedSet =
           new Set(
-            blockedDuplicates
+            blockedDuplicates.concat(blockedSuppressedKeys)
           );
 
         checks.forEach(cb => {
@@ -7463,6 +7644,33 @@
         });
 
         renderUploadList();
+
+        if (blockedSuppressed.length) {
+          const suppressedMessage = blockedSuppressed.map(item => {
+            const sourceKey = String((item && item.sourceKey) || 'Phiếu');
+            const notices = Array.isArray(item && item.notices) ? item.notices : [];
+            if (!notices.length) {
+              return sourceKey + ': phiếu đã bị xóa với lựa chọn “Không phát nữa”.';
+            }
+            return notices.map(notice => {
+              const state = String((notice && notice.originalState) || '') === 'progress' ? 'Đang phát dở' : 'Chưa phát';
+              const when = notice && notice.deletedAt ? (' lúc ' + new Date(notice.deletedAt).toLocaleString('vi-VN')) : '';
+              const byName = notice && (notice.deletedByName || notice.deletedBy);
+              const by = byName ? (' bởi ' + byName) : '';
+              return sourceKey + ': phiếu ' + state + ' đã bị xóa không phát nữa' + by + when + '.';
+            }).join('\n');
+          }).join('\n\n');
+
+          await showMsg(
+            'Máy chủ vừa xác nhận các phiếu sau đang ở danh sách KHÔNG PHÁT NỮA:\n\n' + suppressedMessage + '\n\nCác phiếu này chưa được nạp. Admin có thể xác nhận nạp lại; Người phát chỉ có thể ép nạp khi dùng cách nạp FILE riêng lẻ, không phải nạp thư mục.',
+            'Phiếu đã xóa không phát nữa',
+            'warning'
+          );
+
+          if (Number(r.inserted || 0) === 0 && !blockedDuplicates.length) {
+            return;
+          }
+        }
 
         if (
           blockedDuplicates.length
@@ -7906,6 +8114,11 @@
                     : 'Chưa phát'
                 )
           );
+    if (v.deletedNoReimport) {
+      bClass = 'status-waiting';
+      bText = 'Đã xóa - không phát nữa';
+    }
+
     let allDates = new Set();
     let allVouchers = new Set();
     let khoNames = new Set();
@@ -8044,6 +8257,14 @@ let d = new Date(v.time);
         timeHtml = `<span onclick="event.stopPropagation(); this.innerText = this.innerText.includes('${finalLabel}') ? '(Nạp: ${timeStr})' : '(${finalLabel}: ${fTimeStr})'" style="font-size:16px; color:#555; font-style:italic; cursor:pointer;" title="Bấm để xem giờ nạp/hoàn tất">(${finalLabel}: ${fTimeStr})</span>`;
     }
 
+    let historyNoticeHtml = '';
+    if (currentUser && currentUser.role === 'admin' && v.historyNotice) {
+      const purgeText = v.purgeAfter
+        ? `<span class="history-purge-time">Dự kiến xóa vĩnh viễn: ${new Date(v.purgeAfter).toLocaleString('vi-VN')}</span>`
+        : '';
+      historyNoticeHtml = `<div class="history-admin-notice ${v.deletedNoReimport ? 'no-reimport' : ''}">${escapeHtmlText(v.historyNotice)}${purgeText}</div>`;
+    }
+
     return `
       <div
         class="tracking-card"
@@ -8053,14 +8274,15 @@ let d = new Date(v.time);
         onpointerdown="prefetchVoucherDetail('${id}')"
         onclick="openDetail('${id}', '${v.state}')">
         <div class="tracking-card-title-row">
-          ${currentUser.role === 'admin' ? `<input type="checkbox" class="bulk-voucher-chk" value="${id}" onclick="event.stopPropagation()">` : ''}
+          ${currentUser.role === 'admin' && !v.archived ? `<input type="checkbox" class="bulk-voucher-chk" value="${id}" onclick="event.stopPropagation()">` : ''}
           <div class="tracking-card-title-text">${v.khoa}</div>
-          ${(currentUser.role === 'admin' || (currentUser.role === 'phat' && (v.state === 'waiting' || v.state === 'progress'))) ? `<button class="tracking-delete-btn" onclick="event.stopPropagation(); deleteVoucher('${id}')">Xóa</button>` : ''}
+          ${(!v.archived && (currentUser.role === 'admin' || (currentUser.role === 'phat' && (v.state === 'waiting' || v.state === 'progress')))) ? `<button class="tracking-delete-btn" onclick="event.stopPropagation(); deleteVoucher('${id}')">Xóa</button>` : ''}
         </div>
         <div style="margin-top:2px;">${timeHtml}</div>
         <div class="tracking-card-warehouse-row"><span class="tracking-card-warehouse-label">🏢 Kho:</span><span class="warehouse-badges">${khoBadgesHtml}</span></div>
         <div style="font-size:18px; margin-top:0px;"><b>📅 Ngày:</b> <span style="color:var(--danger);">${dateStr}</span></div>
         <div style="font-size:18px; margin-top:10px; line-height:1.4;"><b>🧾 Phiếu:</b> <span style="color:#333; font-weight:bold;">${phieuStr}</span></div>
+        ${historyNoticeHtml}
         <div class="tracking-card-status"><span class="status-badge ${bClass}"><span class="status-badge-text">${bText}</span></span></div>
       </div>`;
   }
@@ -8654,19 +8876,43 @@ let d = new Date(v.time);
   }
 
   async function deleteVoucher(id) {
-    let v = cloudWaitList[id];
+    let v = cloudWaitList[id] || (Array.isArray(cloudHistoryData) ? cloudHistoryData.find(item => String(item.id) === String(id)) : null);
+    if (v && v.archived) {
+      return showMsg('Phiếu này đã được ẩn/xóa và đang chờ hệ thống xóa vĩnh viễn.', 'Phiếu đã lưu lịch sử', 'warning');
+    }
     if (currentUser.role === 'phat' && v && !(v.state === 'waiting' || v.state === 'progress')) {
-      return showMsg("Tài khoản phát thuốc chỉ được xóa phiếu Chưa phát hoặc Đang phát.", "Không đủ quyền", "warning");
+      return showMsg('Tài khoản phát thuốc chỉ được xóa phiếu Chưa phát hoặc Đang phát.', 'Không đủ quyền', 'warning');
     }
-    const ok = await showConfirm("Bạn có chắc chắn muốn xóa phiếu này không?", "Xóa phiếu", { type: 'danger', confirmText: 'Xóa', confirmClass: 'btn-danger' });
-    if(ok) {
-      google.script.run
-        .withSuccessHandler(() => {
-          removeVoucherDetailCache(id);
-          loadWaitList();
-        })
-        .deleteVoucherServer(id);
+
+    const ok = await showConfirm('Bạn có chắc chắn muốn xóa phiếu này không?', 'Xóa phiếu', { type: 'danger', confirmText: 'Tiếp tục', confirmClass: 'btn-danger' });
+    if (!ok) return;
+
+    let deleteMode = 'standard';
+    if (currentUser.role === 'admin' && v && (v.state === 'waiting' || v.state === 'progress')) {
+      const blockReimport = await showConfirm(
+        'Chọn “Xóa không phát nữa” nếu phiếu này thực sự không tiếp tục phát. Sau đó tài khoản phát thuốc nạp lại đúng phiếu sẽ tự động bỏ qua như phiếu trùng. Admin vẫn có thể nạp lại nếu xác nhận rõ ràng.\n\nChọn “Xóa thông thường” nếu chỉ muốn xóa tạm và vẫn giữ cơ chế nạp lại hiện tại.',
+        'Chọn cách xóa phiếu',
+        { type: 'danger', confirmText: 'Xóa không phát nữa', cancelText: 'Xóa thông thường', confirmClass: 'btn-danger' }
+      );
+      deleteMode = blockReimport ? 'no_reimport' : 'standard';
     }
+
+    showLoading(true, 'Đang xóa phiếu...');
+    google.script.run
+      .withSuccessHandler(result => {
+        showLoading(false);
+        removeVoucherDetailCache(id);
+        const historyVisible = document.getElementById('view-history') && document.getElementById('view-history').style.display === 'block';
+        if (historyVisible) loadHistoryList(); else loadWaitList();
+        if (result && result.deleteMode === 'no_reimport') {
+          showMsg('Đã xóa phiếu và đánh dấu KHÔNG PHÁT NỮA. Lần nạp sau trên tài khoản phát thuốc sẽ tự bỏ qua phiếu này như phiếu trùng.', 'Đã xóa không phát nữa', 'success');
+        }
+      })
+      .withFailureHandler(error => {
+        showLoading(false);
+        showMsg(error.message || String(error), 'Không xóa được phiếu', 'danger');
+      })
+      .deleteVoucherServer(id, deleteMode);
   }
 
 
@@ -8698,56 +8944,75 @@ let d = new Date(v.time);
   }
 
   async function deleteSelectedVouchers() {
-    if (!currentUser || currentUser.role !== 'admin') return showMsg("Chỉ tài khoản Admin mới được xóa hàng loạt.", "Không đủ quyền", "warning");
+    if (!currentUser || currentUser.role !== 'admin') return showMsg('Chỉ tài khoản Admin mới được xóa hàng loạt.', 'Không đủ quyền', 'warning');
     let ids = Array.from(document.querySelectorAll('.bulk-voucher-chk:checked')).map(cb => cb.value);
     ids = [...new Set(ids)];
-    if (ids.length === 0) return showMsg("Vui lòng tích chọn ít nhất 1 phiếu cần xóa.", "Chưa chọn phiếu", "warning");
-    const ok = await showConfirm("Bạn có chắc chắn muốn xóa hàng loạt " + ids.length + " phiếu đã chọn không?", "Xóa hàng loạt", { type: 'danger', confirmText: 'Xóa đã chọn', confirmClass: 'btn-danger' });
+    if (ids.length === 0) return showMsg('Vui lòng tích chọn ít nhất 1 phiếu cần xóa.', 'Chưa chọn phiếu', 'warning');
+
+    const ok = await showConfirm('Bạn có chắc chắn muốn xóa hàng loạt ' + ids.length + ' phiếu đã chọn không?', 'Xóa hàng loạt', { type: 'danger', confirmText: 'Tiếp tục', confirmClass: 'btn-danger' });
     if (!ok) return;
 
-    showLoading(true, "Đang xóa hàng loạt...");
-    try {
-      google.script.run
-        .withSuccessHandler(() => { showLoading(false); refreshAfterBulkDelete(); })
-        .withFailureHandler(() => { deleteVouchersOneByOne(ids); })
-        .batchDeleteVouchersServer(JSON.stringify(ids));
-    } catch (e) {
-      deleteVouchersOneByOne(ids);
+    const selected = ids.map(id => cloudWaitList[id] || (Array.isArray(cloudHistoryData) ? cloudHistoryData.find(v => String(v.id) === String(id)) : null)).filter(Boolean);
+    const hasUnfinished = selected.some(v => !v.archived && (v.state === 'waiting' || v.state === 'progress'));
+    let deleteMode = 'standard';
+    if (hasUnfinished) {
+      const blockReimport = await showConfirm(
+        'Trong các phiếu đã chọn có phiếu Chưa phát/Đang phát. Bạn có muốn đánh dấu các phiếu chưa hoàn tất này là “Không phát nữa” để tài khoản phát thuốc tự bỏ qua nếu nạp lại không?\n\nCác phiếu đã phát/đã đối chiếu vẫn chỉ được xóa theo lịch sử bình thường.',
+        'Cách xóa phiếu chưa hoàn tất',
+        { type: 'danger', confirmText: 'Xóa không phát nữa', cancelText: 'Xóa thông thường', confirmClass: 'btn-danger' }
+      );
+      deleteMode = blockReimport ? 'no_reimport' : 'standard';
     }
+
+    showLoading(true, 'Đang xóa hàng loạt...');
+    google.script.run
+      .withSuccessHandler(result => {
+        showLoading(false);
+        refreshAfterBulkDelete();
+        if (result && result.suppressedVouchers > 0) {
+          showMsg('Đã đánh dấu ' + result.suppressedVouchers + ' phiếu Chưa phát/Đang phát là KHÔNG PHÁT NỮA.', 'Đã cập nhật', 'success');
+        }
+      })
+      .withFailureHandler(error => {
+        showLoading(false);
+        showMsg(error.message || String(error), 'Không xóa được phiếu', 'danger');
+      })
+      .batchDeleteVouchersServer(JSON.stringify(ids), deleteMode);
   }
 
   function loadHistoryList() {
+    if (currentUser && currentUser.role === 'admin') {
+      showLoading(true, 'Đang tải toàn bộ lịch sử Admin...');
+      google.script.run
+        .withSuccessHandler(response => {
+          showLoading(false);
+          const data = response && response.vouchers ? response.vouchers : (unpackVoucherCardsResponse(response) || {});
+          cloudHistoryData = Object.values(data);
+          renderHistoryList();
+        })
+        .withFailureHandler(error => {
+          showLoading(false);
+          showMsg(error.message || String(error), 'Không tải được lịch sử Admin', 'danger');
+        })
+        .getAdminHistoryCardsServer();
+      return;
+    }
+
     const localCached = readVoucherCardsLocalCache();
-
     if (localCached) {
-      cloudHistoryData = Object
-        .values(localCached)
-        .filter(v => v.state === 'done' || v.state === 'checked');
-
+      cloudHistoryData = Object.values(localCached).filter(v => v.state === 'done' || v.state === 'checked');
       renderHistoryList();
     }
 
     google.script.run
       .withSuccessHandler(response => {
-        const data =
-          unpackVoucherCardsResponse(response);
-
+        const data = unpackVoucherCardsResponse(response);
         saveVoucherCardsLocalCache(data);
-
-        cloudHistoryData = Object
-          .values(data)
-          .filter(v => v.state === 'done' || v.state === 'checked');
-
+        cloudHistoryData = Object.values(data).filter(v => v.state === 'done' || v.state === 'checked');
         renderHistoryList();
       })
       .withFailureHandler(error => {
-        if (!localCached) {
-          showMsg(
-            error.message || String(error),
-            'Không tải được lịch sử',
-            'danger'
-          );
-        }
+        if (!localCached) showMsg(error.message || String(error), 'Không tải được lịch sử', 'danger');
       })
       .getVoucherCardsServer();
   }
@@ -9065,6 +9330,13 @@ let d = new Date(v.time);
 
     const finishCheckButton =
       document.getElementById('btnFinishCheck');
+
+    if (voucher.archived) {
+      modeText.innerText = '📚 Lịch sử Admin – Phiếu chỉ đọc';
+      finishButton.style.display = 'none';
+      finishCheckButton.style.display = 'none';
+      return;
+    }
 
     const isCheckFinalized =
       voucher.state === 'checked' ||
@@ -9534,7 +9806,9 @@ let d = new Date(v.time);
                
                let clickAction = "showMsg('Chỉ xem!')";
 
-               if (currentUser.role === 'admin') {
+               if (voucherData.archived) {
+                   clickAction = `showMsg('Phiếu lịch sử đã ẩn/xóa. Chỉ được xem, không thể sửa.', 'Lịch sử Admin', 'warning')`;
+               } else if (currentUser.role === 'admin') {
                    clickAction = `toggleItem(${it.index})`;
                } else if (
                    voucherData.state === 'checked' ||
