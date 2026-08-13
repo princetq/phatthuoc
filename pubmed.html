@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trợ lý Y khoa lâm sàng - EBM Search (Gemini Powered)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #10b981;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans min-h-screen">
+
+    <!-- Header -->
+    <header class="bg-emerald-600 text-white shadow-md">
+        <div class="max-w-4xl mx-auto px-4 py-6">
+            <h1 class="text-2xl font-bold flex items-center">
+                <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
+                Trợ lý Y học Thực chứng (Gemini AI)
+            </h1>
+            <p class="text-sm opacity-90 mt-1">Công cụ tra cứu PubMed tự động dành cho Nhân viên Y tế & Dược sĩ</p>
+        </div>
+    </header>
+
+    <main class="max-w-4xl mx-auto px-4 py-8">
+        
+        <!-- Lưu ý API Keys ở đây -->
+        <div class="bg-blue-50 border-l-4 border-blue-500 text-blue-700 p-4 mb-6 rounded shadow-sm" role="alert">
+            <p class="font-bold">Hệ thống đã cấu hình sẵn API Keys</p>
+            <p>Ứng dụng này đã được tích hợp sẵn khóa API của Gemini và PubMed trong mã nguồn. Bạn có thể sử dụng ngay lập tức.</p>
+        </div>
+
+        <!-- Khu vực tra cứu -->
+        <section class="bg-white rounded-lg shadow-sm p-6 border border-slate-200">
+            <h2 class="text-lg font-semibold mb-4">Câu hỏi Lâm sàng</h2>
+            <textarea id="queryInput" rows="3" placeholder="Ví dụ: Sử dụng Corticosteroid có làm giảm tỷ lệ tử vong ở bệnh nhân ARDS do COVID-19 không?" 
+                class="w-full px-4 py-3 border rounded-md focus:ring-2 focus:ring-emerald-500 focus:outline-none resize-none mb-4"></textarea>
+            
+            <button onclick="runAnalysis()" id="analyzeBtn" class="w-full bg-emerald-600 text-white font-semibold py-3 rounded-md hover:bg-emerald-700 transition flex justify-center items-center">
+                <span>Tra cứu PubMed & Phân tích</span>
+                <div id="loadingSpinner" class="loader ml-3 hidden"></div>
+            </button>
+        </section>
+
+        <!-- Khu vực hiển thị kết quả -->
+        <section id="resultSection" class="mt-8 hidden">
+            <h3 class="text-xl font-bold text-slate-800 mb-4 border-b pb-2">Kết luận Lâm sàng từ AI</h3>
+            <div id="answerContent" class="bg-white p-6 rounded-lg shadow-sm border border-slate-200 prose max-w-none text-slate-700 leading-relaxed">
+                <!-- Nội dung AI sẽ chèn vào đây -->
+            </div>
+
+            <h3 class="text-lg font-bold text-slate-800 mt-8 mb-4 border-b pb-2">Nguồn tài liệu PubMed (Citations)</h3>
+            <ul id="citationsList" class="space-y-3">
+                <!-- Danh sách tài liệu sẽ chèn vào đây -->
+            </ul>
+        </section>
+
+        <!-- Console Log cho người dùng theo dõi tiến độ -->
+        <div id="statusLog" class="mt-6 text-sm text-slate-500 font-mono bg-slate-100 p-4 rounded-md hidden"></div>
+    </main>
+
+    <script>
+        // =================================================================================
+        // VUI LÒNG ĐIỀN API KEYS CỦA BẠN VÀO ĐÂY TRƯỚC KHI ĐƯA LÊN GITHUB
+        // =================================================================================
+        const HARDCODED_GEMINI_API_KEY = "AQ.Ab8RN6IweB42lbVi0HpJ_x8QdE1_" + "w8la6VCCoqWxhT_dwb414w";
+        const HARDCODED_NCBI_API_KEY = "934e584f3a69220d1ae111ccd1829777fe08"; // (Tuỳ chọn)
+        // =================================================================================
+
+        function updateStatus(message) {
+            const logBox = document.getElementById("statusLog");
+            logBox.classList.remove("hidden");
+            logBox.innerHTML += `> ${message}<br>`;
+            // Cuộn xuống cuối log
+            logBox.scrollTop = logBox.scrollHeight;
+        }
+
+        // --- TÍCH HỢP GEMINI API ---
+        async function callGemini(prompt, systemInstruction) {
+            // Sử dụng model gemini-3.6-flash theo yêu cầu
+            const model = "gemini-3.6-flash"; 
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${HARDCODED_GEMINI_API_KEY}`;
+
+            // Cấu trúc JSON đặc thù của Gemini API
+            const payload = {
+                system_instruction: {
+                    parts: [{ text: systemInstruction }]
+                },
+                contents: [{
+                    role: "user",
+                    parts: [{ text: prompt }]
+                }],
+                generationConfig: {
+                    temperature: 0.1, // Thấp để tránh ảo giác dữ liệu y khoa
+                }
+            };
+
+            const response = await fetch(url, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error?.message || "Lỗi xác thực Gemini API Key hoặc kết nối.");
+            }
+
+            const data = await response.json();
+            return data.candidates[0].content.parts[0].text;
+        }
+
+        // --- TÍCH HỢP PUBMED API (NCBI E-UTILITIES) ---
+        async function fetchPubMed(query) {
+            const email = "admin@tuyenquanghospital.vn"; // Khuyên dùng để NCBI dễ hỗ trợ
+            
+            // Xây dựng URL cho esearch
+            let searchUrl = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=${encodeURIComponent(query)}&retmode=json&retmax=5&email=${email}`;
+            if (HARDCODED_NCBI_API_KEY && HARDCODED_NCBI_API_KEY !== "ĐIỀN_NCBI_API_KEY_CỦA_BẠN_VÀO_ĐÂY") {
+                searchUrl += `&api_key=${HARDCODED_NCBI_API_KEY}`;
+            }
+
+            const searchRes = await fetch(searchUrl);
+            const searchData = await searchRes.json();
+            const ids = searchData.esearchresult.idlist;
+            
+            if (!ids || ids.length === 0) return [];
+
+            // Xây dựng URL cho efetch
+            let fetchUrl = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=${ids.join(",")}&retmode=xml&email=${email}`;
+            if (HARDCODED_NCBI_API_KEY && HARDCODED_NCBI_API_KEY !== "ĐIỀN_NCBI_API_KEY_CỦA_BẠN_VÀO_ĐÂY") {
+                fetchUrl += `&api_key=${HARDCODED_NCBI_API_KEY}`;
+            }
+
+            const fetchRes = await fetch(fetchUrl);
+            const xmlText = await fetchRes.text();
+            
+            // Bóc tách XML bằng Regex
+            const articles = [];
+            const articleBlocks = xmlText.split("<PubmedArticle>");
+            for (let i = 1; i < articleBlocks.length; i++) {
+                const block = articleBlocks[i];
+                
+                const pmidMatch = block.match(/<PMID[^>]*>(.*?)<\/PMID>/);
+                const titleMatch = block.match(/<ArticleTitle[^>]*>(.*?)<\/ArticleTitle>/);
+                
+                const abstractMatches = [...block.matchAll(/<AbstractText[^>]*>(.*?)<\/AbstractText>/g)];
+                let abstract = abstractMatches.map(m => m[1]).join(" ");
+
+                if (pmidMatch && titleMatch && abstract) {
+                    articles.push({
+                        pmid: pmidMatch[1],
+                        title: titleMatch[1],
+                        abstract: abstract
+                    });
+                }
+            }
+            return articles;
+        }
+
+        // --- LUỒNG XỬ LÝ CHÍNH ---
+        async function runAnalysis() {
+            const question = document.getElementById("queryInput").value.trim();
+            
+            if (!HARDCODED_GEMINI_API_KEY || HARDCODED_GEMINI_API_KEY === "ĐIỀN_GEMINI_API_KEY_CỦA_BẠN_VÀO_ĐÂY") {
+                return alert("LỖI: Mã nguồn chưa được điền Google Gemini API Key. Vui lòng mở file index.html và điền key vào phần Javascript.");
+            }
+            if (!question) return alert("Vui lòng nhập câu hỏi lâm sàng.");
+
+            const btn = document.getElementById("analyzeBtn");
+            const spinner = document.getElementById("loadingSpinner");
+            const logBox = document.getElementById("statusLog");
+            const resultSection = document.getElementById("resultSection");
+            
+            btn.disabled = true;
+            spinner.classList.remove("hidden");
+            logBox.innerHTML = "";
+            resultSection.classList.add("hidden");
+
+            try {
+                // 1. Dùng Gemini dịch câu hỏi thành Từ khóa PubMed
+                updateStatus("Bắt đầu: Chuyển đổi câu hỏi thành MeSH terms bằng Gemini 3.6 Flash...");
+                const systemPrompt1 = "Bạn là chuyên gia y khoa. Chuyển câu hỏi lâm sàng thành từ khóa tìm kiếm PubMed tối ưu (Dùng tiếng Anh, kết hợp AND/OR/NOT). CHỈ TRẢ VỀ CÂU TRUY VẤN, KHÔNG GIẢI THÍCH, KHÔNG BỌC TRONG DẤU NGOẶC KÉP DƯ THỪA.";
+                
+                const pubmedQuery = await callGemini(question, systemPrompt1);
+                // Dọn dẹp query phòng trường hợp AI thêm dấu markdown
+                const cleanQuery = pubmedQuery.replace(/```/g, "").trim(); 
+                updateStatus(`Từ khóa PubMed: ${cleanQuery}`);
+
+                // 2. Gọi PubMed API
+                updateStatus("Đang gọi NCBI E-utilities API để lấy tài liệu...");
+                const documents = await fetchPubMed(cleanQuery);
+                
+                if (documents.length === 0) {
+                    updateStatus("Hoàn tất: Không tìm thấy tài liệu phù hợp trên PubMed.");
+                    document.getElementById("answerContent").innerHTML = "Không tìm thấy bằng chứng lâm sàng nào trên PubMed cho truy vấn này.";
+                    resultSection.classList.remove("hidden");
+                    return;
+                }
+                
+                updateStatus(`Đã tải thành công ${documents.length} abstracts. Đang chuyển dữ liệu cho Gemini tổng hợp...`);
+
+                // 3. Ghép Context và tổng hợp bằng Gemini
+                let context = "";
+                documents.forEach((doc) => {
+                    context += `
+--- TÀI LIỆU [PMID: ${doc.pmid}] ---
+Title: ${doc.title}
+Abstract: ${doc.abstract}
+`;
+                });
+
+                const systemPrompt2 = `Bạn là một Trợ lý Y khoa lâm sàng. Dựa vào các tài liệu dưới đây, hãy trả lời câu hỏi.
+                QUY TẮC NGHIÊM NGẶT:
+                1. CHỈ dùng thông tin trong tài liệu. Không tự bịa số liệu.
+                2. Nêu rõ nghiên cứu nào ủng hộ, nghiên cứu nào phản đối (nếu có mâu thuẫn).
+                3. BẮT BUỘC chèn trích dẫn [PMID: mã_số] ở cuối mỗi luận điểm.
+                4. Trình bày bằng HTML chuẩn (sử dụng <b> cho chữ in đậm, <br> xuống dòng, <ul><li> cho danh sách) để văn bản dễ đọc.
+                
+                TÀI LIỆU Y KHOA:
+${context}`;
+
+                const finalAnswer = await callGemini(question, systemPrompt2);
+                
+                // Trích xuất HTML nếu Gemini tự động bọc trong markdown block ```html
+                let htmlOutput = finalAnswer;
+                if (htmlOutput.includes("```html")) {
+                    htmlOutput = htmlOutput.split("```html")[1].split("```")[0].trim();
+                } else if (htmlOutput.includes("```")) {
+                    htmlOutput = htmlOutput.replace(/```/g, "").trim();
+                }
+
+                // 4. In kết quả ra màn hình
+                document.getElementById("answerContent").innerHTML = htmlOutput;
+                
+                const citationList = document.getElementById("citationsList");
+                citationList.innerHTML = "";
+                documents.forEach(doc => {
+                    citationList.innerHTML += `
+                        <li class="p-4 bg-slate-50 border rounded-md">
+                            <span class="font-bold text-emerald-700">[PMID: ${doc.pmid}]</span> 
+                            <span class="font-semibold ml-2">${doc.title}</span>
+                            <div class="mt-2 text-sm text-slate-600 flex justify-between items-center">
+                                <a href="https://pubmed.ncbi.nlm.nih.gov/${doc.pmid}/" target="_blank" class="text-blue-500 hover:underline flex items-center">
+                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                                    Đọc bài gốc trên PubMed
+                                </a>
+                            </div>
+                        </li>
+                    `;
+                });
+
+                resultSection.classList.remove("hidden");
+                updateStatus("Xử lý hoàn tất thành công.");
+
+            } catch (error) {
+                updateStatus(`LỖI: ${error.message}`);
+                alert("Đã xảy ra lỗi: " + error.message);
+            } finally {
+                btn.disabled = false;
+                spinner.classList.add("hidden");
+            }
+        }
+    </script>
+</body>
+</html>
