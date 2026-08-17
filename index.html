@@ -1089,6 +1089,64 @@
     .group-done { color: var(--green); border-color: var(--green); }
     .group-checked { color: #007bff; border-color: #007bff; }
 
+
+    /* ===== AUTO-COLLAB: hiển thị rõ trên desktop và mobile ===== */
+    .collab-status-bar {
+      flex: 1 1 100%;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      padding: 8px 10px;
+      border-radius: 8px;
+      background: rgba(255,255,255,0.18);
+      border: 1px solid rgba(255,255,255,0.32);
+      box-sizing: border-box;
+    }
+    .collab-status-bar[hidden] { display: none !important; }
+    .collab-status-summary { font-weight: 900; white-space: nowrap; }
+    .collab-status-people { display: flex; gap: 6px; flex-wrap: wrap; min-width: 0; }
+    .collab-person-chip {
+      display: inline-flex;
+      max-width: 220px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      background: rgba(255,255,255,0.9);
+      color: #14532d;
+      border-radius: 999px;
+      padding: 4px 9px;
+      font-size: 13px;
+      font-weight: 800;
+    }
+    tr.collab-claimed td {
+      background: #fff3cd !important;
+      color: #5f4300 !important;
+      border-color: #f0c36d !important;
+      transition: background-color .12s ease, color .12s ease;
+    }
+    tr.collab-claimed-own td { box-shadow: inset 4px 0 0 #f59e0b; }
+    tr.collab-claimed-other { cursor: not-allowed; }
+    .collab-claim-badge {
+      display: inline-block;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: normal;
+      line-height: 1.2;
+      font-weight: 900;
+      color: #7a4b00;
+    }
+    tr.collab-requesting td { opacity: .78; }
+    tr.collab-pulse td { animation: collabPulse .65s ease; }
+    @keyframes collabPulse {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-2px); }
+      50% { transform: translateX(2px); }
+      75% { transform: translateX(-1px); }
+    }
+
     .dist-header { background: var(--green); color: #fff; padding: 15px 20px; border-radius: 8px 8px 0 0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
     .user-badge { background: rgba(255,255,255,0.25); padding: 8px 16px; border-radius: 20px; font-weight: 700; font-size: 18px; margin-right: 10px; }
     .dist-header button { font-size: 20px; padding: 10px 20px; }
@@ -1702,6 +1760,36 @@
 
       #view-detail #btnCloseDetail {
         margin-left: auto;
+      }
+
+
+      #view-detail .collab-status-bar {
+        order: 4;
+        flex: 1 0 100%;
+        width: 100%;
+        padding: 6px 7px;
+        gap: 5px;
+        border-radius: 6px;
+      }
+      #view-detail .collab-status-summary {
+        flex: 1 1 100%;
+        width: 100%;
+        text-align: center;
+        font-size: 13px;
+        white-space: normal;
+      }
+      #view-detail .collab-status-people {
+        width: 100%;
+        justify-content: center;
+        gap: 4px;
+      }
+      #view-detail .collab-person-chip {
+        max-width: 145px;
+        font-size: 11px;
+        padding: 3px 7px;
+      }
+      #view-detail .collab-claim-badge {
+        font-size: 12px;
       }
 
       .tab-header {
@@ -2361,6 +2449,10 @@
       <button id="btnFinishCheck" class="btn-primary" style="display:none; background: #007bff;" onclick="finishCheck()">✅ Chốt Đối Chiếu</button>
       <button id="btnCloseDetail" class="btn-warning" onclick="closeDetail()">⬅ Thoát</button>
     </div>
+    <div id="collabStatusBar" class="collab-status-bar" hidden aria-live="polite">
+      <span id="collabStatusSummary" class="collab-status-summary">👥 Phát song song</span>
+      <span id="collabStatusPeople" class="collab-status-people"></span>
+    </div>
   </div>
   <div id="distTabsHeader" class="tab-header"></div>
   <div id="distTabsBody"></div>
@@ -2659,7 +2751,7 @@
 
 <script>
   /* ===== GITHUB PAGES ↔ APPS SCRIPT BRIDGE V2 ===== */
-  window.PHATTHUOC_REALTIME_OPT = 'FIX17_4_REALTIME_SINGLE_WAREHOUSE_ZERO_STUCK';
+  window.PHATTHUOC_REALTIME_OPT = 'FIX17_5_AUTO_COLLAB_SINGLE_WAREHOUSE_ZERO_STUCK_REALTIME';
   const GAS_BRIDGE_URL = 'https://script.google.com/macros/s/AKfycbzhDWWBV13NuxpVfYqaOe3BIzuAQYGE8obpn6Yr76qW4wa7v7bfk5WJU-IAxWaHiJiYJA/exec';
   let gasBridgeReady = false;
   let gasBridgeWindow = null;
@@ -3655,6 +3747,225 @@
     document.addEventListener('touchstart', () => requestImmediateDetailSync(0), { passive: true });
   }
   /* ===== END REALTIME V1 ===== */
+
+
+  /* ===== AUTO-COLLAB UI V2 ===== */
+  let collaborationSnapshot = {
+    mode: 'solo',
+    activeCount: 0,
+    active: [],
+    claims: []
+  };
+  let collaborationActionInFlight = false;
+  let collaborationVisualSignature = '';
+
+  function collaborationDeviceId() {
+    return getNotificationDeviceId();
+  }
+
+  function collaborationClaimForIndex(idx) {
+    const claims = collaborationSnapshot && Array.isArray(collaborationSnapshot.claims)
+      ? collaborationSnapshot.claims
+      : [];
+    return claims.find(claim => Number(claim && claim.index) === Number(idx)) || null;
+  }
+
+  function isOwnCollaborationClaim(claim) {
+    return Boolean(
+      claim &&
+      String(claim.ownerDeviceId || '') === String(collaborationDeviceId() || '')
+    );
+  }
+
+  function collaborationDisplayName(entry) {
+    const name = String(entry && (entry.fullName || entry.username) || 'Người phát').trim();
+    return name || 'Người phát';
+  }
+
+  function renderCollaborationBanner() {
+    const bar = document.getElementById('collabStatusBar');
+    const summary = document.getElementById('collabStatusSummary');
+    const people = document.getElementById('collabStatusPeople');
+    if (!bar || !summary || !people) return;
+
+    const active = collaborationSnapshot && Array.isArray(collaborationSnapshot.active)
+      ? collaborationSnapshot.active
+      : [];
+    const mode = collaborationSnapshot && collaborationSnapshot.mode === 'collab';
+
+    if (!mode) {
+      bar.hidden = true;
+      people.innerHTML = '';
+      return;
+    }
+
+    bar.hidden = false;
+    const claims = collaborationSnapshot && Array.isArray(collaborationSnapshot.claims)
+      ? collaborationSnapshot.claims
+      : [];
+    const deviceCount = Math.max(Number(collaborationSnapshot.activeCount || 0), active.length);
+    summary.textContent = deviceCount >= 2
+      ? `👥 Phát song song · ${deviceCount} thiết bị đang phát`
+      : (claims.length
+          ? `👥 Phát song song · ${claims.length} dòng đang được xử lý`
+          : '👥 Đang chuyển về chế độ một người');
+
+    const byName = new Map();
+    [...active, ...claims.map(claim => ({
+      deviceId: claim.ownerDeviceId,
+      fullName: claim.fullName,
+      username: claim.username
+    }))].forEach(entry => {
+      const name = collaborationDisplayName(entry);
+      const current = byName.get(name) || { devices: new Set(), mine: false };
+      if (entry && entry.deviceId) current.devices.add(String(entry.deviceId));
+      if (String(entry && entry.deviceId || '') === String(collaborationDeviceId() || '')) current.mine = true;
+      byName.set(name, current);
+    });
+
+    people.innerHTML = Array.from(byName.entries()).slice(0, 5).map(([name, meta]) => {
+      const deviceTotal = meta.devices ? meta.devices.size : 1;
+      const suffix = deviceTotal > 1 ? ` · ${deviceTotal} máy` : '';
+      const mine = meta.mine ? ' · bạn' : '';
+      return `<span class="collab-person-chip" title="${escapeHtmlValue(name)}">${escapeHtmlText(name)}${suffix}${mine}</span>`;
+    }).join('');
+  }
+
+  function renderCollaborationClaimVisual(idx, item, claim) {
+    const row = document.getElementById('tr_' + idx);
+    const status = document.getElementById('st_' + idx);
+    if (!row || !status || !item || item.status !== 'Chưa phát' || !claim) return;
+
+    row.classList.remove('status-updating', 'missed-item', 'distributed');
+    row.classList.add('item-row', 'collab-claimed');
+    row.classList.toggle('collab-claimed-own', isOwnCollaborationClaim(claim));
+    row.classList.toggle('collab-claimed-other', !isOwnCollaborationClaim(claim));
+
+    const name = collaborationDisplayName(claim);
+    const compact = window.matchMedia && window.matchMedia('(max-width: 700px)').matches;
+    const label = isOwnCollaborationClaim(claim)
+      ? (compact ? '🟡 Bạn đang phát' : `🟡 Bạn đang phát · ${name}`)
+      : (compact ? `🟡 ${name}` : `🟡 ${name} đang phát`);
+    status.innerHTML = `<span class="collab-claim-badge" title="${escapeHtmlValue(name)}">${escapeHtmlText(label)}</span>`;
+  }
+
+  function renderAllCollaborationClaims() {
+    const voucher = cloudWaitList[activeVoucherId];
+    if (!voucher || !Array.isArray(voucher.items)) return;
+
+    voucher.items.forEach((item, idx) => {
+      const pending = distributionIntentStates.get(distributionActionKey(activeVoucherId, idx));
+      if (pending && (pending.inFlight || pending.desiredDistributed !== pending.confirmedDistributed)) return;
+      const checkPending = checkIntentStates.get(checkActionKey(activeVoucherId, idx));
+      if (checkPending && (checkPending.inFlight || checkPending.queued || checkPending.desiredChecked !== checkPending.confirmedChecked)) return;
+      const claim = collaborationClaimForIndex(idx);
+      if (item.status === 'Chưa phát' && claim) renderCollaborationClaimVisual(idx, item, claim);
+      else renderServerItemStateBase(idx, item);
+    });
+  }
+
+  function applyCollaborationSnapshot(snapshot) {
+    if (!snapshot || typeof snapshot !== 'object') return;
+    const next = {
+      mode: snapshot.mode === 'collab' ? 'collab' : 'solo',
+      activeCount: Number(snapshot.activeCount || 0),
+      active: Array.isArray(snapshot.active) ? snapshot.active : [],
+      claims: Array.isArray(snapshot.claims) ? snapshot.claims : [],
+      serverNow: Number(snapshot.serverNow || 0),
+      claimTtlMs: Number(snapshot.claimTtlMs || 0)
+    };
+    const signature = JSON.stringify({
+      mode: next.mode,
+      active: next.active.map(entry => [String(entry.deviceId || ''), String(entry.fullName || entry.username || '')]).sort(),
+      claims: next.claims.map(claim => [Number(claim.index), String(claim.ownerDeviceId || ''), String(claim.fullName || claim.username || '')]).sort()
+    });
+    collaborationSnapshot = next;
+    if (signature === collaborationVisualSignature) return;
+    collaborationVisualSignature = signature;
+    renderCollaborationBanner();
+    renderAllCollaborationClaims();
+  }
+
+  function pulseClaimedRow(idx) {
+    const row = document.getElementById('tr_' + idx);
+    if (!row) return;
+    row.classList.remove('collab-pulse');
+    void row.offsetWidth;
+    row.classList.add('collab-pulse');
+    setTimeout(() => row.classList.remove('collab-pulse'), 650);
+  }
+
+  async function handleCollaborativeDistributionTap(idx, item) {
+    if (collaborationActionInFlight || distributionFinalizeInFlight || detailActionInFlight) return;
+    const claim = collaborationClaimForIndex(idx);
+
+    if (claim && !isOwnCollaborationClaim(claim)) {
+      renderCollaborationClaimVisual(idx, item, claim);
+      pulseClaimedRow(idx);
+      return;
+    }
+
+    collaborationActionInFlight = true;
+    mutationInFlight = true;
+    const row = document.getElementById('tr_' + idx);
+    const status = document.getElementById('st_' + idx);
+    if (row) row.classList.add('collab-requesting');
+    if (status) status.innerHTML = `<span class="collab-claim-badge">${claim ? '⏳ Đang xác nhận...' : '⏳ Đang nhận dòng...'}</span>`;
+
+    try {
+      const action = {
+        idx: Number(idx),
+        itemId: item.itemId || '',
+        desiredDistributed: true,
+        expectedItemVersion: Number(item.itemVersion || 0),
+        mutationId: createMutationId('C'),
+        deviceId: collaborationDeviceId(),
+        collabOperation: claim && isOwnCollaborationClaim(claim) ? 'complete' : 'claim'
+      };
+      const result = await gasCall(
+        'saveItemActionsBatchServer',
+        [String(activeVoucherId || ''), 'distribute', [action]],
+        18000
+      );
+
+      if (!result || result.success === false) {
+        throw new Error((result && result.msg) || 'Chưa thể cập nhật dòng thuốc.');
+      }
+
+      if (result.collab) applyCollaborationSnapshot(result.collab);
+      const itemResult = Array.isArray(result.results) ? result.results[0] : null;
+
+      if (itemResult && itemResult.item) {
+        applyBatchItemResult(String(activeVoucherId || ''), {
+          ...itemResult,
+          version: result.version,
+          state: result.state,
+          finishTime: result.finishTime
+        });
+      }
+
+      if (itemResult && itemResult.collabClaimedByOther) {
+        if (result.collab) applyCollaborationSnapshot(result.collab);
+        pulseClaimedRow(idx);
+        return;
+      }
+
+      if (itemResult && itemResult.success === false) {
+        throw new Error(itemResult.msg || 'Dòng thuốc vừa thay đổi trên thiết bị khác.');
+      }
+
+      requestImmediateDetailSync(80);
+    } catch (error) {
+      console.warn('Phát song song:', error);
+      requestImmediateDetailSync(0);
+    } finally {
+      if (row) row.classList.remove('collab-requesting');
+      collaborationActionInFlight = false;
+      mutationInFlight = false;
+    }
+  }
+  /* ===== END AUTO-COLLAB UI V2 ===== */
+
 
 
 
@@ -10177,7 +10488,7 @@ function displayVoucherDetail(
     e.currentTarget.classList.add('active'); document.getElementById('content-'+k).classList.add('active');
   }
 
-  function renderServerItemState(idx, item) {
+  function renderServerItemStateBase(idx, item) {
     const trElem = document.getElementById('tr_' + idx);
     const statusElem = document.getElementById('st_' + idx);
     const sttElem = document.getElementById('stt_' + idx);
@@ -10197,6 +10508,14 @@ function displayVoucherDetail(
       sttElem.innerHTML = isDone
         ? (isChecked ? '<span style="display:inline-block;background:#007bff;color:#fff;width:22px;height:22px;line-height:22px;border-radius:4px;text-align:center;font-size:14px;">✔</span>' : '✅')
         : origStt;
+    }
+  }
+
+  function renderServerItemState(idx, item) {
+    renderServerItemStateBase(idx, item);
+    const claim = collaborationClaimForIndex(idx);
+    if (item && item.status === 'Chưa phát' && claim) {
+      renderCollaborationClaimVisual(idx, item, claim);
     }
   }
 
@@ -10335,12 +10654,14 @@ function displayVoucherDetail(
         itemId: state.itemId || '',
         desiredDistributed: Boolean(state.desiredDistributed),
         expectedItemVersion: Number(state.confirmedItemVersion || 0),
-        mutationId: state.mutationId || createMutationId('D')
+        mutationId: state.mutationId || createMutationId('D'),
+        deviceId: collaborationDeviceId()
       }));
   }
 
   function applyFinalizeSnapshot(voucherId, result) {
     if (!result || !Array.isArray(result.items)) return;
+    if (result.collab) applyCollaborationSnapshot(result.collab);
     const voucher = cloudWaitList[voucherId];
     if (!voucher) return;
 
@@ -10921,7 +11242,8 @@ async function processDistributionBatch() {
         itemId: state.itemId || '',
         desiredDistributed: state.sentDesired,
         expectedItemVersion: Number(state.confirmedItemVersion || 0),
-        mutationId: state.sentMutationId
+        mutationId: state.sentMutationId,
+        deviceId: collaborationDeviceId()
       }));
 
       const result = await gasCall(
@@ -10941,6 +11263,7 @@ async function processDistributionBatch() {
         throw error;
       }
 
+      if (result.collab) applyCollaborationSnapshot(result.collab);
       const resultMap = new Map(
         (result.results || []).map(item => [Number(item.index), item])
       );
@@ -10950,6 +11273,41 @@ async function processDistributionBatch() {
         const itemResult = resultMap.get(state.idx);
         state.inFlight = false;
         state.syncPaused = false;
+
+        if (itemResult && itemResult.collabClaimed) {
+          if (itemResult.item) {
+            applyBatchItemResult(voucherId, {
+              ...itemResult,
+              version: result.version,
+              state: result.state,
+              finishTime: result.finishTime
+            });
+            state.confirmedDistributed = itemResult.item.status !== 'Chưa phát';
+            state.confirmedItemVersion = Number(itemResult.item.itemVersion || state.confirmedItemVersion || 0);
+          }
+          state.desiredDistributed = state.confirmedDistributed;
+          removeDistributionIntentState(state);
+          if (result.collab) applyCollaborationSnapshot(result.collab);
+          return;
+        }
+
+        if (itemResult && itemResult.collabClaimedByOther) {
+          if (itemResult.item) {
+            applyBatchItemResult(voucherId, {
+              ...itemResult,
+              version: result.version,
+              state: result.state,
+              finishTime: result.finishTime
+            });
+            state.confirmedDistributed = itemResult.item.status !== 'Chưa phát';
+            state.confirmedItemVersion = Number(itemResult.item.itemVersion || state.confirmedItemVersion || 0);
+          }
+          state.desiredDistributed = state.confirmedDistributed;
+          removeDistributionIntentState(state);
+          if (result.collab) applyCollaborationSnapshot(result.collab);
+          pulseClaimedRow(state.idx);
+          return;
+        }
 
         if (!itemResult || itemResult.success === false) {
           if (itemResult && itemResult.item) {
@@ -11309,6 +11667,16 @@ async function processDistributionBatch() {
       voucher = cloudWaitList[voucherId];
       item = voucher && voucher.items && voucher.items[idx];
       if (!item) return;
+    }
+
+    // Khi server/client đã xác nhận đang phát song song, dòng chưa phát phải được CLAIM trước.
+    if (
+      item.status === 'Chưa phát' &&
+      collaborationSnapshot && collaborationSnapshot.mode === 'collab'
+    ) {
+      const existingPending = distributionIntentStates.get(distributionActionKey(voucherId, idx));
+      if (existingPending && (existingPending.inFlight || existingPending.desiredDistributed !== existingPending.confirmedDistributed)) return;
+      return handleCollaborativeDistributionTap(idx, item);
     }
 
     const key = distributionActionKey(voucherId, idx);
@@ -12032,6 +12400,7 @@ async function processDistributionBatch() {
       if (requestSeq !== detailSyncRequestSeq || id !== activeVoucherId) return;
       if (delta && delta.sheetFallback) detailLastSheetFallbackAt = Date.now();
       if (!delta) return;
+      if (delta.collab) applyCollaborationSnapshot(delta.collab);
 
       if (delta.deleted) {
         removeVoucherDetailCache(id);
@@ -12913,14 +13282,24 @@ function flattenNotificationResults(value) {
 
       if (!result.finalized) {
         const missing = result.unfinishedIndices || [];
+        const activeClaims = Array.isArray(result.activeClaims) ? result.activeClaims : [];
+        const claimIndices = new Set(activeClaims.map(claim => Number(claim.index)).filter(Number.isInteger));
+        const missingWithoutClaims = missing.filter(idx => !claimIndices.has(Number(idx)));
         const problematic = [
           ...(result.conflicts || []),
           ...(result.actionErrors || []),
-          ...missing
+          ...missingWithoutClaims
         ];
         highlightUnfinishedDistributionItems(problematic);
+        if (result.collab) applyCollaborationSnapshot(result.collab);
 
-        if ((result.conflicts || []).length || (result.actionErrors || []).length) {
+        if (activeClaims.length && !problematic.length) {
+          await showMsg(
+            'Còn ' + activeClaims.length + ' thuốc đang được phát song song. Hệ thống sẽ cập nhật ngay khi người phát hoàn tất.',
+            'Đang phát song song',
+            'info'
+          );
+        } else if ((result.conflicts || []).length || (result.actionErrors || []).length) {
           await showMsg(
             'Dữ liệu phiếu vừa thay đổi. Hệ thống đã tải lại trạng thái mới nhất. Vui lòng kiểm tra các dòng được đánh dấu rồi chốt lại.',
             'Cần kiểm tra lại',
@@ -12928,7 +13307,9 @@ function flattenNotificationResults(value) {
           );
         } else {
           await showMsg(
-            'Còn ' + missing.length + ' thuốc chưa phát. Vui lòng kiểm tra các mục được bôi đỏ.',
+            activeClaims.length
+              ? ('Còn ' + missingWithoutClaims.length + ' thuốc chưa phát và ' + activeClaims.length + ' thuốc đang được người khác phát.')
+              : ('Còn ' + missingWithoutClaims.length + ' thuốc chưa phát. Vui lòng kiểm tra các mục được bôi đỏ.'),
             'Chưa thể chốt phát',
             'danger'
           );
