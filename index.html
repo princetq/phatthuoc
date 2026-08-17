@@ -2204,9 +2204,19 @@
 <div id="view-upload" class="container">
   <div class="card">
     <h1 style="color:var(--green); text-align:center; margin-top:0;">NẠP FILE EXCEL VÀO HỆ THỐNG</h1>
+
+    <div id="singleWarehouseImportContext" style="margin:0 0 18px; padding:14px 16px; border:2px solid #90caf9; border-radius:10px; background:#f4f9ff;">
+      <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+        <label for="uploadWarehouseSelect" style="font-weight:800; color:#0d47a1; min-width:120px;">🏢 Kho đang nạp:</label>
+        <select id="uploadWarehouseSelect" onchange="handleSingleWarehouseImportChange()" style="flex:1; min-width:220px; max-width:520px; margin:0;"></select>
+      </div>
+      <div id="uploadWarehouseHint" style="margin-top:8px; color:#455a64; line-height:1.45;">
+        Mỗi lần nạp chỉ lấy dữ liệu của một kho. File có thể chứa một khoa hoặc nhiều khoa; hệ thống sẽ tạo phiếu độc lập theo từng khoa trong kho đã chọn.
+      </div>
+    </div>
     
     <div id="singleFileDropArea" class="upload-area"
-         onclick="isFolderAutoLoad = false; document.getElementById('fileInput').click()"
+         onclick="openSingleWarehouseFilePicker()"
          ondragover="handleSingleFileDragOver(event)"
          ondragleave="handleSingleFileDragLeave(event)"
          ondrop="handleSingleFileDrop(event)">
@@ -2286,6 +2296,7 @@
       </div>
     </div>
   </div>
+  <div id="importCommitBanner" style="display:none;margin:0 0 12px;padding:10px 14px;border-radius:10px;background:#e3f2fd;color:#0d47a1;font-weight:800;box-shadow:0 2px 8px rgba(0,0,0,.08);" aria-live="polite"></div>
   <div id="backgroundFinishPanel" class="background-finish-panel" aria-live="polite"></div>
   <div class="tracking-list" id="trackingListContainer"></div>
 </div>
@@ -2648,7 +2659,7 @@
 
 <script>
   /* ===== GITHUB PAGES ↔ APPS SCRIPT BRIDGE V2 ===== */
-  window.PHATTHUOC_FIX17_2_ZERO_STUCK = 'FIX17_2_ZERO_STUCK_SINGLE_WAREHOUSE';
+  window.PHATTHUOC_REALTIME_OPT = 'FIX17_4_REALTIME_SINGLE_WAREHOUSE_ZERO_STUCK';
   const GAS_BRIDGE_URL = 'https://script.google.com/macros/s/AKfycbzhDWWBV13NuxpVfYqaOe3BIzuAQYGE8obpn6Yr76qW4wa7v7bfk5WJU-IAxWaHiJiYJA/exec';
   let gasBridgeReady = false;
   let gasBridgeWindow = null;
@@ -2986,7 +2997,7 @@
       );
     }
 
-    await waitForGasBridge();
+    await waitForGasBridge(Math.min(12000, Math.max(5000, Number(timeoutMs || 30000))));
 
     const id = 'REQ_' + Date.now() + '_' + (++gasRequestCounter);
     const token =
@@ -3469,7 +3480,7 @@
   let currentVoucherVersion = 0;
   let syncInFlight = false;
   let mutationInFlight = false;
-  let detailSyncIntervalMs = 1500;
+  let detailSyncIntervalMs = 750;
   let skipNextListReload = false;
   let detailRefreshing = false;
   let adminFinalizedEditConfirmed = false;
@@ -3480,6 +3491,171 @@
   let detailActionInFlight = false;
   let detailPromptInFlight = false;
   let loadingWatchdogTimer = null;
+
+
+  /* ===== REALTIME V1: đồng bộ nhanh nhiều thiết bị cùng phiếu ===== */
+  let detailLastSheetFallbackAt = 0;
+  let detailSyncRequestSeq = 0;
+  let detailSyncWakeTimer = null;
+  let waitListAutoRefreshTimer = null;
+  let waitListLoadInFlight = false;
+  let waitListReloadQueued = false;
+  let readyNotificationDispatchRunning = false;
+  const DETAIL_SYNC_TIMEOUT_MS = 7000;
+  const DETAIL_SHEET_FALLBACK_MS = 4500;
+  const LIST_AUTO_REFRESH_MS = 5000;
+  const READY_NOTIFICATION_QUEUE_PREFIX = 'phatthuoc_ready_notification_queue_v1_';
+
+  function recoverGasBridgeForRealtime() {
+    if (mutationInFlight || detailActionInFlight || distributionBatchRunning) return;
+    const frame = getGasBridgeFrame();
+    if (!frame || !GAS_BRIDGE_URL || GAS_BRIDGE_URL.includes('PASTE_YOUR_')) return;
+    gasBridgeReady = false;
+    gasBridgeWindow = null;
+    gasBridgeOrigin = '';
+    backendWarmPromise = null;
+    try {
+      const url = new URL(GAS_BRIDGE_URL);
+      url.searchParams.set('_rtwake', String(Date.now()));
+      frame.src = url.toString();
+    } catch (error) {
+      frame.src = GAS_BRIDGE_URL;
+    }
+  }
+
+  function requestImmediateDetailSync(delayMs = 0) {
+    if (!activeVoucherId || document.visibilityState === 'hidden') return;
+    if (detailSyncWakeTimer) clearTimeout(detailSyncWakeTimer);
+    detailSyncWakeTimer = setTimeout(() => {
+      detailSyncWakeTimer = null;
+      const voucher = cloudWaitList[activeVoucherId];
+      const isViewer = currentUser && currentUser.role === 'xem';
+      if (voucher) syncDetail(activeVoucherId, isViewer, true);
+    }, Math.max(0, Number(delayMs || 0)));
+  }
+
+  function reapplyLocalIntentVisualForItem(voucherId, idx) {
+    const distributionState = distributionIntentStates.get(distributionActionKey(voucherId, idx));
+    if (
+      distributionState &&
+      (distributionState.inFlight || distributionState.syncPaused || distributionState.desiredDistributed !== distributionState.confirmedDistributed)
+    ) {
+      renderPendingDistributionState(
+        distributionState,
+        distributionState.inFlight ? 'saving' : (distributionState.syncPaused ? 'paused' : 'pending')
+      );
+    }
+
+    const checkState = checkIntentStates.get(checkActionKey(voucherId, idx));
+    if (
+      checkState &&
+      (checkState.inFlight || checkState.queued || checkState.desiredChecked !== checkState.confirmedChecked)
+    ) {
+      renderPendingCheckState(checkState, checkState.inFlight ? 'saving' : 'undo');
+    }
+  }
+
+  function reapplyAllLocalIntentVisuals(voucherId) {
+    Array.from(distributionIntentStates.values()).forEach(state => {
+      if (state.voucherId === voucherId) reapplyLocalIntentVisualForItem(voucherId, state.idx);
+    });
+    Array.from(checkIntentStates.values()).forEach(state => {
+      if (state.voucherId === voucherId) reapplyLocalIntentVisualForItem(voucherId, state.idx);
+    });
+  }
+
+  function readyNotificationQueueKey() {
+    const username = currentUser && currentUser.username ? String(currentUser.username).trim().toLowerCase() : 'guest';
+    return READY_NOTIFICATION_QUEUE_PREFIX + username;
+  }
+
+  function readReadyNotificationQueue() {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(readyNotificationQueueKey()) || '[]');
+      return Array.isArray(parsed) ? Array.from(new Set(parsed.map(String).filter(Boolean))) : [];
+    } catch (error) {
+      return [];
+    }
+  }
+
+  function enqueueReadyNotificationDispatch(ids) {
+    const merged = Array.from(new Set(readReadyNotificationQueue().concat((ids || []).map(String).filter(Boolean))));
+    try {
+      if (merged.length) localStorage.setItem(readyNotificationQueueKey(), JSON.stringify(merged));
+    } catch (error) {}
+    setTimeout(flushReadyNotificationDispatch, 50);
+  }
+
+  async function flushReadyNotificationDispatch() {
+    if (readyNotificationDispatchRunning || !currentUser || !navigator.onLine) return;
+    const ids = readReadyNotificationQueue();
+    if (!ids.length) return;
+    readyNotificationDispatchRunning = true;
+    try {
+      const result = await gasCall('dispatchReadyNotificationsForVouchersServer', [ids], 45000);
+      if (result && result.success !== false) {
+        localStorage.removeItem(readyNotificationQueueKey());
+      }
+    } catch (error) {
+      console.warn('Thông báo sẵn sàng sẽ tự thử lại:', error.message || String(error));
+    } finally {
+      readyNotificationDispatchRunning = false;
+    }
+  }
+
+  function showImportCommitBanner(show, text = 'Đang đưa phiếu vào danh sách…') {
+    const el = document.getElementById('importCommitBanner');
+    if (!el) return;
+    el.textContent = text;
+    el.style.display = show ? 'block' : 'none';
+  }
+
+  function beginFastImportCommitUI() {
+    skipNextListReload = true;
+    switchView('list');
+    showImportCommitBanner(true, 'Đang đưa phiếu vào danh sách… Bạn có thể tiếp tục theo dõi các phiếu đang phát.');
+  }
+
+  function finishFastImportCommitUI() {
+    showImportCommitBanner(false);
+  }
+
+  function startWaitListAutoRefresh() {
+    stopWaitListAutoRefresh();
+    waitListAutoRefreshTimer = setInterval(() => {
+      const list = document.getElementById('view-list');
+      if (list && list.style.display !== 'none' && document.visibilityState === 'visible') {
+        loadWaitList({ silent: true });
+      }
+    }, LIST_AUTO_REFRESH_MS);
+  }
+
+  function stopWaitListAutoRefresh() {
+    if (waitListAutoRefreshTimer) clearInterval(waitListAutoRefreshTimer);
+    waitListAutoRefreshTimer = null;
+  }
+
+  function installRealtimeRecoveryHooks() {
+    if (window.__realtimeRecoveryHooksInstalled) return;
+    window.__realtimeRecoveryHooksInstalled = true;
+    const wake = () => {
+      requestImmediateDetailSync(0);
+      const list = document.getElementById('view-list');
+      if (list && list.style.display !== 'none') loadWaitList({ silent: true });
+      flushReadyNotificationDispatch();
+    };
+    window.addEventListener('online', wake);
+    window.addEventListener('focus', wake);
+    window.addEventListener('pageshow', wake);
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') wake();
+    });
+    // Android/PWA đôi khi trì hoãn timer; tương tác đầu tiên đánh thức đồng bộ ngay.
+    document.addEventListener('pointerdown', () => requestImmediateDetailSync(0), { passive: true });
+    document.addEventListener('touchstart', () => requestImmediateDetailSync(0), { passive: true });
+  }
+  /* ===== END REALTIME V1 ===== */
+
 
 
   /* ===== FIX6: HÀNG ĐỢI CHỐT PHÁT NỀN BỀN VỮNG ===== */
@@ -4315,7 +4491,7 @@
       Number(
         sessionStorage.getItem(
           'detail_sync_interval_ms'
-        ) || 700
+        ) || 750
       )
     );
 
@@ -6278,8 +6454,8 @@
         currentUser = res.user;
 
         detailSyncIntervalMs = Math.max(
-          1500,
-          Number(res.syncIntervalMs || 1500)
+          650,
+          Number(res.syncIntervalMs || 750)
         );
 
         sessionStorage.setItem(
@@ -6678,6 +6854,8 @@
     resetAdminWarehouseFiltersForAccount();
     startAdminSessionValidation();
     resumeBackgroundFinishQueue();
+    installRealtimeRecoveryHooks();
+    flushReadyNotificationDispatch();
 
     ensureOneSignalInitialized()
       .catch(error => {
@@ -6728,6 +6906,8 @@
 
     if(viewName === 'admin') loadAdminUsers();
 
+    if(viewName === 'upload') { prepareSingleWarehouseImportContext(Object.keys(parsedFileData || {}).length === 0); }
+
     if(viewName === 'list') {
       if (skipNextListReload) {
         skipNextListReload = false;
@@ -6771,14 +6951,16 @@
           showMsg("Đã copy đường dẫn thành công!");
       }
   }
-
-  function loadFromLocalFolder() {
+async function loadFromLocalFolder() {
+    const key = await requireSingleWarehouseImportSelection();
+    if (!key) return;
     const input = document.getElementById('folderInput');
     if (!input) return;
     input.value = '';
     isFolderAutoLoad = true;
     input.click();
   }
+
 
   function mapKhoToKey(khoName) {
     let lower = (khoName||"").toLowerCase();
@@ -6794,6 +6976,106 @@
     if (currentUser.role === 'admin' || khoText === 'Tất cả') return null;
     return khoText.split(',').map(s => mapKhoToKey(s.trim())).filter(k => k);
   }
+
+function getSingleWarehouseImportOptions() {
+    const active = (warehouseCatalog.length
+      ? warehouseCatalog.filter(item => item.active !== false)
+      : Object.keys(KHO_CONFIG).map(key => ({ key, displayName: KHO_CONFIG[key], active: true }))
+    );
+    if (!currentUser) return [];
+    const khoText = String(currentUser.kho || '').trim();
+    if (currentUser.role === 'admin' || khoText === 'Tất cả') return active;
+    const allowed = new Set(
+      khoText.split(',').map(x => mapKhoToKey(x.trim())).filter(Boolean)
+    );
+    return active.filter(item => allowed.has(String(item.key || '')));
+  }
+
+  function getSelectedSingleWarehouseImportKey() {
+    const select = document.getElementById('uploadWarehouseSelect');
+    return select ? String(select.value || '').trim() : '';
+  }
+
+  function getSelectedSingleWarehouseImportLabel() {
+    const select = document.getElementById('uploadWarehouseSelect');
+    if (!select || select.selectedIndex < 0) return '';
+    return String(select.options[select.selectedIndex].text || '').trim();
+  }
+
+  function setSingleWarehouseImportLocked(locked) {
+    const select = document.getElementById('uploadWarehouseSelect');
+    if (!select) return;
+    const options = getSingleWarehouseImportOptions();
+    select.disabled = Boolean(locked) || options.length <= 1;
+    select.title = locked
+      ? 'Hủy danh sách nạp hiện tại trước khi đổi kho.'
+      : (options.length <= 1 ? 'Tài khoản chỉ có một kho được phép nạp.' : 'Chọn kho trước khi đọc file.');
+  }
+
+  async function prepareSingleWarehouseImportContext(resetForNewBatch = false) {
+    try {
+      await loadAppCatalogs();
+    } catch (error) {
+      console.warn('Không tải được danh mục kho cho màn hình nạp:', error);
+    }
+    const select = document.getElementById('uploadWarehouseSelect');
+    if (!select) return;
+    const options = getSingleWarehouseImportOptions();
+    const hasParsedData = Object.keys(parsedFileData || {}).length > 0;
+    const oldValue = String(select.value || '');
+    select.innerHTML = '';
+    if (options.length > 1) {
+      select.innerHTML += '<option value="">-- Chọn kho cho lần nạp này --</option>';
+    }
+    options.forEach(item => {
+      const option = document.createElement('option');
+      option.value = String(item.key || '');
+      option.textContent = String(item.displayName || item.key || '');
+      select.appendChild(option);
+    });
+
+    if (options.length === 1) {
+      select.value = String(options[0].key || '');
+    } else if (hasParsedData && options.some(item => String(item.key) === oldValue)) {
+      select.value = oldValue;
+    } else if (!resetForNewBatch && options.some(item => String(item.key) === oldValue)) {
+      select.value = oldValue;
+    } else {
+      select.value = '';
+    }
+    setSingleWarehouseImportLocked(hasParsedData);
+  }
+
+  function handleSingleWarehouseImportChange() {
+    const hasParsedData = Object.keys(parsedFileData || {}).length > 0;
+    if (hasParsedData) setSingleWarehouseImportLocked(true);
+  }
+
+  async function requireSingleWarehouseImportSelection() {
+    if (!warehouseCatalog.length) {
+      try { await loadAppCatalogs(); } catch (_) {}
+      await prepareSingleWarehouseImportContext(false);
+    }
+    const key = getSelectedSingleWarehouseImportKey();
+    if (key) return key;
+    await showMsg(
+      'Vui lòng chọn Kho đang nạp trước khi chọn file. Mỗi lần nạp chỉ lấy dữ liệu của một kho.',
+      'Chưa chọn kho',
+      'warning'
+    );
+    const select = document.getElementById('uploadWarehouseSelect');
+    if (select) select.focus();
+    return '';
+  }
+
+  async function openSingleWarehouseFilePicker() {
+    const key = await requireSingleWarehouseImportSelection();
+    if (!key) return;
+    isFolderAutoLoad = false;
+    const input = document.getElementById('fileInput');
+    if (input) { input.value = ''; input.click(); }
+  }
+
 
   function processVoucherString(rawStr, arr, datesArr) {
     if (!rawStr) return;
@@ -7172,46 +7454,26 @@
       }
     );
   }
-
-  async function parseImportFile(
+async function parseImportFile(
     file,
     allowedKhoKeys
   ) {
-    const buffer =
-      await readFileAsArrayBufferFast(file);
-
-    const workbook =
-      XLSX.read(
-        new Uint8Array(buffer),
-        { type: 'array' }
-      );
-
-    const rows =
-      XLSX.utils.sheet_to_json(
-        workbook.Sheets[
-          workbook.SheetNames[0]
-        ],
-        {
-          header: 1,
-          defval: ''
-        }
-      );
-
-    const localData = {};
-
-    parseRows(
-      rows,
-      allowedKhoKeys,
-      localData
+    const buffer = await readFileAsArrayBufferFast(file);
+    const workbook = XLSX.read(new Uint8Array(buffer), { type: 'array' });
+    const rows = XLSX.utils.sheet_to_json(
+      workbook.Sheets[workbook.SheetNames[0]],
+      { header: 1, defval: '' }
     );
-
+    const localData = {};
+    const stats = { acceptedRows: 0, skippedOtherWarehouseRows: 0, warehouseKeysSeen: [] };
+    parseRows(rows, allowedKhoKeys, localData, stats);
     return {
-      fileName: file && file.name
-        ? file.name
-        : '',
-      data: localData
+      fileName: file && file.name ? file.name : '',
+      data: localData,
+      stats: stats
     };
   }
+
 
   function mergeParsedImportData(
     target,
@@ -7310,13 +7572,31 @@
     showLoading(true,'Đang đọc và phân tích file...');
     parsedFileData={}; parsedDuplicateStatus={}; folderImportSummary=null; renderFolderImportSummary();
     const fileList=Array.from(files);
-    const allowedKhoKeys=getAllowedKhoKeysForCurrentUser();
+    const selectedImportWarehouseKey = await requireSingleWarehouseImportSelection();
+    if (!selectedImportWarehouseKey) { showLoading(false); return; }
+    const allowedKhoKeys=[selectedImportWarehouseKey];
     let nextIndex=0,failedCount=0;
     const parsedUnits=new Array(fileList.length);
     const worker=async()=>{ while(nextIndex<fileList.length){ const index=nextIndex++; try{ parsedUnits[index]=await parseImportFile(fileList[index],allowedKhoKeys); }catch(error){ failedCount++; console.error('Lỗi đọc file:',fileList[index]?fileList[index].name:'',error); } } };
     const workerCount=Math.min(FILE_PARSE_CONCURRENCY,fileList.length);
     await Promise.all(Array.from({length:workerCount},()=>worker()));
+    const skippedOtherWarehouseRows = parsedUnits
+      .filter(Boolean)
+      .reduce((sum, unit) => sum + Number(unit && unit.stats && unit.stats.skippedOtherWarehouseRows || 0), 0);
+    const warehouseHint = document.getElementById('uploadWarehouseHint');
+    if (warehouseHint) {
+      warehouseHint.textContent = skippedOtherWarehouseRows > 0
+        ? ('Đang nạp ' + getSelectedSingleWarehouseImportLabel() + '. Hệ thống chỉ lấy kho này và đã tự bỏ qua ' + skippedOtherWarehouseRows + ' dòng thuộc kho khác trong file.')
+        : ('Đang nạp ' + getSelectedSingleWarehouseImportLabel() + '. File có thể chứa một khoa hoặc nhiều khoa; hệ thống sẽ tạo phiếu độc lập theo từng khoa.');
+    }
     const validUnits=parsedUnits.filter(unit=>unit && unit.data && Object.keys(unit.data).length);
+    if (!validUnits.length) {
+      showLoading(false);
+      setSingleWarehouseImportLocked(false);
+      await showMsg('Không tìm thấy dữ liệu thuộc kho “' + getSelectedSingleWarehouseImportLabel() + '” trong file đã chọn. Hãy kiểm tra lại kho và file Excel.', 'Không có dữ liệu đúng kho', 'warning');
+      return;
+    }
+    setSingleWarehouseImportLocked(true);
     showLoading(true,'Đang kiểm tra phiếu trùng...');
 
     if (isFolderAutoLoad) {
@@ -7403,11 +7683,11 @@
     renderUploadList(); showLoading(false);
     if(!isFolderAutoLoad && failedCount>0) await showMsg('Có '+failedCount+' file không đọc được. Các file còn lại đã được xử lý.','Một số file bị lỗi','warning');
   }
-
-  function parseRows(
+function parseRows(
     rows,
     allowedKhoKeys,
-    targetData = parsedFileData
+    targetData = parsedFileData,
+    stats = null
   ) {
     let h = { khoa: -1, kho: -1, loaiPhieu: -1, ma: -1, ten: -1, dvt: -1, sl: -1, phieuTQ: -1, phieuBT: -1, phieuHT: -1 };
     for(let i=0; i<Math.min(20, rows.length); i++) {
@@ -7421,46 +7701,51 @@
         break;
       }
     }
+    const seen = new Set();
     for(let i=1; i<rows.length; i++) {
       let r = rows[i]; if(!r || r.length === 0) continue;
-      let khoa = String(r[h.khoa]||"").trim(); let khoName = String(r[h.kho]||"").trim(); let khoKey = mapKhoToKey(khoName);
-      if (allowedKhoKeys && !allowedKhoKeys.includes(khoKey)) continue;
+      let khoa = String(r[h.khoa]||"").trim();
+      let khoName = String(r[h.kho]||"").trim();
+      let khoKey = mapKhoToKey(khoName);
+      if (khoKey) seen.add(khoKey);
+      if (allowedKhoKeys && !allowedKhoKeys.includes(khoKey)) {
+        if (stats && khoa && khoName) stats.skippedOtherWarehouseRows++;
+        continue;
+      }
       let ma = String(r[h.ma]||"").trim(); let ten = String(r[h.ten]||"").trim(); let dvt = String(r[h.dvt]||"").trim(); let sl = parseFloat(r[h.sl]);
       if(!khoa || !ma || !ten || isNaN(sl) || sl === 0 || khoa.toUpperCase() === "NGAY") continue;
-      
-      if(!targetData[khoa]) {
-        targetData[khoa] = { items: [], vouchers: {} };
-      }
-      if(!targetData[khoa].vouchers[khoKey]) {
-        targetData[khoa].vouchers[khoKey] = { TQ:[], BT:[], HT:[], dates:[] };
-      }
+      if(!targetData[khoa]) targetData[khoa] = { items: [], vouchers: {} };
+      if(!targetData[khoa].vouchers[khoKey]) targetData[khoa].vouchers[khoKey] = { TQ:[], BT:[], HT:[], dates:[] };
       let vCat = targetData[khoa].vouchers[khoKey];
       if(h.phieuTQ !== -1) processVoucherString(r[h.phieuTQ], vCat.TQ, vCat.dates);
       if(h.phieuBT !== -1) processVoucherString(r[h.phieuBT], vCat.BT, vCat.dates);
       if(h.phieuHT !== -1) processVoucherString(r[h.phieuHT], vCat.HT, vCat.dates);
       targetData[khoa].items.push({ khoKey: khoKey, ma: ma, ten: ten, dvt: dvt, sl: sl, loaiThuoc: String(r[h.loaiPhieu]||"").trim(), status: 'Chưa phát' });
+      if (stats) stats.acceptedRows++;
     }
+    if (stats) stats.warehouseKeysSeen = Array.from(seen);
   }
-
-  async function clearAllUploads() {
+async function clearAllUploads() {
       const ok = await showConfirm("Bạn có chắc chắn muốn hủy bỏ toàn bộ danh sách nạp này không?", "Hủy danh sách nạp", { type: 'danger', confirmText: 'Hủy toàn bộ', confirmClass: 'btn-danger' });
       if(ok) {
           parsedFileData = {};
           parsedDuplicateStatus = {};
           folderImportSummary = null;
           renderFolderImportSummary();
-          renderUploadList(); 
+          renderUploadList();
+          setSingleWarehouseImportLocked(false);
       }
   }
-
-  async function removeUploadItem(khoa) {
+async function removeUploadItem(khoa) {
       const ok = await showConfirm("Xóa " + khoa + " khỏi danh sách nạp?", "Xóa phiếu đang nạp", { type: 'danger', confirmText: 'Xóa', confirmClass: 'btn-danger' });
       if(ok) {
           delete parsedFileData[khoa];
           delete parsedDuplicateStatus[khoa];
-          renderUploadList(); 
+          renderUploadList();
+          if (!Object.keys(parsedFileData || {}).length) setSingleWarehouseImportLocked(false);
       }
   }
+
 
   function renderUploadList() {
     let container=document.getElementById('deptListContainer'); container.innerHTML='';
@@ -7613,6 +7898,8 @@
       ] = {
         sourceKey:
           k,
+        importWarehouseKey:
+          getSelectedSingleWarehouseImportKey(),
         uploadMode:
           uploadMode,
         allowDuplicate:
@@ -7630,13 +7917,25 @@
       };
     });
     
-    showLoading(true, "Đang lưu...");
+    beginFastImportCommitUI();
     google.script.run
       .withSuccessHandler(async r => {
-        showLoading(false);
+        finishFastImportCommitUI();
         if (!r || r.success === false) {
+          switchView('upload');
           showMsg((r && r.msg) || 'Không thể đưa phiếu vào danh sách.', 'Nạp phiếu thất bại', 'warning');
           return;
+        }
+
+        const insertedNow = Number(r.inserted || 0) > 0;
+        if (insertedNow) {
+          mergeInsertedVoucherCards(r.insertedCards || {});
+          prepareVoucherListForInsertedCards(r.insertedCards || {});
+          saveVoucherCardsLocalCache(cloudWaitList);
+          renderTrackingList();
+          enqueueReadyNotificationDispatch(r.notificationVoucherIds || Object.keys(r.insertedCards || {}));
+        } else {
+          switchView('upload');
         }
         const blockedDuplicates =
           Array.isArray(
@@ -7724,25 +8023,13 @@
             return;
           }
         }
-
-        /*
-         * Ghép ngay các thẻ vừa được máy chủ xác nhận vào dữ liệu cục bộ.
-         * Nhờ đó khi quay về danh sách, phiếu xuất hiện tức thời,
-         * không phải chờ thêm một lượt tải danh sách 1–2 giây.
-         */
-        mergeInsertedVoucherCards(
-          r.insertedCards || {}
-        );
-
-        prepareVoucherListForInsertedCards(
-          r.insertedCards || {}
-        );
-
-        skipNextListReload = true;
-        switchView('list');
+        setSingleWarehouseImportLocked(false);
+        const uploadWarehouseSelect = document.getElementById('uploadWarehouseSelect');
+        if (uploadWarehouseSelect && getSingleWarehouseImportOptions().length > 1) uploadWarehouseSelect.value = '';
       })
       .withFailureHandler(error => {
-        showLoading(false);
+        finishFastImportCommitUI();
+        switchView('upload');
         showMsg(error.message || String(error), 'Lỗi nạp phiếu', 'danger');
       })
       .pushVouchersServer(
@@ -8680,54 +8967,49 @@ let d = new Date(v.time);
     return {};
   }
 
-  function loadWaitList() {
-    const localCached = readVoucherCardsLocalCache();
+  function loadWaitList(options = {}) {
+    const silent = Boolean(options && options.silent);
+    if (waitListLoadInFlight) {
+      waitListReloadQueued = true;
+      return;
+    }
+    waitListLoadInFlight = true;
 
-    const hasCurrentData =
-      cloudWaitList &&
-      Object.keys(cloudWaitList).length > 0;
+    const localCached = readVoucherCardsLocalCache();
+    const hasCurrentData = cloudWaitList && Object.keys(cloudWaitList).length > 0;
 
     if (!hasCurrentData && localCached) {
       cloudWaitList = localCached;
       renderTrackingList();
     }
-
-    if (!hasCurrentData && !localCached) {
-      showLoading(true, "Đang tải danh sách phiếu...");
-    }
+    if (!silent && !hasCurrentData && !localCached) showLoading(true, 'Đang tải danh sách phiếu...');
 
     const startedAt = performance.now();
-
-    google.script.run
-      .withSuccessHandler(response => {
-        showLoading(false);
-
-        cloudWaitList =
-          unpackVoucherCardsResponse(response);
-
+    gasCall('getVoucherCardsServer', [], 10000)
+      .then(response => {
+        if (!silent) showLoading(false);
+        cloudWaitList = unpackVoucherCardsResponse(response);
         saveVoucherCardsLocalCache(cloudWaitList);
         renderTrackingList();
-
-        console.log(
-          'Voucher list totalMs:',
-          Math.round(performance.now() - startedAt)
-        );
+        console.log('Voucher list totalMs:', Math.round(performance.now() - startedAt));
       })
-      .withFailureHandler(error => {
-        showLoading(false);
-
-        if (!hasCurrentData && !localCached) {
-          showMsg(
-            error.message || String(error),
-            'Không tải được danh sách',
-            'danger'
-          );
+      .catch(error => {
+        if (!silent) showLoading(false);
+        if (!silent && !hasCurrentData && !localCached) {
+          showMsg(error.message || String(error), 'Không tải được danh sách', 'danger');
         }
+        if (/quá thời gian|không kết nối/i.test(String(error.message || error))) recoverGasBridgeForRealtime();
       })
-      .getVoucherCardsServer();
+      .finally(() => {
+        waitListLoadInFlight = false;
+        if (waitListReloadQueued) {
+          waitListReloadQueued = false;
+          setTimeout(() => loadWaitList({ silent: true }), 100);
+        }
+      });
   }
 
-  function renderTrackingList() {
+function renderTrackingList() {
     let bulkBtn = document.getElementById('btnBulkDelete');
     if (bulkBtn) bulkBtn.style.display = (currentUser && currentUser.role === 'admin') ? 'inline-block' : 'none';
     renderBackgroundFinishPanel();
@@ -9439,17 +9721,15 @@ let d = new Date(v.time);
   }
 
   function startDetailSync(id, isViewer) {
-    if (syncInterval) {
-      clearInterval(syncInterval);
-    }
-
-    syncInterval = setInterval(
-      () => syncDetail(id, isViewer),
-      detailSyncIntervalMs
-    );
+    if (syncInterval) clearInterval(syncInterval);
+    // 750 ms đủ nhanh để nhìn thấy thao tác người khác gần như tức thời,
+    // nhưng endpoint bình thường chỉ đọc Script Cache nên không quét Google Sheet mỗi nhịp.
+    const intervalMs = Math.max(650, Math.min(1000, Number(detailSyncIntervalMs || 750)));
+    syncInterval = setInterval(() => syncDetail(id, isViewer, false), intervalMs);
+    requestImmediateDetailSync(50);
   }
 
-  function displayVoucherDetail(
+function displayVoucherDetail(
     voucher,
     isViewer,
     options = {}
@@ -9974,6 +10254,8 @@ let d = new Date(v.time);
     );
 
     saveVoucherDetailCache(voucher);
+
+    reapplyLocalIntentVisualForItem(activeVoucherId, idx);
   }
 
   function waitForDetailFresh(timeoutMs = 5000) {
@@ -10832,14 +11114,12 @@ async function processDistributionBatch() {
         persistDistributionIntentStates();
         updateBatchSaveIndicator();
 
-        await showMsg(
-          'Có ' + unresolved.length +
-            ' khoản thuốc chưa xác nhận được với máy chủ sau ' +
-            DISTRIBUTION_MAX_AUTO_RETRIES +
-            ' lần thử. Hệ thống đã dừng tự thử lại để tránh treo vô hạn.\n\n' +
-            'Nút Chốt Phát vẫn hiển thị. Khi mạng ổn định, bấm nhãn “⚠ Chưa đồng bộ … mục” hoặc bấm Chốt Phát để hệ thống đối chiếu và thử lại.',
-          'Chưa đồng bộ xong',
-          'warning'
+        // Không bật popup kỹ thuật làm gián đoạn người phát.
+        // Queue đã được giữ trên máy và sẽ tự thử lại khi online/focus/visible
+        // hoặc được FINALIZE xử lý khi người dùng bấm Chốt Phát.
+        console.warn(
+          'Tạm dừng tự đồng bộ sau ' + DISTRIBUTION_MAX_AUTO_RETRIES +
+          ' lần; còn ' + unresolved.length + ' khoản chờ server xác nhận.'
         );
         return;
       }
@@ -10869,6 +11149,7 @@ async function processDistributionBatch() {
       mutationInFlight = false;
       persistDistributionIntentStates();
       updateBatchSaveIndicator();
+      requestImmediateDetailSync(0);
 
       if (
         Array.from(distributionIntentStates.values()).some(state =>
@@ -11734,63 +12015,79 @@ async function processDistributionBatch() {
     );
   }
 
-  function syncDetail(id, isViewer) {
-    if (
-      syncInFlight ||
-      mutationInFlight ||
-      hasPendingDistributionActions(id) ||
-      hasPendingCheckActions() ||
-      detailActionInFlight ||
-      id !== activeVoucherId
-    ) return;
+  async function syncDetail(id, isViewer, forced = false) {
+    if (syncInFlight || detailActionInFlight || id !== activeVoucherId) return;
+    if (!forced && document.visibilityState === 'hidden') return;
+
     syncInFlight = true;
-    google.script.run
-      .withSuccessHandler((delta) => {
-        syncInFlight = false;
-        if (!delta) return;
-        if (delta.deleted) {
-          removeVoucherDetailCache(id);
-          showMsg('Phiếu đã bị xóa hoặc hết thời gian lưu.', 'Phiếu không còn tồn tại', 'warning');
-          switchView('list');
-          return;
-        }
-        if (!delta.changed) {
-          currentVoucherVersion = Number(delta.version || currentVoucherVersion);
+    const requestSeq = ++detailSyncRequestSeq;
+    const forceSheet = Date.now() - detailLastSheetFallbackAt >= DETAIL_SHEET_FALLBACK_MS;
 
-          const current = cloudWaitList[id];
-          if (current) {
-            current.version = currentVoucherVersion;
-            saveVoucherDetailCache(current);
-          }
+    try {
+      const delta = await gasCall(
+        'getVoucherRealtimeDeltaServer',
+        [id, currentVoucherVersion, forceSheet],
+        DETAIL_SYNC_TIMEOUT_MS
+      );
+      if (requestSeq !== detailSyncRequestSeq || id !== activeVoucherId) return;
+      if (delta && delta.sheetFallback) detailLastSheetFallbackAt = Date.now();
+      if (!delta) return;
 
-          return;
+      if (delta.deleted) {
+        removeVoucherDetailCache(id);
+        showMsg('Phiếu đã bị xóa hoặc hết thời gian lưu.', 'Phiếu không còn tồn tại', 'warning');
+        switchView('list');
+        return;
+      }
+
+      if (!delta.changed) {
+        currentVoucherVersion = Number(delta.version || currentVoucherVersion);
+        const current = cloudWaitList[id];
+        if (current) {
+          current.version = currentVoucherVersion;
+          saveVoucherDetailCache(current);
         }
-        if (delta.full && delta.voucher) {
-          cloudWaitList[id] = delta.voucher;
-          currentVoucherVersion = Number(delta.version || delta.voucher.version || 0);
-          renderTabs(delta.voucher, !isViewer);
-          saveVoucherDetailCache(delta.voucher);
-          return;
-        }
-        if (delta.item && Number.isInteger(delta.index)) {
+        return;
+      }
+
+      if (delta.full && delta.voucher) {
+        cloudWaitList[id] = delta.voucher;
+        currentVoucherVersion = Number(delta.version || delta.voucher.version || 0);
+        renderTabs(delta.voucher, !isViewer);
+        reapplyAllLocalIntentVisuals(id);
+        saveVoucherDetailCache(delta.voucher);
+        return;
+      }
+
+      if (Array.isArray(delta.items) && delta.items.length) {
+        delta.items.forEach(entry => {
+          if (!entry || !Number.isInteger(Number(entry.index)) || !entry.item) return;
           applyServerItemUpdate(
-            delta.index,
-            delta.item,
+            Number(entry.index),
+            entry.item,
             delta.version,
             delta.state,
             delta.finishTime
           );
-        }
-      })
-      .withFailureHandler((error) => {
-        syncInFlight = false;
-        console.error('Lỗi đồng bộ:', error);
-      })
-      .getVoucherDeltaServer(id, currentVoucherVersion);
+        });
+        return;
+      }
+
+      if (delta.item && Number.isInteger(delta.index)) {
+        applyServerItemUpdate(delta.index, delta.item, delta.version, delta.state, delta.finishTime);
+      }
+    } catch (error) {
+      console.warn('Đồng bộ nhanh tạm gián đoạn:', error.message || String(error));
+      // Quan trọng trên Android: không giữ syncInFlight 30 giây và không để Bridge chết âm thầm.
+      if (/quá thời gian|không kết nối/i.test(String(error.message || error))) {
+        recoverGasBridgeForRealtime();
+      }
+    } finally {
+      if (requestSeq === detailSyncRequestSeq) syncInFlight = false;
+    }
   }
 
-
-  function flattenNotificationResults(value) {
+function flattenNotificationResults(value) {
     const output = [];
 
     (function walk(item) {
