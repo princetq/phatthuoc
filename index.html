@@ -3015,7 +3015,7 @@
 
 <script>
   /* ===== GITHUB PAGES ↔ APPS SCRIPT BRIDGE V2 ===== */
-  window.PHATTHUOC_REALTIME_OPT = 'FIX17_9_1_MOBILE_HISTORY_DATE_SINGLE';
+  window.PHATTHUOC_REALTIME_OPT = 'FIX17_10_CLEAN_QA_HARDENED_SINGLE';
   const GAS_BRIDGE_URL = 'https://script.google.com/macros/s/AKfycbzhDWWBV13NuxpVfYqaOe3BIzuAQYGE8obpn6Yr76qW4wa7v7bfk5WJU-IAxWaHiJiYJA/exec';
   let gasBridgeReady = false;
   let gasBridgeWindow = null;
@@ -8266,10 +8266,17 @@ function renderSingleWarehouseImportContext(resetForNewBatch = false) {
     return keys.map(khoa => buildDuplicateCandidate(parsedFileData,khoa,khoa)).filter(Boolean);
   }
 
-  async function requestDuplicateCheckCandidates(candidates){
+  async function requestDuplicateCheckCandidates(candidates, sessionState=null){
     if(!Array.isArray(candidates)||!candidates.length)return {};
-    const response=await gasCall('checkVoucherDuplicatesServer',[JSON.stringify(candidates)]);
-    if(response&&response.serverMs!==undefined)console.info('[IMPORT] Duplicate check',{candidates:candidates.length,serverMs:response.serverMs});
+    const useSession=Boolean(sessionState&&typeof sessionState==='object');
+    const payload=useSession
+      ? {candidates:candidates,sessionFingerprints:Array.isArray(sessionState.fingerprints)?sessionState.fingerprints:[]}
+      : candidates;
+    const response=await gasCall('checkVoucherDuplicatesServer',[JSON.stringify(payload)]);
+    if(useSession&&response&&Array.isArray(response.sessionFingerprints)){
+      sessionState.fingerprints=response.sessionFingerprints;
+    }
+    if(response&&response.serverMs!==undefined)console.info('[IMPORT] Duplicate check',{candidates:candidates.length,serverMs:response.serverMs,sessionFingerprints:useSession&&sessionState?sessionState.fingerprints.length:0});
     return response&&response.results?response.results:{};
   }
 
@@ -8534,27 +8541,69 @@ async function parseImportFile(
         }
 
         const existing = target[khoa];
+        const itemCoreSignature = item => [
+          item.khoKey,
+          item.ma,
+          item.ten,
+          item.dvt,
+          Number(item.sl || 0),
+          item.loaiThuoc
+        ].join('|');
+        const itemsByVoucherIdentity = items => {
+          const map = new Map();
+          (items || []).forEach(item => {
+            const identity = String(item.__importVoucherIdentity || '');
+            if (!identity) return;
+            if (!map.has(identity)) map.set(identity, new Set());
+            map.get(identity).add(itemCoreSignature(item));
+          });
+          return map;
+        };
+        const existingByIdentity = itemsByVoucherIdentity(existing.items || []);
+        const incomingByIdentity = itemsByVoucherIdentity(incoming.items || []);
+        const blockedIdentities = new Set();
+
+        incomingByIdentity.forEach((incomingSet, identity) => {
+          const existingSet = existingByIdentity.get(identity);
+          if (!existingSet) return;
+          const exactSame = incomingSet.size === existingSet.size &&
+            Array.from(incomingSet).every(signature => existingSet.has(signature));
+          if (exactSame) return;
+          blockedIdentities.add(identity);
+          if (!Array.isArray(existing.__importMergeConflicts)) {
+            Object.defineProperty(existing, '__importMergeConflicts', {
+              value: [],
+              enumerable: false,
+              configurable: false,
+              writable: false
+            });
+          }
+          if (!existing.__importMergeConflicts.includes(identity)) {
+            existing.__importMergeConflicts.push(identity);
+          }
+        });
+
         const itemSignatures = new Set(
           (existing.items || []).map(item =>
             [
-              item.khoKey,
-              item.ma,
-              item.ten,
-              item.dvt,
-              Number(item.sl || 0),
-              item.loaiThuoc
+              itemCoreSignature(item),
+              item.__importVoucherIdentity || ''
             ].join('|')
           )
         );
 
         (incoming.items || []).forEach(item => {
+          const identity = String(item.__importVoucherIdentity || '');
+          if (identity && blockedIdentities.has(identity)) return;
+
+          /*
+           * Hai file khác số phiếu có thể chứa cùng một thuốc/cùng số lượng.
+           * Dấu định danh nguồn giữ đủ cả hai khoản; file trùng đúng cùng số
+           * phiếu vẫn được khử lặp. Dấu này không được JSON hóa lên backend.
+           */
           const signature = [
-            item.khoKey,
-            item.ma,
-            item.ten,
-            item.dvt,
-            Number(item.sl || 0),
-            item.loaiThuoc
+            itemCoreSignature(item),
+            identity
           ].join('|');
 
           if (!itemSignatures.has(signature)) {
@@ -8571,10 +8620,8 @@ async function parseImportFile(
               };
             }
 
-            const targetVoucher =
-              existing.vouchers[khoKey];
-            const sourceVoucher =
-              incoming.vouchers[khoKey] || {};
+            const targetVoucher = existing.vouchers[khoKey];
+            const sourceVoucher = incoming.vouchers[khoKey] || {};
 
             ['TQ','BT','HT','dates']
               .forEach(field => {
@@ -8602,7 +8649,7 @@ async function parseImportFile(
 
 
   function defaultDuplicateStatus(checking) {
-    return {duplicate:false,partial:false,hasOverlap:false,matchedCount:0,tokenCount:0,duplicateWarehouseKeys:[],partialWarehouseKeys:[],newWarehouseKeys:[],suppressed:false,suppressedWarehouseKeys:[],suppressionNotices:[],checking:Boolean(checking),checkError:false};
+    return {duplicate:false,partial:false,hasOverlap:false,matchedCount:0,tokenCount:0,duplicateWarehouseKeys:[],partialWarehouseKeys:[],newWarehouseKeys:[],suppressed:false,suppressedWarehouseKeys:[],suppressionNotices:[],checking:Boolean(checking),checkError:false,mergeConflict:false};
   }
 
   function updateUploadCommitButton() {
@@ -8633,14 +8680,15 @@ async function parseImportFile(
     const total=(source.items||[]).length,allDates=new Set(),allVouchers=new Set();
     Object.keys(source.vouchers||{}).forEach(kKey=>{const vc=source.vouchers[kKey]||{};(vc.dates||[]).forEach(d=>allDates.add(d));['TQ','BT','HT'].forEach(type=>(vc[type]||[]).forEach(v=>allVouchers.add(String(v).split('|')[0])));});
     const status=parsedDuplicateStatus[khoa]||defaultDuplicateStatus(false),checking=Boolean(status.checking),checkError=Boolean(status.checkError);
-    const isDup=!checking&&isDuplicateVoucher(khoa),isPartial=!checking&&isPartialDuplicateVoucher(khoa),isSuppressed=!checking&&isSuppressedDeletedVoucher(khoa);
+    const mergeConflict=Boolean(status.mergeConflict),isDup=!checking&&!mergeConflict&&isDuplicateVoucher(khoa),isPartial=!checking&&!mergeConflict&&isPartialDuplicateVoucher(khoa),isSuppressed=!checking&&!mergeConflict&&isSuppressedDeletedVoucher(khoa);
     let borderCard='border:1px solid #ccc;',bgHeader='#f0f0f0',colorHeader='var(--green)',bgBody='#fff',statusTag='';
     if(checking){borderCard='border:2px solid #90caf9;';bgHeader='#e3f2fd';colorHeader='#0d47a1';bgBody='#f8fbff';statusTag=' <span style="font-size:14px;font-style:italic;">(⏳ đang kiểm tra trùng)</span>';}
+    else if(mergeConflict){borderCard='border:3px solid #ef6c00;';bgHeader='#fff3e0';colorHeader='#e65100';bgBody='#fffaf2';statusTag=' <span style="font-size:14px;font-style:italic;">(cùng số phiếu nhưng nội dung khác giữa các file)</span>';}
     else if(checkError){borderCard='border:2px solid #c62828;';bgHeader='#ffebee';colorHeader='#b71c1c';bgBody='#fff8f8';statusTag=' <span style="font-size:14px;font-style:italic;">(chưa kiểm tra được)</span>';}
     else if(isSuppressed){borderCard='border:3px solid #c62828;';bgHeader='#ffcdd2';colorHeader='#b71c1c';bgBody='#fff5f5';statusTag=' <span style="font-size:14px;font-style:italic;">(đã xóa – không phát nữa)</span>';}
     else if(isDup){borderCard='border:2px solid var(--danger);';bgHeader='#ffebee';colorHeader='var(--danger)';bgBody='#fff9f9';statusTag=' <span style="font-size:14px;font-style:italic;">(trùng hoàn toàn)</span>';}
     else if(isPartial){borderCard='border:2px solid #ef6c00;';bgHeader='#fff3e0';colorHeader='#e65100';bgBody='#fffaf2';statusTag=' <span style="font-size:14px;font-style:italic;">(chồng lấp một phần – cần kiểm tra)</span>';}
-    const checked=(!checking&&!checkError&&!isDup&&!isPartial&&!isSuppressed)?'checked':'',disabled=(checking||checkError)?'disabled':'',safeKhoaJs=String(khoa).replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    const checked=(!checking&&!checkError&&!mergeConflict&&!isDup&&!isPartial&&!isSuppressed)?'checked':'',disabled=(checking||checkError||mergeConflict)?'disabled':'',safeKhoaJs=String(khoa).replace(/\\/g,'\\\\').replace(/'/g,"\\'");
     return `<div style="${borderCard} margin-bottom:15px;border-radius:8px;overflow:hidden;"><div style="background:${bgHeader};padding:15px;font-weight:bold;font-size:20px;color:${colorHeader};display:flex;justify-content:space-between;align-items:center;gap:10px;"><label style="display:flex;align-items:center;flex-wrap:wrap;min-width:0;"><input type="checkbox" class="v-chk" value="${escapeHtmlValue(khoa)}" ${checked} ${disabled} style="width:20px;height:20px;margin:0 10px 0 0;">${escapeHtmlText(khoa)}${statusTag}</label><div style="display:flex;align-items:center;gap:15px;"><span style="color:var(--danger);font-size:18px;white-space:nowrap;">${total} khoản</span><button onclick="removeUploadItem('${safeKhoaJs}')" style="background:transparent;border:none;color:var(--danger);font-size:22px;padding:0;cursor:pointer;line-height:1;" title="Xóa khoa này">✖</button></div></div><div style="padding:15px;background:${bgBody};font-size:16px;"><div style="margin-bottom:8px;font-size:18px;"><b>📅 Ngày:</b> <span style="color:var(--danger);font-weight:bold;">${escapeHtmlText(Array.from(allDates).join(', '))}</span></div><div><b>🧾 Các phiếu:</b><br>${formatVoucherColors(Array.from(allVouchers))}</div></div></div>`;
   }
 
@@ -8669,10 +8717,10 @@ async function parseImportFile(
   const selectedImportWarehouseKey=await requireSingleWarehouseImportSelection();
   if(!selectedImportWarehouseKey){showLoading(false);return;}
   const allowedKhoKeys=[selectedImportWarehouseKey];
-  let nextIndex=0,failedCount=0;
+  let nextIndex=0,failedCount=0,completedCount=0;
   const parsedUnits=new Array(fileList.length);
   const parseStarted=performance.now();
-  const worker=async()=>{while(nextIndex<fileList.length){const index=nextIndex++;try{parsedUnits[index]=await parseImportFile(fileList[index],allowedKhoKeys);}catch(error){failedCount++;console.error('Lỗi đọc file:',fileList[index]?fileList[index].name:'',error);}}};
+  const worker=async()=>{while(nextIndex<fileList.length){const index=nextIndex++;try{parsedUnits[index]=await parseImportFile(fileList[index],allowedKhoKeys);}catch(error){failedCount++;console.error('Lỗi đọc file:',fileList[index]?fileList[index].name:'',error);}finally{completedCount++;showLoading(true,(isFolderAutoLoad?'Đang đọc thư mục... ':'Đang đọc file... ')+completedCount+'/'+fileList.length+' file');}}};
   const workerCount=Math.min(FILE_PARSE_CONCURRENCY,fileList.length);
   await Promise.all(Array.from({length:workerCount},()=>worker()));
   const parseMs=Math.round(performance.now()-parseStarted);
@@ -8694,11 +8742,12 @@ async function parseImportFile(
     folderImportSummary={totalFiles:fileList.length,filesRead:parsedUnits.filter(Boolean).length,totalGroups:candidates.length,checkedGroups:0,newUnits:0,duplicateWarehouses:0,partialWarehouses:0,suppressedWarehouses:0,failedFiles:failedCount,checking:true,checkError:false};
     showLoading(false);setUploadDuplicateCheckState(true,false);renderFolderImportSummary();renderUploadList();await yieldUploadPaint();
     let cursor=0;
+    const duplicateSession={fingerprints:[]};
     try{
       while(cursor<candidates.length){
         const size=cursor===0?FOLDER_DUPLICATE_FIRST_BATCH_SIZE:FOLDER_DUPLICATE_BATCH_SIZE;
         const batch=candidates.slice(cursor,cursor+size);
-        const results=await requestDuplicateCheckCandidates(batch);
+        const results=await requestDuplicateCheckCandidates(batch,duplicateSession);
         batch.forEach(candidate=>{
           const meta=candidateMeta[candidate.key],result=results[candidate.key]||defaultDuplicateStatus(false);
           const exactKeys=Array.isArray(result.duplicateWarehouseKeys)?result.duplicateWarehouseKeys:[];
@@ -8719,6 +8768,13 @@ async function parseImportFile(
     if(!Object.keys(parsedFileData).length)await showMsg('Đã kiểm tra xong thư mục nhưng không còn phiếu mới hợp lệ để đưa vào danh sách.','Không có phiếu mới','info');
   }else{
     validUnits.forEach(unit=>mergeParsedImportData(parsedFileData,unit.data));
+    const mergeConflictKhoas=Object.keys(parsedFileData).filter(khoa=>Array.isArray(parsedFileData[khoa].__importMergeConflicts)&&parsedFileData[khoa].__importMergeConflicts.length>0);
+    if(mergeConflictKhoas.length){
+      mergeConflictKhoas.forEach(khoa=>{parsedDuplicateStatus[khoa]=Object.assign(defaultDuplicateStatus(false),{mergeConflict:true});});
+      showLoading(false);setUploadDuplicateCheckState(false,true);renderUploadList();
+      await showMsg('Có cùng số phiếu nhưng nội dung thuốc khác nhau giữa các file tại: '+mergeConflictKhoas.join(', ')+'. Hệ thống đã chặn việc gộp để tránh cộng sai số lượng. Hãy nạp từng file riêng để kiểm tra đúng phiếu.','Phát hiện file chồng lấp nội bộ','warning');
+      return;
+    }
     markParsedDuplicateStatusesChecking();showLoading(false);setUploadDuplicateCheckState(true,false);renderUploadList();await yieldUploadPaint();
     try{await refreshParsedDuplicateStatus();}
     catch(error){Object.keys(parsedFileData).forEach(khoa=>{parsedDuplicateStatus[khoa]=Object.assign(defaultDuplicateStatus(false),{checkError:true});});setUploadDuplicateCheckState(false,true);renderUploadList();await showMsg('Không kiểm tra được phiếu trùng. Hệ thống đã giữ preview nhưng không cho đưa vào danh sách để tránh nạp sai. Vui lòng chọn lại file để thử lại.','Không kiểm tra được phiếu trùng','warning');return;}
@@ -8798,7 +8854,20 @@ function parseRows(
       if(h.phieuTQ !== -1) processVoucherString(r[h.phieuTQ], vCat.TQ, vCat.dates);
       if(h.phieuBT !== -1) processVoucherString(r[h.phieuBT], vCat.BT, vCat.dates);
       if(h.phieuHT !== -1) processVoucherString(r[h.phieuHT], vCat.HT, vCat.dates);
-      targetData[khoa].items.push({ khoKey: khoKey, ma: ma, ten: ten, dvt: dvt, sl: sl, loaiThuoc: String(r[h.loaiPhieu]||"").trim(), status: 'Chưa phát' });
+      const parsedItem = { khoKey: khoKey, ma: ma, ten: ten, dvt: dvt, sl: sl, loaiThuoc: String(r[h.loaiPhieu]||"").trim(), status: 'Chưa phát' };
+      const importVoucherIdentity = [
+        String(khoKey || ''),
+        h.phieuTQ !== -1 ? String(r[h.phieuTQ] || '').trim() : '',
+        h.phieuBT !== -1 ? String(r[h.phieuBT] || '').trim() : '',
+        h.phieuHT !== -1 ? String(r[h.phieuHT] || '').trim() : ''
+      ].join('||');
+      Object.defineProperty(parsedItem, '__importVoucherIdentity', {
+        value: importVoucherIdentity,
+        enumerable: false,
+        configurable: false,
+        writable: false
+      });
+      targetData[khoa].items.push(parsedItem);
       if (stats) stats.acceptedRows++;
     }
     if (stats) {
