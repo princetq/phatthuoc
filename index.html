@@ -1449,7 +1449,7 @@
     }
 
     body.low-vision-detail-active #detailModeText,
-    body.low-vision-detail-active .dist-header button[onclick="window.print()"] {
+    body.low-vision-detail-active .dist-header #btnPrintVoucher {
       display: none !important;
     }
 
@@ -1579,19 +1579,223 @@
     }
 
 
+
+
+    /* ===== FIX17.5.3: CHỌN IN 1 TỜ / 2 TỜ TRÊN 1 MẶT A4 ===== */
+    .print-options-content {
+      max-width: 620px;
+      padding: 24px;
+      border-radius: 18px;
+      text-align: left;
+    }
+    .print-options-title {
+      margin: 0 0 6px;
+      text-align: center;
+      color: var(--dark);
+      font-size: 24px;
+    }
+    .print-options-help {
+      margin: 0 0 18px;
+      text-align: center;
+      color: #5f6368;
+      font-size: 15px;
+      line-height: 1.45;
+    }
+    .print-options-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .print-option-card {
+      border: 2px solid #d9e2ec;
+      background: #fff;
+      border-radius: 14px;
+      padding: 16px;
+      min-height: 150px;
+      cursor: pointer;
+      text-align: left;
+      transition: transform .15s ease, border-color .15s ease, box-shadow .15s ease;
+      font-family: inherit;
+      color: inherit;
+    }
+    .print-option-card:hover,
+    .print-option-card:focus-visible {
+      border-color: var(--green);
+      box-shadow: 0 7px 22px rgba(46,125,50,.16);
+      transform: translateY(-1px);
+      outline: none;
+    }
+    .print-option-icon {
+      display: block;
+      font-size: 32px;
+      margin-bottom: 8px;
+    }
+    .print-option-name {
+      display: block;
+      font-size: 19px;
+      font-weight: 900;
+      color: var(--green-dark, #1b5e20);
+      margin-bottom: 5px;
+    }
+    .print-option-desc {
+      display: block;
+      color: #555;
+      font-size: 14px;
+      line-height: 1.42;
+    }
+    .print-options-cancel {
+      width: 100%;
+      margin-top: 14px;
+    }
+    #voucherPrintStage { display: none; }
+
+    @media (max-width: 600px) {
+      .print-options-content { padding: 18px 14px; border-radius: 15px; }
+      .print-options-title { font-size: 21px; }
+      .print-options-grid { grid-template-columns: 1fr; gap: 9px; }
+      .print-option-card {
+        min-height: 0;
+        padding: 13px 14px;
+        display: grid;
+        grid-template-columns: 42px minmax(0, 1fr);
+        column-gap: 10px;
+        align-items: center;
+      }
+      .print-option-icon { grid-row: 1 / 3; margin: 0; font-size: 29px; }
+      .print-option-name { margin: 0; font-size: 17px; }
+      .print-option-desc { font-size: 13px; }
+    }
+
     @media print {
       body * { visibility: hidden !important; }
-      #view-detail, #view-detail * { visibility: visible !important; }
-      #view-detail { position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 0; }
-      .dist-header button, .tab-header, .app-footer { display: none !important; }
-      .tab-content { display: none !important; border: none !important; padding: 0 !important; }
-      .tab-content.active { display: block !important; }
-      .dist-header { background: #fff !important; color: #000 !important; padding: 0 !important; border-bottom: 2px solid #000; margin-bottom: 10px; }
-      .user-badge { color: #000 !important; background: transparent !important; }
-      tr.distributed td, tr.negative-row td { background: transparent !important; color: #000 !important; }
-      .phat-badge { color: #000 !important; border: 1px solid #000; }
-      th.col-ghichu, td.col-ghichu { display: table-cell !important; }
-      th:nth-child(7), td:nth-child(7) { display: none !important; }
+
+      /* In mặc định / In 1 tờ: giữ bố cục A4 dọc như trước. */
+      body:not(.print-mode-double) #view-detail,
+      body:not(.print-mode-double) #view-detail * {
+        visibility: visible !important;
+      }
+      body:not(.print-mode-double) #view-detail {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        margin: 0;
+        padding: 0;
+      }
+      body:not(.print-mode-double) .dist-header button,
+      body:not(.print-mode-double) .tab-header,
+      body:not(.print-mode-double) .app-footer,
+      body:not(.print-mode-double) #batchSaveIndicator,
+      body:not(.print-mode-double) #collabStatusBar {
+        display: none !important;
+      }
+      body:not(.print-mode-double) .tab-content { display: none !important; border: none !important; padding: 0 !important; }
+      body:not(.print-mode-double) .tab-content.active { display: block !important; }
+      body:not(.print-mode-double) .dist-header {
+        background: #fff !important;
+        color: #000 !important;
+        padding: 0 !important;
+        border-bottom: 2px solid #000;
+        margin-bottom: 10px;
+      }
+      body:not(.print-mode-double) .user-badge { color: #000 !important; background: transparent !important; }
+      body:not(.print-mode-double) tr.distributed td,
+      body:not(.print-mode-double) tr.negative-row td { background: transparent !important; color: #000 !important; }
+      body:not(.print-mode-double) .phat-badge { color: #000 !important; border: 1px solid #000; }
+      body:not(.print-mode-double) th.col-ghichu,
+      body:not(.print-mode-double) td.col-ghichu { display: table-cell !important; }
+      body:not(.print-mode-double) th:nth-child(7),
+      body:not(.print-mode-double) td:nth-child(7) { display: none !important; }
+
+      /* In 2 tờ: hai bản giống nhau, thu nhỏ theo tỉ lệ A5 và đặt cạnh nhau trên A4 ngang. */
+      body.print-mode-double #voucherPrintStage,
+      body.print-mode-double #voucherPrintStage * {
+        visibility: visible !important;
+      }
+      body.print-mode-double #voucherPrintStage {
+        display: grid !important;
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 285mm;
+        height: 198mm;
+        grid-template-columns: 142.5mm 142.5mm;
+        grid-template-rows: 198mm;
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        background: #fff !important;
+      }
+      body.print-mode-double .print-sheet-half {
+        width: 142.5mm;
+        height: 198mm;
+        box-sizing: border-box;
+        overflow: hidden;
+        position: relative;
+        padding: 2mm 3mm 1mm;
+        background: #fff !important;
+      }
+      body.print-mode-double .print-sheet-half + .print-sheet-half {
+        border-left: .25mm dashed #999;
+        padding-left: 4mm;
+      }
+      body.print-mode-double .print-copy-scale {
+        width: 190mm;
+        transform: scale(.67);
+        transform-origin: top left;
+      }
+      body.print-mode-double .print-voucher-copy {
+        width: 190mm !important;
+        max-width: 190mm !important;
+        min-width: 190mm !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        position: static !important;
+        background: #fff !important;
+        color: #000 !important;
+      }
+      body.print-mode-double .print-voucher-copy .dist-header {
+        position: static !important;
+        background: #fff !important;
+        color: #000 !important;
+        padding: 0 0 2mm !important;
+        margin: 0 0 2mm !important;
+        border-bottom: 2px solid #000 !important;
+        box-shadow: none !important;
+        border-radius: 0 !important;
+      }
+      body.print-mode-double .print-voucher-copy .detail-header-title { flex: 1 1 100% !important; }
+      body.print-mode-double .print-voucher-copy .detail-header-actions { display: flex !important; }
+      body.print-mode-double .print-voucher-copy .dist-header button,
+      body.print-mode-double .print-voucher-copy .tab-header,
+      body.print-mode-double .print-voucher-copy #batchSaveIndicator,
+      body.print-mode-double .print-voucher-copy #collabStatusBar {
+        display: none !important;
+      }
+      body.print-mode-double .print-voucher-copy .tab-content {
+        display: block !important;
+        border: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+      }
+      body.print-mode-double .print-voucher-copy .user-badge {
+        color: #000 !important;
+        background: transparent !important;
+      }
+      body.print-mode-double .print-voucher-copy table {
+        width: 100% !important;
+        table-layout: auto !important;
+      }
+      body.print-mode-double .print-voucher-copy tr.distributed td,
+      body.print-mode-double .print-voucher-copy tr.negative-row td {
+        background: transparent !important;
+        color: #000 !important;
+      }
+      body.print-mode-double .print-voucher-copy .phat-badge { color: #000 !important; border: 1px solid #000; }
+      body.print-mode-double .print-voucher-copy th.col-ghichu,
+      body.print-mode-double .print-voucher-copy td.col-ghichu { display: table-cell !important; }
+      body.print-mode-double .print-voucher-copy th:nth-child(7),
+      body.print-mode-double .print-voucher-copy td:nth-child(7) { display: none !important; }
     }
 
     @media (max-width: 768px) {
@@ -1684,7 +1888,7 @@
       
       .user-badge { font-size: 12px; padding: 4px 10px; flex-grow: 1; text-align: center; }
       .dist-header button { font-size: 14px; padding: 6px 12px; }
-      .dist-header button[onclick="window.print()"] { display: none !important; }
+      .dist-header #btnPrintVoucher { display: inline-flex !important; align-items:center; justify-content:center; }
 
 
       /*
@@ -2196,6 +2400,14 @@
     font-weight: 500;
   }
 
+
+    /* ===== SHARED MOBILE ACTION VISIBILITY: SINGLE + MULTI ===== */
+    @media (max-width: 768px) {
+      #btnUpload,
+      #btnPrintVoucher {
+        display: none !important;
+      }
+    }
 </style>
 </head>
 <body>
@@ -2293,7 +2505,7 @@
   <div class="card">
     <h1 style="color:var(--green); text-align:center; margin-top:0;">NẠP FILE EXCEL VÀO HỆ THỐNG</h1>
 
-    <div id="singleWarehouseImportContext" style="margin:0 0 18px; padding:14px 16px; border:2px solid #90caf9; border-radius:10px; background:#f4f9ff;">
+    <div id="singleWarehouseImportContext" style="display:none; margin:0 0 18px; padding:14px 16px; border:2px solid #90caf9; border-radius:10px; background:#f4f9ff;">
       <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
         <label for="uploadWarehouseSelect" style="font-weight:800; color:#0d47a1; min-width:120px;">🏢 Kho đang nạp:</label>
         <select id="uploadWarehouseSelect" onchange="handleSingleWarehouseImportChange()" style="flex:1; min-width:220px; max-width:520px; margin:0;"></select>
@@ -2444,7 +2656,7 @@
     <div class="detail-header-actions" style="display:flex; align-items:center; gap:10px;">
       <span class="user-badge" id="detailModeText">👤 ...</span>
       <span id="batchSaveIndicator" class="batch-save-indicator" role="button" tabindex="0" onclick="retryPendingDistributionSync()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();retryPendingDistributionSync();}" title="Trạng thái lưu nền"></span>
-      <button class="btn-primary" onclick="window.print()">🖨️ In</button>
+      <button id="btnPrintVoucher" class="btn-primary" onclick="openPrintOptions()">🖨️ In</button>
       <button id="btnFinishVoucher" class="btn-indigo" style="display:none;" onclick="finishDistribution()">✅ Chốt Phát</button>
       <button id="btnFinishCheck" class="btn-primary" style="display:none; background: #007bff;" onclick="finishCheck()">✅ Chốt Đối Chiếu</button>
       <button id="btnCloseDetail" class="btn-warning" onclick="closeDetail()">⬅ Thoát</button>
@@ -2724,6 +2936,29 @@
 </div>
 
 
+
+<div id="printOptionsModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="printOptionsTitle">
+  <div class="modal-content print-options-content">
+    <h3 id="printOptionsTitle" class="print-options-title">🖨️ Chọn chế độ in</h3>
+    <p class="print-options-help">Chọn cách bố trí phiếu trên giấy A4.</p>
+    <div class="print-options-grid">
+      <button type="button" class="print-option-card" onclick="printVoucherWithMode('single')">
+        <span class="print-option-icon">📄</span>
+        <span class="print-option-name">In 1 tờ</span>
+        <span class="print-option-desc">A4 dọc · kích thước lớn như chế độ in hiện tại.</span>
+      </button>
+      <button type="button" class="print-option-card" onclick="printVoucherWithMode('double')">
+        <span class="print-option-icon">📑</span>
+        <span class="print-option-name">In 2 tờ</span>
+        <span class="print-option-desc">A4 ngang · hai bản giống nhau trên cùng một mặt giấy, tự thu nhỏ để vừa trang.</span>
+      </button>
+    </div>
+    <button type="button" class="btn-admin print-options-cancel" onclick="closePrintOptions()">Hủy</button>
+  </div>
+</div>
+
+<div id="voucherPrintStage" aria-hidden="true"></div>
+
 <div id="appPopupModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="appPopupTitle">
   <div class="modal-content app-popup-content">
     <div id="appPopupIcon" class="app-popup-icon">ℹ️</div>
@@ -2751,7 +2986,7 @@
 
 <script>
   /* ===== GITHUB PAGES ↔ APPS SCRIPT BRIDGE V2 ===== */
-  window.PHATTHUOC_REALTIME_OPT = 'FIX17_5_AUTO_COLLAB_SINGLE_WAREHOUSE_ZERO_STUCK_REALTIME';
+  window.PHATTHUOC_REALTIME_OPT = 'FIX17_5_5_AUTO_COLLAB_KEEPALIVE_SINGLE';
   const GAS_BRIDGE_URL = 'https://script.google.com/macros/s/AKfycbzhDWWBV13NuxpVfYqaOe3BIzuAQYGE8obpn6Yr76qW4wa7v7bfk5WJU-IAxWaHiJiYJA/exec';
   let gasBridgeReady = false;
   let gasBridgeWindow = null;
@@ -3732,6 +3967,7 @@
     window.__realtimeRecoveryHooksInstalled = true;
     const wake = () => {
       requestImmediateDetailSync(0);
+      keepAliveOwnCollaborationClaim();
       const list = document.getElementById('view-list');
       if (list && list.style.display !== 'none') loadWaitList({ silent: true });
       flushReadyNotificationDispatch();
@@ -3776,6 +4012,67 @@
       String(claim.ownerDeviceId || '') === String(collaborationDeviceId() || '')
     );
   }
+
+
+  /* ===== AUTO-COLLAB CLAIM KEEPALIVE V3 =====
+   * Claim cơ bản vẫn có TTL 90 giây. Khi chính thiết bị đang giữ dòng,
+   * app còn mở phiếu và ở foreground, hệ thống gia hạn nền mỗi 25 giây.
+   * Server giới hạn một lần giữ liên tục tối đa 5 phút để tránh khóa rác.
+   */
+  const COLLAB_CLAIM_KEEPALIVE_INTERVAL_MS = 25000;
+  let collaborationClaimKeepAliveTimer = null;
+  let collaborationClaimKeepAliveInFlight = false;
+
+  function ownCollaborationClaim() {
+    const claims = collaborationSnapshot && Array.isArray(collaborationSnapshot.claims)
+      ? collaborationSnapshot.claims
+      : [];
+    return claims.find(isOwnCollaborationClaim) || null;
+  }
+
+  function stopCollaborationClaimKeepAlive() {
+    if (collaborationClaimKeepAliveTimer) {
+      clearInterval(collaborationClaimKeepAliveTimer);
+      collaborationClaimKeepAliveTimer = null;
+    }
+  }
+
+  function startCollaborationClaimKeepAlive() {
+    if (collaborationClaimKeepAliveTimer) return;
+    collaborationClaimKeepAliveTimer = setInterval(() => {
+      keepAliveOwnCollaborationClaim();
+    }, COLLAB_CLAIM_KEEPALIVE_INTERVAL_MS);
+  }
+
+  async function keepAliveOwnCollaborationClaim() {
+    if (collaborationClaimKeepAliveInFlight || !activeVoucherId || document.visibilityState !== 'visible') return;
+    const claim = ownCollaborationClaim();
+    if (!claim) {
+      stopCollaborationClaimKeepAlive();
+      return;
+    }
+
+    collaborationClaimKeepAliveInFlight = true;
+    try {
+      const result = await gasCall(
+        'keepAliveVoucherClaimServer',
+        [String(activeVoucherId || ''), {
+          deviceId: collaborationDeviceId(),
+          index: Number(claim.index),
+          itemId: String(claim.itemId || '')
+        }],
+        8000
+      );
+      if (result && result.collab) applyCollaborationSnapshot(result.collab);
+      if (result && result.renewed === false) requestImmediateDetailSync(0);
+    } catch (error) {
+      // Không hiện popup: nếu mạng thật sự mất, claim tự hết TTL và realtime sẽ cập nhật khi kết nối lại.
+      console.warn('Gia hạn dòng đang phát tạm gián đoạn:', error && error.message ? error.message : String(error));
+    } finally {
+      collaborationClaimKeepAliveInFlight = false;
+    }
+  }
+  /* ===== END AUTO-COLLAB CLAIM KEEPALIVE V3 ===== */
 
   function collaborationDisplayName(entry) {
     const name = String(entry && (entry.fullName || entry.username) || 'Người phát').trim();
@@ -3872,7 +4169,8 @@
       active: Array.isArray(snapshot.active) ? snapshot.active : [],
       claims: Array.isArray(snapshot.claims) ? snapshot.claims : [],
       serverNow: Number(snapshot.serverNow || 0),
-      claimTtlMs: Number(snapshot.claimTtlMs || 0)
+      claimTtlMs: Number(snapshot.claimTtlMs || 0),
+      claimMaxHoldMs: Number(snapshot.claimMaxHoldMs || 0)
     };
     const signature = JSON.stringify({
       mode: next.mode,
@@ -3880,6 +4178,11 @@
       claims: next.claims.map(claim => [Number(claim.index), String(claim.ownerDeviceId || ''), String(claim.fullName || claim.username || '')]).sort()
     });
     collaborationSnapshot = next;
+    if (ownCollaborationClaim() && activeVoucherId && document.visibilityState === 'visible') {
+      startCollaborationClaimKeepAlive();
+    } else {
+      stopCollaborationClaimKeepAlive();
+    }
     if (signature === collaborationVisualSignature) return;
     collaborationVisualSignature = signature;
     renderCollaborationBanner();
@@ -4413,6 +4716,113 @@
     }, 20000);
   }
   let appPopupResolver = null;
+
+
+
+  /* ===== FIX17.5.3: IN 1 TỜ / 2 TỜ TRÊN 1 MẶT A4 ===== */
+  let voucherPrintCleanupTimer = null;
+
+  function openPrintOptions() {
+    const modal = document.getElementById('printOptionsModal');
+    if (!modal) return;
+    modal.style.display = 'flex';
+    const first = modal.querySelector('.print-option-card');
+    if (first) setTimeout(() => first.focus(), 30);
+  }
+
+  function closePrintOptions() {
+    const modal = document.getElementById('printOptionsModal');
+    if (modal) modal.style.display = 'none';
+  }
+
+  function setDynamicPrintPageStyle(mode) {
+    let style = document.getElementById('voucherDynamicPrintPageStyle');
+    if (!style) {
+      style = document.createElement('style');
+      style.id = 'voucherDynamicPrintPageStyle';
+      document.head.appendChild(style);
+    }
+    style.textContent = mode === 'double'
+      ? '@page { size: A4 landscape; margin: 6mm; }'
+      : '@page { size: A4 portrait; margin: 10mm; }';
+  }
+
+  function makeVoucherPrintClone() {
+    const source = document.getElementById('view-detail');
+    if (!source) return null;
+    const clone = source.cloneNode(true);
+    clone.removeAttribute('id');
+    clone.classList.add('print-voucher-copy');
+
+    clone.querySelectorAll('.tab-header, #collabStatusBar, #batchSaveIndicator, button').forEach(el => el.remove());
+
+    const tabs = Array.from(clone.querySelectorAll('.tab-content'));
+    if (tabs.length) {
+      const active = tabs.find(el => el.classList.contains('active')) || tabs[0];
+      tabs.forEach(el => {
+        if (el !== active) el.remove();
+      });
+      active.classList.add('active');
+      active.style.display = 'block';
+    }
+    return clone;
+  }
+
+  function buildDoubleVoucherPrintStage() {
+    const stage = document.getElementById('voucherPrintStage');
+    if (!stage) return false;
+    stage.innerHTML = '';
+
+    for (let copyIndex = 0; copyIndex < 2; copyIndex++) {
+      const clone = makeVoucherPrintClone();
+      if (!clone) return false;
+      const half = document.createElement('div');
+      half.className = 'print-sheet-half';
+      const scale = document.createElement('div');
+      scale.className = 'print-copy-scale';
+      scale.appendChild(clone);
+      half.appendChild(scale);
+      stage.appendChild(half);
+    }
+    return true;
+  }
+
+  function cleanupVoucherPrintMode() {
+    if (voucherPrintCleanupTimer) {
+      clearTimeout(voucherPrintCleanupTimer);
+      voucherPrintCleanupTimer = null;
+    }
+    document.body.classList.remove('print-mode-single', 'print-mode-double');
+    const stage = document.getElementById('voucherPrintStage');
+    if (stage) stage.innerHTML = '';
+    const style = document.getElementById('voucherDynamicPrintPageStyle');
+    if (style) style.remove();
+  }
+
+  function printVoucherWithMode(mode) {
+    closePrintOptions();
+    cleanupVoucherPrintMode();
+
+    const normalized = mode === 'double' ? 'double' : 'single';
+    if (normalized === 'double' && !buildDoubleVoucherPrintStage()) {
+      showMsg('Không thể chuẩn bị nội dung in. Vui lòng mở lại phiếu rồi thử lại.', 'Không thể in', 'warning');
+      return;
+    }
+
+    document.body.classList.add(normalized === 'double' ? 'print-mode-double' : 'print-mode-single');
+    setDynamicPrintPageStyle(normalized);
+
+    // Đợi trình duyệt hoàn tất layout trước khi mở hộp thoại in, đặc biệt trên Android/PWA.
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => window.print());
+    });
+
+    // Fallback chỉ dọn trạng thái tạm sau thời gian dài nếu trình duyệt không phát sự kiện afterprint.
+    voucherPrintCleanupTimer = setTimeout(cleanupVoucherPrintMode, 120000);
+  }
+
+  window.addEventListener('afterprint', cleanupVoucherPrintMode);
+
 
   function openAppPopup(message, options = {}) {
     return new Promise(resolve => {
@@ -6920,6 +7330,7 @@
 
     if(syncInterval) clearInterval(syncInterval);
     syncInterval = null;
+    stopCollaborationClaimKeepAlive();
     currentVoucherVersion = 0;
     syncInFlight = false;
     mutationInFlight = false;
@@ -7184,6 +7595,7 @@
     if(syncInterval) clearInterval(syncInterval);
 
     if (viewName !== 'detail') {
+      stopCollaborationClaimKeepAlive();
       exitLowVisionDetailMode();
       cancelPendingDetailOpen();
       detailRefreshing = false;
@@ -7217,7 +7629,7 @@
 
     if(viewName === 'admin') loadAdminUsers();
 
-    if(viewName === 'upload') { prepareSingleWarehouseImportContext(Object.keys(parsedFileData || {}).length === 0); }
+    if(viewName === 'upload') { showSingleWarehouseImportContextLoading(); prepareSingleWarehouseImportContext(Object.keys(parsedFileData || {}).length === 0).catch(error => console.warn('Không chuẩn bị được Kho đang nạp:', error && error.message ? error.message : error)); }
 
     if(viewName === 'list') {
       if (skipNextListReload) {
@@ -7281,23 +7693,93 @@ async function loadFromLocalFolder() {
     return 'Khac';
   }
 
-  function getAllowedKhoKeysForCurrentUser() {
-    if (!currentUser) return null;
-    let khoText = String(currentUser.kho || '').trim();
-    if (currentUser.role === 'admin' || khoText === 'Tất cả') return null;
-    return khoText.split(',').map(s => mapKhoToKey(s.trim())).filter(k => k);
+  let singleWarehouseImportContextReady = false;
+  let singleWarehouseImportContextGeneration = 0;
+
+  function normalizeSingleWarehouseImportText(value) {
+    if (typeof normalizeCatalogSearchText === 'function') {
+      return normalizeCatalogSearchText(value);
+    }
+    return String(value || '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/đ/g, 'd')
+      .replace(/Đ/g, 'D')
+      .toLowerCase()
+      .replace(/\s+/g, ' ')
+      .trim();
   }
 
-function getSingleWarehouseImportOptions() {
-    const active = (warehouseCatalog.length
-      ? warehouseCatalog.filter(item => item.active !== false)
-      : Object.keys(KHO_CONFIG).map(key => ({ key, displayName: KHO_CONFIG[key], active: true }))
+  function getSingleWarehouseCatalogSnapshot() {
+    let source = [];
+    if (
+      typeof warehouseCatalog !== 'undefined' &&
+      Array.isArray(warehouseCatalog) &&
+      warehouseCatalog.length
+    ) {
+      source = warehouseCatalog.map(item => ({
+        key: String(item && item.key || '').trim(),
+        displayName: String(item && (item.displayName || item.key) || '').trim(),
+        active: item && item.active !== false,
+        aliases: Array.isArray(item && item.aliases) ? item.aliases.slice() : []
+      }));
+    } else {
+      source = Object.keys(KHO_CONFIG || {}).map(key => ({
+        key: String(key),
+        displayName: String(KHO_CONFIG[key] || key),
+        active: true,
+        aliases: []
+      }));
+    }
+    return source.filter(item => item.key && item.active !== false);
+  }
+
+  function resolveSingleWarehouseImportKey(value, catalogOverride = null) {
+    const raw = String(value || '').trim();
+    if (!raw) return '';
+
+    if (typeof resolveClientWarehouse === 'function') {
+      try {
+        const record = resolveClientWarehouse(raw, true);
+        if (record && record.active !== false && record.key) {
+          return String(record.key);
+        }
+      } catch (_) {}
+    }
+
+    const normalized = normalizeSingleWarehouseImportText(raw);
+    const catalog = Array.isArray(catalogOverride)
+      ? catalogOverride
+      : getSingleWarehouseCatalogSnapshot();
+    const matched = catalog.find(item =>
+      normalizeSingleWarehouseImportText(item.key) === normalized ||
+      normalizeSingleWarehouseImportText(item.displayName) === normalized ||
+      (item.aliases || []).some(alias => normalizeSingleWarehouseImportText(alias) === normalized)
     );
+    if (matched) return String(matched.key || '');
+
+    // Fallback tương thích v42 với 3 nhóm kho cố định cũ.
+    return mapKhoToKey(raw);
+  }
+
+  function getAllowedKhoKeysForCurrentUser() {
+    if (!currentUser) return [];
+    const options = getSingleWarehouseImportOptions();
+    return options.map(item => String(item.key || '')).filter(Boolean);
+  }
+
+  function getSingleWarehouseImportOptions() {
+    const active = getSingleWarehouseCatalogSnapshot();
     if (!currentUser) return [];
     const khoText = String(currentUser.kho || '').trim();
-    if (currentUser.role === 'admin' || khoText === 'Tất cả') return active;
+    if (currentUser.role === 'admin' || normalizeSingleWarehouseImportText(khoText) === normalizeSingleWarehouseImportText('Tất cả')) {
+      return active;
+    }
     const allowed = new Set(
-      khoText.split(',').map(x => mapKhoToKey(x.trim())).filter(Boolean)
+      khoText
+        .split(',')
+        .map(value => resolveSingleWarehouseImportKey(value, active))
+        .filter(Boolean)
     );
     return active.filter(item => allowed.has(String(item.key || '')));
   }
@@ -7313,10 +7795,39 @@ function getSingleWarehouseImportOptions() {
     return String(select.options[select.selectedIndex].text || '').trim();
   }
 
+  function showSingleWarehouseImportContextLoading() {
+    const context = document.getElementById('singleWarehouseImportContext');
+    const select = document.getElementById('uploadWarehouseSelect');
+    const hint = document.getElementById('uploadWarehouseHint');
+    if (!context || !select) return;
+
+    const khoText = String(currentUser && currentUser.kho || '').trim();
+    const likelyMultiple = Boolean(
+      currentUser &&
+      (currentUser.role === 'admin' ||
+       normalizeSingleWarehouseImportText(khoText) === normalizeSingleWarehouseImportText('Tất cả') ||
+       khoText.split(',').map(x => x.trim()).filter(Boolean).length > 1)
+    );
+
+    if (!likelyMultiple) {
+      context.style.display = 'none';
+      return;
+    }
+
+    context.style.display = 'block';
+    select.innerHTML = '<option value="">Đang tải danh sách kho...</option>';
+    select.disabled = true;
+    if (hint) hint.textContent = 'Đang tải phân quyền kho. Bạn chưa cần chọn file cho tới khi danh sách kho sẵn sàng.';
+  }
+
   function setSingleWarehouseImportLocked(locked) {
     const select = document.getElementById('uploadWarehouseSelect');
+    const context = document.getElementById('singleWarehouseImportContext');
     if (!select) return;
     const options = getSingleWarehouseImportOptions();
+    if (context) {
+      context.style.display = options.length === 1 ? 'none' : 'block';
+    }
     select.disabled = Boolean(locked) || options.length <= 1;
     select.title = locked
       ? 'Hủy danh sách nạp hiện tại trước khi đổi kho.'
@@ -7324,17 +7835,42 @@ function getSingleWarehouseImportOptions() {
   }
 
   async function prepareSingleWarehouseImportContext(resetForNewBatch = false) {
+    const generation = ++singleWarehouseImportContextGeneration;
+    showSingleWarehouseImportContextLoading();
+
     try {
-      await loadAppCatalogs();
+      if (typeof loadAppCatalogs === 'function') {
+        await loadAppCatalogs();
+      }
     } catch (error) {
-      console.warn('Không tải được danh mục kho cho màn hình nạp:', error);
+      console.warn('Không tải được danh mục kho cho màn hình nạp:', error && error.message ? error.message : error);
     }
+
+    if (generation !== singleWarehouseImportContextGeneration) return;
+
     const select = document.getElementById('uploadWarehouseSelect');
-    if (!select) return;
+    const context = document.getElementById('singleWarehouseImportContext');
+    const hint = document.getElementById('uploadWarehouseHint');
+    if (!select || !context) return;
+
     const options = getSingleWarehouseImportOptions();
     const hasParsedData = Object.keys(parsedFileData || {}).length > 0;
     const oldValue = String(select.value || '');
     select.innerHTML = '';
+
+    if (!options.length) {
+      select.innerHTML = '<option value="">Không có kho được phép nạp</option>';
+      select.disabled = true;
+      context.style.display = 'block';
+      if (hint) {
+        hint.textContent = 'Tài khoản này chưa có kho được phép nạp phiếu. Vui lòng kiểm tra phân quyền tài khoản.';
+        hint.style.color = '#c62828';
+        hint.style.fontWeight = '800';
+      }
+      singleWarehouseImportContextReady = true;
+      return;
+    }
+
     if (options.length > 1) {
       select.innerHTML += '<option value="">-- Chọn kho cho lần nạp này --</option>';
     }
@@ -7354,19 +7890,51 @@ function getSingleWarehouseImportOptions() {
     } else {
       select.value = '';
     }
+
+    context.style.display = options.length > 1 ? 'block' : 'none';
+    if (hint) {
+      hint.style.color = '#455a64';
+      hint.style.fontWeight = '';
+      if (options.length > 1) {
+        hint.textContent = select.value
+          ? ('Đang nạp ' + getSelectedSingleWarehouseImportLabel() + '. File có thể chứa dữ liệu nhiều kho; hệ thống chỉ lấy đúng kho này và nhóm phiếu theo từng khoa.')
+          : 'Chọn kho trước khi đọc Excel. Nếu file có dữ liệu nhiều kho, hệ thống chỉ lấy đúng kho đang nạp và tự bỏ qua các kho còn lại.';
+      }
+    }
+
     setSingleWarehouseImportLocked(hasParsedData);
+    singleWarehouseImportContextReady = true;
   }
 
   function handleSingleWarehouseImportChange() {
     const hasParsedData = Object.keys(parsedFileData || {}).length > 0;
-    if (hasParsedData) setSingleWarehouseImportLocked(true);
+    if (hasParsedData) {
+      setSingleWarehouseImportLocked(true);
+      return;
+    }
+    const hint = document.getElementById('uploadWarehouseHint');
+    const key = getSelectedSingleWarehouseImportKey();
+    if (hint) {
+      hint.textContent = key
+        ? ('Đã chọn ' + getSelectedSingleWarehouseImportLabel() + '. File có thể chứa nhiều kho; chỉ dữ liệu của kho này được lấy.')
+        : 'Chọn kho trước khi đọc Excel. Nếu file có dữ liệu nhiều kho, hệ thống chỉ lấy đúng kho đang nạp.';
+    }
   }
 
   async function requireSingleWarehouseImportSelection() {
-    if (!warehouseCatalog.length) {
-      try { await loadAppCatalogs(); } catch (_) {}
+    if (!singleWarehouseImportContextReady) {
       await prepareSingleWarehouseImportContext(false);
     }
+    const options = getSingleWarehouseImportOptions();
+    if (!options.length) {
+      await showMsg(
+        'Tài khoản này chưa được phân quyền kho để nạp phiếu. Vui lòng liên hệ Admin kiểm tra lại phân quyền.',
+        'Chưa có quyền nạp kho',
+        'warning'
+      );
+      return '';
+    }
+
     const key = getSelectedSingleWarehouseImportKey();
     if (key) return key;
     await showMsg(
@@ -7894,17 +8462,24 @@ async function parseImportFile(
     const skippedOtherWarehouseRows = parsedUnits
       .filter(Boolean)
       .reduce((sum, unit) => sum + Number(unit && unit.stats && unit.stats.skippedOtherWarehouseRows || 0), 0);
+    const acceptedWarehouseRows = parsedUnits
+      .filter(Boolean)
+      .reduce((sum, unit) => sum + Number(unit && unit.stats && unit.stats.acceptedRows || 0), 0);
     const warehouseHint = document.getElementById('uploadWarehouseHint');
     if (warehouseHint) {
-      warehouseHint.textContent = skippedOtherWarehouseRows > 0
-        ? ('Đang nạp ' + getSelectedSingleWarehouseImportLabel() + '. Hệ thống chỉ lấy kho này và đã tự bỏ qua ' + skippedOtherWarehouseRows + ' dòng thuộc kho khác trong file.')
-        : ('Đang nạp ' + getSelectedSingleWarehouseImportLabel() + '. File có thể chứa một khoa hoặc nhiều khoa; hệ thống sẽ tạo phiếu độc lập theo từng khoa.');
+      const selectedWarehouseLabel = getSelectedSingleWarehouseImportLabel();
+      warehouseHint.textContent =
+        'Đã lấy ' + acceptedWarehouseRows + ' dòng thuộc ' + selectedWarehouseLabel + '.' +
+        (skippedOtherWarehouseRows > 0
+          ? ' Đã tự bỏ qua ' + skippedOtherWarehouseRows + ' dòng thuộc kho khác trong file.'
+          : ' Không có dòng kho khác cần bỏ qua.') +
+        ' Dữ liệu được nhóm thành phiếu độc lập theo từng khoa.';
     }
     const validUnits=parsedUnits.filter(unit=>unit && unit.data && Object.keys(unit.data).length);
     if (!validUnits.length) {
       showLoading(false);
       setSingleWarehouseImportLocked(false);
-      await showMsg('Không tìm thấy dữ liệu thuộc kho “' + getSelectedSingleWarehouseImportLabel() + '” trong file đã chọn. Hãy kiểm tra lại kho và file Excel.', 'Không có dữ liệu đúng kho', 'warning');
+      await showMsg('Không tìm thấy dữ liệu thuộc kho “' + getSelectedSingleWarehouseImportLabel() + '” trong file đã chọn.' + (skippedOtherWarehouseRows > 0 ? ' Hệ thống đã bỏ qua ' + skippedOtherWarehouseRows + ' dòng thuộc kho khác.' : '') + ' Hãy kiểm tra lại kho và file Excel.', 'Không có dữ liệu đúng kho', 'warning');
       return;
     }
     setSingleWarehouseImportLocked(true);
@@ -8017,7 +8592,7 @@ function parseRows(
       let r = rows[i]; if(!r || r.length === 0) continue;
       let khoa = String(r[h.khoa]||"").trim();
       let khoName = String(r[h.kho]||"").trim();
-      let khoKey = mapKhoToKey(khoName);
+      let khoKey = resolveSingleWarehouseImportKey(khoName);
       if (khoKey) seen.add(khoKey);
       if (allowedKhoKeys && !allowedKhoKeys.includes(khoKey)) {
         if (stats && khoa && khoName) stats.skippedOtherWarehouseRows++;
