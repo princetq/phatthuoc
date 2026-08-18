@@ -1595,17 +1595,23 @@
       position: absolute !important;
       left: -100000px !important;
       top: 0 !important;
-      width: 190mm !important;
+      width: 133mm !important;
       visibility: hidden !important;
       pointer-events: none !important;
       z-index: -1 !important;
       background: #fff !important;
+      contain: layout style !important;
     }
+    /*
+     * Trang logic 2-up được dựng TRỰC TIẾP ở kích thước cuối cùng của nửa A4 ngang.
+     * Không dùng CSS transform scale: một số Chrome/Android/driver máy in clip theo
+     * kích thước chưa transform, làm mất các dòng cuối trang.
+     */
     .print-logical-page {
-      width: 190mm !important;
-      height: 280mm !important;
-      max-width: 190mm !important;
-      min-width: 190mm !important;
+      width: 133mm !important;
+      height: 195.5mm !important;
+      max-width: 133mm !important;
+      min-width: 133mm !important;
       box-sizing: border-box !important;
       overflow: hidden !important;
       margin: 0 !important;
@@ -1613,16 +1619,19 @@
       position: relative !important;
       background: #fff !important;
       color: #000 !important;
+      font-family: Arial, Helvetica, sans-serif !important;
     }
     .print-logical-page .dist-header {
       position: static !important;
       background: #fff !important;
       color: #000 !important;
-      padding: 0 0 2mm !important;
-      margin: 0 0 2mm !important;
-      border-bottom: 2px solid #000 !important;
+      padding: 0 0 .7mm !important;
+      margin: 0 0 .7mm !important;
+      border-bottom: 1px solid #000 !important;
       box-shadow: none !important;
       border-radius: 0 !important;
+      font-size: 9.5px !important;
+      line-height: 1.14 !important;
     }
     .print-logical-page .dist-header button,
     .print-logical-page .tab-header,
@@ -1644,59 +1653,52 @@
     .print-logical-page table {
       width: 100% !important;
       table-layout: fixed !important;
-      font-size: 14px !important;
-      line-height: 1.16 !important;
+      border-collapse: collapse !important;
+      font-size: 10px !important;
+      line-height: 1.14 !important;
+      margin: 0 !important;
     }
-    /*
-     * 2-up ưu tiên mật độ thông tin: giảm khoảng đệm thay vì thu chữ quá nhỏ.
-     * Các rule này cũng vô hiệu ảnh hưởng của chế độ hỗ trợ mắt kém trong DOM đo trang.
-     */
     .print-logical-page th,
     .print-logical-page td {
-      padding: 4px 5px !important;
-      line-height: 1.16 !important;
+      padding: 2.7px 3.4px !important;
+      line-height: 1.14 !important;
       vertical-align: middle !important;
-      font-size: 14px !important;
+      font-size: 10px !important;
+      box-sizing: border-box !important;
     }
     .print-logical-page th {
       position: static !important;
-      font-size: 13px !important;
+      font-size: 9.3px !important;
     }
     .print-logical-page .ten-thuoc-main,
     body.low-vision-detail-active .print-logical-page .ten-thuoc-main {
-      font-size: 14px !important;
-      line-height: 1.16 !important;
+      font-size: 10px !important;
+      line-height: 1.14 !important;
     }
     .print-logical-page .v-num-mobile,
     body.low-vision-detail-active .print-logical-page .v-num-mobile {
-      font-size: 13px !important;
-      line-height: 1.16 !important;
+      font-size: 9.3px !important;
+      line-height: 1.14 !important;
     }
     .print-logical-page .voucher-header {
-      padding: 5px 7px !important;
-      margin: 0 0 4px !important;
-      border-radius: 3px !important;
-      font-size: 13px !important;
-      line-height: 1.18 !important;
+      padding: 3px 4.5px !important;
+      margin: 0 0 3px !important;
+      border-radius: 2px !important;
+      font-size: 9.4px !important;
+      line-height: 1.14 !important;
     }
     .print-logical-page .voucher-header > div {
-      margin-bottom: 2px !important;
+      margin-bottom: 1px !important;
     }
     .print-logical-page .print-category-fragment {
-      margin: 0 0 4px !important;
+      margin: 0 0 3px !important;
       border-width: 1px !important;
-      border-radius: 3px !important;
+      border-radius: 2px !important;
     }
     .print-logical-page .print-category-fragment > div:first-child {
-      padding: 3px 5px !important;
-      font-size: 13px !important;
-      line-height: 1.1 !important;
-    }
-    .print-logical-page .dist-header {
-      padding-bottom: 1mm !important;
-      margin-bottom: 1mm !important;
-      font-size: 13px !important;
-      line-height: 1.15 !important;
+      padding: 2px 3.5px !important;
+      font-size: 9.4px !important;
+      line-height: 1.08 !important;
     }
     .print-logical-page tr.distributed td,
     .print-logical-page tr.negative-row td {
@@ -1830,24 +1832,25 @@
         overflow: hidden;
         position: relative;
         background: #fff !important;
+        padding: 1mm 4.5mm 1.5mm 4.5mm;
       }
       body.print-mode-double .print-sheet-half + .print-sheet-half {
         border-left: .25mm dashed #999;
       }
       body.print-mode-double .print-copy-scale {
-        position: absolute;
-        left: 4.5mm;
-        top: 1mm;
-        width: 190mm;
-        height: 280mm;
-        transform: scale(.70);
-        transform-origin: top left;
+        position: static !important;
+        width: 133mm !important;
+        height: 195.5mm !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        transform: none !important;
+        overflow: hidden !important;
       }
       body.print-mode-double .print-logical-page {
-        width: 190mm !important;
-        height: 280mm !important;
-        max-width: 190mm !important;
-        min-width: 190mm !important;
+        width: 133mm !important;
+        height: 195.5mm !important;
+        max-width: 133mm !important;
+        min-width: 133mm !important;
         overflow: hidden !important;
       }
     }
@@ -3010,7 +3013,7 @@
 
 <script>
   /* ===== GITHUB PAGES ↔ APPS SCRIPT BRIDGE V2 ===== */
-  window.PHATTHUOC_REALTIME_OPT = 'FIX17_6_5_COMPACT_2UP_PRINT_SINGLE';
+  window.PHATTHUOC_REALTIME_OPT = 'FIX17_6_7_PRINT_SAFE_2UP_SINGLE';
   const GAS_BRIDGE_URL = 'https://script.google.com/macros/s/AKfycbzhDWWBV13NuxpVfYqaOe3BIzuAQYGE8obpn6Yr76qW4wa7v7bfk5WJU-IAxWaHiJiYJA/exec';
   let gasBridgeReady = false;
   let gasBridgeWindow = null;
@@ -4510,7 +4513,11 @@
 
   function logicalPrintPageFits(page) {
     if (!page) return true;
-    return page.scrollHeight <= page.clientHeight + 2;
+    const body = page.querySelector('.print-logical-body');
+    const pageRect = page.getBoundingClientRect();
+    const bodyRect = body ? body.getBoundingClientRect() : pageRect;
+    /* 1px dự phòng chống sai số làm tròn px/mm giữa Chrome, Android và driver in. */
+    return page.scrollHeight <= page.clientHeight + 1 && bodyRect.bottom <= pageRect.bottom + 1;
   }
 
   function createLogicalPrintPage(measureRoot, pages, headerTemplate, includeHeader) {
@@ -4568,6 +4575,7 @@
 
     const headerTemplate = prepared.querySelector('.dist-header');
     const activeContent = prepared.querySelector('.tab-content.active') || prepared.querySelector('.tab-content');
+    const sourceBodyRowCount = activeContent ? activeContent.querySelectorAll('tbody tr').length : 0;
     const pages = [];
     let current = createLogicalPrintPage(measureRoot, pages, headerTemplate, true);
 
@@ -4641,7 +4649,7 @@
       else moveSimpleBlock(block);
     });
 
-    return { pages, measureRoot };
+    return { pages, measureRoot, sourceBodyRowCount };
   }
 
   function buildDoubleVoucherPrintStage() {
@@ -4680,8 +4688,28 @@
       stage.appendChild(physicalSheet);
     }
 
+    /*
+     * Kiểm tra toàn vẹn trước khi in: không được mất một tbody row nào và không trang
+     * nào được overflow. Nếu có sai lệch layout trên thiết bị lạ, dừng in thay vì
+     * âm thầm cắt mất thuốc.
+     */
+    const stagedRows = stage.querySelectorAll('.print-logical-page tbody tr').length;
+    const overflowPage = Array.from(stage.querySelectorAll('.print-logical-page'))
+      .find(page => page.scrollHeight > page.clientHeight + 1);
+    const rowCountOk = !built.sourceBodyRowCount || stagedRows === built.sourceBodyRowCount;
+
     /* Các trang logic đã được chuyển vào stage; chỉ bỏ vỏ đo ngoài màn hình. */
     built.measureRoot.remove();
+
+    if (!rowCountOk || overflowPage) {
+      console.error('[PRINT_2UP_INTEGRITY]', {
+        sourceRows: built.sourceBodyRowCount,
+        stagedRows,
+        overflowPage: overflowPage?.getAttribute('data-logical-page') || null
+      });
+      stage.innerHTML = '';
+      return false;
+    }
     return true;
   }
 
@@ -4699,13 +4727,19 @@
     if (style) style.remove();
   }
 
-  function printVoucherWithMode(mode) {
+  async function printVoucherWithMode(mode) {
     closePrintOptions();
     cleanupVoucherPrintMode();
 
     const normalized = mode === 'double' ? 'double' : 'single';
+
+    /* Font tải muộn là một nguồn làm chiều cao dòng thay đổi giữa lúc đo và lúc in. */
+    try {
+      if (document.fonts && document.fonts.ready) await document.fonts.ready;
+    } catch (_) {}
+
     if (normalized === 'double' && !buildDoubleVoucherPrintStage()) {
-      showMsg('Không thể chia nội dung thành các trang in. Vui lòng mở lại phiếu rồi thử lại.', 'Không thể in', 'warning');
+      showMsg('Bố cục in trên thiết bị này vừa thay đổi nên hệ thống đã dừng để tránh mất dòng thuốc. Vui lòng bấm In lại.', 'Bảo vệ dữ liệu in', 'warning');
       return;
     }
 
@@ -7667,6 +7701,7 @@ async function loadFromLocalFolder() {
       ? catalogOverride
       : getSingleWarehouseCatalogSnapshot();
 
+    // 1) Ưu tiên khớp tuyệt đối mã kho / tên hiển thị / alias.
     const found = catalog.find(item => {
       if (!item) return false;
       if (normalizeSingleWarehouseImportText(item.key) === normalized) return true;
@@ -7675,14 +7710,40 @@ async function loadFromLocalFolder() {
         normalizeSingleWarehouseImportText(alias) === normalized
       );
     });
-
     if (found && found.key) return String(found.key);
+
+    // 2) File xuất từ phần mềm nguồn thường thêm tiền tố/hậu tố vào tên kho.
+    // Khớp theo tên/alias đủ dài, chọn ứng viên cụ thể nhất để không gán nhầm.
+    const fuzzyMatches = [];
+    (catalog || []).forEach(item => {
+      if (!item || !item.key) return;
+      const labels = [item.key, item.displayName].concat(item.aliases || []);
+      let best = 0;
+      labels.forEach(label => {
+        const labelNormalized = normalizeSingleWarehouseImportText(label);
+        if (!labelNormalized || labelNormalized.length < 4) return;
+        if (normalized.includes(labelNormalized) || labelNormalized.includes(normalized)) {
+          best = Math.max(best, labelNormalized.length);
+        }
+      });
+      if (best > 0) fuzzyMatches.push({ key: String(item.key), score: best });
+    });
+    fuzzyMatches.sort((a, b) => b.score - a.score || String(a.key).localeCompare(String(b.key)));
+    if (fuzzyMatches.length && (!fuzzyMatches[1] || fuzzyMatches[0].score > fuzzyMatches[1].score)) {
+      return fuzzyMatches[0].key;
+    }
+
+    // 3) Tương thích cách nhận diện kho đã dùng ổn định từ FIX17.1.
+    // Dùng chuỗi đã bỏ dấu để nhận cả tên có/không dấu và các hậu tố trong Excel.
+    if (normalized.includes('dich truyen')) return 'Dich_Truyen';
+    if (normalized.includes('vat tu') || normalized.includes('hoa chat')) return 'Vat_Tu';
+    if (normalized.includes('tiem') || normalized.includes('vien')) return 'Tiem_Vien';
+    if (normalized.includes('khac')) return 'Khac';
 
     const staticKey = Object.keys(KHO_CONFIG || {}).find(key =>
       normalizeSingleWarehouseImportText(key) === normalized ||
       normalizeSingleWarehouseImportText(KHO_CONFIG[key]) === normalized
     );
-
     return staticKey || '';
   }
 
@@ -8317,7 +8378,7 @@ async function parseImportFile(
       { header: 1, defval: '' }
     );
     const localData = {};
-    const stats = { acceptedRows: 0, skippedOtherWarehouseRows: 0, warehouseKeysSeen: [] };
+    const stats = { acceptedRows: 0, skippedOtherWarehouseRows: 0, unknownWarehouseRows: 0, unknownWarehouseSamples: [], warehouseKeysSeen: [] };
     parseRows(rows, allowedKhoKeys, localData, stats);
     return {
       fileName: file && file.name ? file.name : '',
@@ -8438,6 +8499,17 @@ async function parseImportFile(
     const acceptedWarehouseRows = parsedUnits
       .filter(Boolean)
       .reduce((sum, unit) => sum + Number(unit && unit.stats && unit.stats.acceptedRows || 0), 0);
+    const unknownWarehouseRows = parsedUnits
+      .filter(Boolean)
+      .reduce((sum, unit) => sum + Number(unit && unit.stats && unit.stats.unknownWarehouseRows || 0), 0);
+    const unknownWarehouseSamples = Array.from(new Set(parsedUnits
+      .filter(Boolean)
+      .reduce((acc, unit) => acc.concat(
+        unit && unit.stats && Array.isArray(unit.stats.unknownWarehouseSamples)
+          ? unit.stats.unknownWarehouseSamples
+          : []
+      ), [])
+    )).slice(0, 5);
     const warehouseHint = document.getElementById('uploadWarehouseHint');
     if (warehouseHint) {
       const selectedWarehouseLabel = getSelectedSingleWarehouseImportLabel();
@@ -8446,13 +8518,16 @@ async function parseImportFile(
         (skippedOtherWarehouseRows > 0
           ? ' Đã tự bỏ qua ' + skippedOtherWarehouseRows + ' dòng thuộc kho khác trong file.'
           : ' Không có dòng kho khác cần bỏ qua.') +
+        (unknownWarehouseRows > 0
+          ? ' Có ' + unknownWarehouseRows + ' dòng chưa nhận diện được tên kho' + (unknownWarehouseSamples.length ? ' (' + unknownWarehouseSamples.join(', ') + ')' : '') + '.'
+          : '') +
         ' Dữ liệu được nhóm thành phiếu độc lập theo từng khoa.';
     }
     const validUnits=parsedUnits.filter(unit=>unit && unit.data && Object.keys(unit.data).length);
     if (!validUnits.length) {
       showLoading(false);
       setSingleWarehouseImportLocked(false);
-      await showMsg('Không tìm thấy dữ liệu thuộc kho “' + getSelectedSingleWarehouseImportLabel() + '” trong file đã chọn.' + (skippedOtherWarehouseRows > 0 ? ' Hệ thống đã bỏ qua ' + skippedOtherWarehouseRows + ' dòng thuộc kho khác.' : '') + ' Hãy kiểm tra lại kho và file Excel.', 'Không có dữ liệu đúng kho', 'warning');
+      await showMsg('Không tìm thấy dữ liệu thuộc kho “' + getSelectedSingleWarehouseImportLabel() + '” trong file đã chọn.' + (skippedOtherWarehouseRows > 0 ? ' Hệ thống đã bỏ qua ' + skippedOtherWarehouseRows + ' dòng thuộc kho khác.' : '') + (unknownWarehouseRows > 0 ? ' Có ' + unknownWarehouseRows + ' dòng chưa nhận diện được tên kho' + (unknownWarehouseSamples.length ? ': ' + unknownWarehouseSamples.join(', ') : '') + '.' : '') + ' Hãy kiểm tra lại kho và file Excel.', 'Không có dữ liệu đúng kho', 'warning');
       return;
     }
     setSingleWarehouseImportLocked(true);
@@ -8567,6 +8642,15 @@ function parseRows(
       let khoName = String(r[h.kho]||"").trim();
       let khoKey = resolveSingleWarehouseImportKey(khoName);
       if (khoKey) seen.add(khoKey);
+      if (!khoKey) {
+        if (stats && khoa && khoName) {
+          stats.unknownWarehouseRows++;
+          if (stats.unknownWarehouseSamples.length < 5 && !stats.unknownWarehouseSamples.includes(khoName)) {
+            stats.unknownWarehouseSamples.push(khoName);
+          }
+        }
+        continue;
+      }
       if (allowedKhoKeys && !allowedKhoKeys.includes(khoKey)) {
         if (stats && khoa && khoName) stats.skippedOtherWarehouseRows++;
         continue;
