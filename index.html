@@ -18,8 +18,6 @@
   <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
   <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
   <title>Phát thuốc thông minh</title>
-  <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
-  <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
   <link rel="preload" as="image" href="https://drive.google.com/thumbnail?id=1ZyertvO-WsXU5FYCcuqUHizfRUCSnRIb&sz=w512-h512">
   <style>
     :root {
@@ -977,9 +975,7 @@
     .list-toolbar-controls .s-icon svg { width:21px; height:21px; }
     .list-toolbar-controls .search-container.active-search .s-icon.clear-icon.show { width:36px; }
     .list-toolbar-controls .status-filter-button { padding:7px 11px !important; }
-
-    /* FIX11: bộ chọn ngày trong Lịch sử */
-    .history-date-select {
+.history-date-select {
       width: 148px !important;
       max-width: 148px;
       min-width: 148px;
@@ -1014,9 +1010,7 @@
       box-shadow: 0 3px 10px rgba(143, 36, 64, .12);
       outline: none;
     }
-
-    /* FIX11: bốn nút Làm mới/Xóa đã chọn ở Danh sách và Lịch sử dùng đúng cùng kích thước */
-    .toolbar-standard-action {
+.toolbar-standard-action {
       height:36px !important;
       min-height:36px !important;
       padding:7px 11px !important;
@@ -2121,8 +2115,7 @@
         min-width:36px;
         flex:0 0 36px;
       }
-      /* FIX15: trên mobile canh nhóm nút ở Lịch sử sang bên phải */
-      #view-history > div:first-child {
+#view-history > div:first-child {
         align-items:flex-start !important;
       }
       #view-history > div:first-child > div:last-child {
@@ -2138,6 +2131,27 @@
       #view-history > div:first-child > div:last-child > #btnBulkDeleteHistory {
         flex:0 0 auto;
         margin:0 !important;
+      }
+      /* Lịch sử Admin trên mobile: bộ lọc ngày luôn ở một hàng riêng, dễ thấy và dễ chạm. */
+      #view-history #filterHistoryDate {
+        order:-2;
+        display:block !important;
+        visibility:visible !important;
+        opacity:1 !important;
+        flex:1 0 100%;
+        width:100% !important;
+        min-width:100% !important;
+        max-width:100% !important;
+        height:44px !important;
+        min-height:44px !important;
+        margin:0 0 2px !important;
+        padding:8px 34px 8px 14px !important;
+        font-size:15px !important;
+        border-radius:12px !important;
+        text-align:left;
+        text-align-last:left;
+        background-position:right 14px center;
+        box-sizing:border-box;
       }
       #view-list #filterKhoa {
         width:86px !important;
@@ -2160,10 +2174,7 @@
       .search-container.active-search { flex-grow: 1; max-width: none; }
       .search-container.active-search + select { display: none !important; }
     }
-  
-
-    /* ===== FIX6: CHỐT PHÁT NỀN KHÔNG CHẶN NGƯỜI DÙNG ===== */
-    .background-finish-panel {
+.background-finish-panel {
       display: none;
       margin: -4px 0 16px;
       padding: 12px 14px;
@@ -2235,12 +2246,7 @@
         flex-direction: column;
       }
     }
-    /* ===== END FIX6 ===== */
-
-
-
-  /* ===== FIX11: TÌM KIẾM TÀI KHOẢN RÕ HƠN + LỌC KHO CHO ADMIN ===== */
-  .admin-user-searchbar {
+.admin-user-searchbar {
     display: grid;
     grid-template-columns: minmax(260px, 1fr) auto auto;
     gap: 10px;
@@ -2303,9 +2309,7 @@
     font-weight: 900;
     color: #37474f;
   }
-
-  /* FIX15: bỏ mũi tên ở nút chọn kho, thu gọn kích thước cho cân đối */
-  .warehouse-select-wrap {
+.warehouse-select-wrap {
     position: relative;
     display: inline-flex;
     align-items: center;
@@ -2401,9 +2405,7 @@
       max-width: 150px !important;
     }
   }
-  /* ===== END FIX11 ===== */
-
-  .history-admin-notice {
+.history-admin-notice {
     margin-top: 10px;
     padding: 9px 11px;
     border-radius: 8px;
@@ -2572,7 +2574,7 @@
       <div id="deptListContainer"></div>
       <div style="display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap;">
         <button class="btn-danger" style="flex: 1; min-width: 150px; font-size: 18px; padding:15px;" onclick="clearAllUploads()">🗑️ HỦY TOÀN BỘ</button>
-        <button class="btn-success" style="flex: 2; min-width: 200px; font-size: 18px; padding:15px;" onclick="pushToWaitList()">🚀 ĐƯA VÀO DANH SÁCH</button>
+        <button id="btnCommitUploads" class="btn-success" style="flex: 2; min-width: 200px; font-size: 18px; padding:15px;" onclick="pushToWaitList()">🚀 ĐƯA VÀO DANH SÁCH</button>
       </div>
     </div>
   </div>
@@ -3013,7 +3015,7 @@
 
 <script>
   /* ===== GITHUB PAGES ↔ APPS SCRIPT BRIDGE V2 ===== */
-  window.PHATTHUOC_REALTIME_OPT = 'FIX17_6_9_REAL_EXPORT_WAREHOUSE_FIX_SINGLE';
+  window.PHATTHUOC_REALTIME_OPT = 'FIX17_9_1_MOBILE_HISTORY_DATE_SINGLE';
   const GAS_BRIDGE_URL = 'https://script.google.com/macros/s/AKfycbzhDWWBV13NuxpVfYqaOe3BIzuAQYGE8obpn6Yr76qW4wa7v7bfk5WJU-IAxWaHiJiYJA/exec';
   let gasBridgeReady = false;
   let gasBridgeWindow = null;
@@ -3575,10 +3577,7 @@
       '--voucher-accent-shadow:' + hexToRgba(firstAccent, 0.18)
     ].join('; ');
   }
-
-
-  /* ===== FIX11: BỘ LỌC KHO RIÊNG CHO ADMIN ===== */
-  function getVoucherWarehouseKeysForFilter(voucher) {
+function getVoucherWarehouseKeysForFilter(voucher) {
     const rawKeys = String(
       voucher && voucher.warehouseKeys
         ? voucher.warehouseKeys
@@ -3630,9 +3629,7 @@
       voucher
     ).includes(warehouseKey);
   }
-
-  /* FIX15: co chiều rộng nút theo đúng lựa chọn hiện tại */
-  function resizeAdminWarehouseSelect(select) {
+function resizeAdminWarehouseSelect(select) {
     if (!select) return;
 
     const selectedOption =
@@ -3818,10 +3815,7 @@
       }
     });
   }
-  /* ===== END FIX11 ADMIN WAREHOUSE FILTER ===== */
-
-
-  let currentUser = null;
+let currentUser = null;
   let parsedFileData = {};
   let singleWarehouseImportContextReady = false;
   let singleWarehouseImportContextGeneration = 0;
@@ -3858,9 +3852,14 @@
   let waitListReloadQueued = false;
   let readyNotificationDispatchRunning = false;
   const DETAIL_SYNC_TIMEOUT_MS = 7000;
-  const DETAIL_SHEET_FALLBACK_MS = 4500;
+  const DETAIL_SHEET_FALLBACK_MS = 8000;
+  const DETAIL_SHEET_FALLBACK_JITTER_MS = 1400;
   const LIST_AUTO_REFRESH_MS = 5000;
   const READY_NOTIFICATION_QUEUE_PREFIX = 'phatthuoc_ready_notification_queue_v1_';
+  let detailRealtimeLastActivityAt = Date.now();
+  let detailRealtimeLastChangeAt = Date.now();
+  let detailSheetFallbackJitterMs = Math.floor(Math.random() * DETAIL_SHEET_FALLBACK_JITTER_MS);
+  let trackingListRenderSignature = '';
 
   function recoverGasBridgeForRealtime() {
     if (mutationInFlight || detailActionInFlight || distributionBatchRunning) return;
@@ -3882,11 +3881,17 @@
   function requestImmediateDetailSync(delayMs = 0) {
     if (!activeVoucherId || document.visibilityState === 'hidden') return;
     if (detailSyncWakeTimer) clearTimeout(detailSyncWakeTimer);
-    detailSyncWakeTimer = setTimeout(() => {
+    detailSyncWakeTimer = setTimeout(async () => {
       detailSyncWakeTimer = null;
-      const voucher = cloudWaitList[activeVoucherId];
+      const voucherId = String(activeVoucherId || '');
+      const voucher = cloudWaitList[voucherId];
       const isViewer = currentUser && currentUser.role === 'xem';
-      if (voucher) syncDetail(activeVoucherId, isViewer, true);
+      if (voucher) {
+        await syncDetail(voucherId, isViewer, true);
+        if (!syncInterval && voucherId === activeVoucherId && document.visibilityState !== 'hidden') {
+          scheduleNextDetailSync(voucherId, isViewer, nextAdaptiveDetailSyncMs());
+        }
+      }
     }, Math.max(0, Number(delayMs || 0)));
   }
 
@@ -4008,23 +4013,22 @@
       if (document.visibilityState === 'visible') wake();
     });
     // Android/PWA đôi khi trì hoãn timer; tương tác đầu tiên đánh thức đồng bộ ngay.
-    document.addEventListener('pointerdown', () => requestImmediateDetailSync(0), { passive: true });
-    document.addEventListener('touchstart', () => requestImmediateDetailSync(0), { passive: true });
+    document.addEventListener('pointerdown', () => {
+      detailRealtimeLastActivityAt = Date.now();
+      requestImmediateDetailSync(0);
+    }, { passive: true });
+    document.addEventListener('touchstart', () => {
+      detailRealtimeLastActivityAt = Date.now();
+      requestImmediateDetailSync(0);
+    }, { passive: true });
   }
   /* ===== END REALTIME V1 ===== */
-
-
-
-  /* ===== FIX6: HÀNG ĐỢI CHỐT PHÁT NỀN BỀN VỮNG ===== */
-  const BACKGROUND_FINISH_STORAGE_PREFIX =
+const BACKGROUND_FINISH_STORAGE_PREFIX =
     'phatthuoc_background_finish_v1_';
 
   let backgroundFinishWorkerRunning = false;
   let backgroundFinishWakeTimer = null;
-  /* ===== END FIX6 STATE ===== */
-
-
-  /* ===== CHẾ ĐỘ HỖ TRỢ MẮT TRÊN ĐIỆN THOẠI ===== */
+/* ===== CHẾ ĐỘ HỖ TRỢ MẮT TRÊN ĐIỆN THOẠI ===== */
   const LOW_VISION_STORAGE_PREFIX =
     'phatthuoc_low_vision_v1_';
 
@@ -4323,7 +4327,7 @@
 
 
   /* ===== PHÁT NHANH / LƯU NỀN THEO LÔ ===== */
-  const ITEM_BATCH_MAX_ACTIONS = 25;
+  const ITEM_BATCH_MAX_ACTIONS = 40;
   const DISTRIBUTION_BATCH_DELAY_MS = 180;
   const DISTRIBUTION_RETRY_MAX_MS = 4000;
   const DISTRIBUTION_MAX_AUTO_RETRIES = 3;
@@ -4350,6 +4354,14 @@
 
   let isFolderAutoLoad = false;
   let folderImportSummary = null;
+
+  const DUPLICATE_WARMUP_TTL_MS = 60000;
+  const FOLDER_DUPLICATE_FIRST_BATCH_SIZE = 8;
+  const FOLDER_DUPLICATE_BATCH_SIZE = 24;
+  let uploadDuplicateCheckPending = false;
+  let uploadDuplicateCheckFailed = false;
+  let duplicateWarmupPromise = null;
+  let duplicateWarmupAt = 0;
 
   const FILE_PARSE_CONCURRENCY =
     Math.max(
@@ -4400,6 +4412,80 @@
   let deferredInstallPrompt = null;
   let oneSignalSdk = null;
   let oneSignalConfig = null;
+  const externalScriptPromises = new Map();
+
+  function loadExternalScriptOnce(id, src) {
+    if (id && document.getElementById(id)) return Promise.resolve();
+    if (externalScriptPromises.has(src)) return externalScriptPromises.get(src);
+
+    const promise = new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      if (id) script.id = id;
+      script.src = src;
+      script.async = true;
+      script.onload = () => resolve();
+      script.onerror = () => {
+        externalScriptPromises.delete(src);
+        reject(new Error('Không tải được thư viện cần thiết.'));
+      };
+      document.head.appendChild(script);
+    });
+
+    externalScriptPromises.set(src, promise);
+    return promise;
+  }
+
+  let sheetJsLoadPromise = null;
+  function ensureSheetJsLoaded() {
+    if (window.XLSX) return Promise.resolve(window.XLSX);
+    if (!sheetJsLoadPromise) {
+      sheetJsLoadPromise = loadExternalScriptOnce(
+        'phatthuoc-sheetjs-sdk',
+        'https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js'
+      ).then(() => {
+        if (!window.XLSX) throw new Error('Thư viện đọc Excel chưa sẵn sàng.');
+        return window.XLSX;
+      }).catch(error => {
+        sheetJsLoadPromise = null;
+        throw error;
+      });
+    }
+    return sheetJsLoadPromise;
+  }
+
+  let oneSignalScriptLoadPromise = null;
+  function ensureOneSignalScriptLoaded() {
+    if (window.OneSignal && window.OneSignalDeferred) return Promise.resolve();
+    if (!oneSignalScriptLoadPromise) {
+      window.OneSignalDeferred = window.OneSignalDeferred || [];
+      oneSignalScriptLoadPromise = loadExternalScriptOnce(
+        'phatthuoc-onesignal-sdk',
+        'https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js'
+      ).catch(error => {
+        oneSignalScriptLoadPromise = null;
+        throw error;
+      });
+    }
+    return oneSignalScriptLoadPromise;
+  }
+
+  function scheduleIdleStartupTasks() {
+    const run = () => {
+      if (currentUser && (currentUser.role === 'admin' || currentUser.role === 'phat') && !isPhoneLikeDevice()) {
+        ensureSheetJsLoaded().catch(() => {});
+      }
+      ensureOneSignalInitialized().catch(error => {
+        console.warn('OneSignal chưa sẵn sàng:', error.message || String(error));
+      });
+    };
+
+    if ('requestIdleCallback' in window) {
+      window.requestIdleCallback(run, { timeout: 2500 });
+    } else {
+      setTimeout(run, 1200);
+    }
+  }
+
   let oneSignalInitPromise = null;
   let notificationOptions = null;
   let notificationDeviceOptions = null;
@@ -5871,6 +5957,8 @@
                 12000
               );
 
+            const sdkLoadPromise = ensureOneSignalScriptLoaded();
+
             window.OneSignalDeferred.push(
               async function(OneSignal) {
                 try {
@@ -5929,6 +6017,11 @@
                 }
               }
             );
+
+            sdkLoadPromise.catch(error => {
+              clearTimeout(timeout);
+              reject(error);
+            });
           }
         );
       })();
@@ -7269,7 +7362,7 @@
     stopAdminSessionValidation();
     logoutOneSignalUser();
 
-    if(syncInterval) clearInterval(syncInterval);
+    if(syncInterval) clearTimeout(syncInterval);
     syncInterval = null;
     currentVoucherVersion = 0;
     syncInFlight = false;
@@ -7486,6 +7579,7 @@
   );
 
   function initUI() {
+    trackingListRenderSignature = '';
     forcedSessionLogoutHandled =
       false;
 
@@ -7519,15 +7613,8 @@
     installRealtimeRecoveryHooks();
     flushReadyNotificationDispatch();
 
-    ensureOneSignalInitialized()
-      .catch(error => {
-        console.warn(
-          'OneSignal chưa sẵn sàng:',
-          error.message || String(error)
-        );
-      });
-
     switchView('list');
+    scheduleIdleStartupTasks();
     applyNotificationDeepLink();
   }
 
@@ -7568,7 +7655,7 @@
 
     if(viewName === 'admin') loadAdminUsers();
 
-    if(viewName === 'upload') { showSingleWarehouseImportContextLoading(); prepareSingleWarehouseImportContext(Object.keys(parsedFileData || {}).length === 0).catch(error => console.warn('Không chuẩn bị được Kho đang nạp:', error && error.message ? error.message : error)); }
+    if(viewName === 'upload') { scheduleDuplicateIndexWarmup(false); showSingleWarehouseImportContextLoading(); prepareSingleWarehouseImportContext(Object.keys(parsedFileData || {}).length === 0).catch(error => console.warn('Không chuẩn bị được Kho đang nạp:', error && error.message ? error.message : error)); }
 
     if(viewName === 'list') {
       if (skipNextListReload) {
@@ -7648,18 +7735,11 @@ async function loadFromLocalFolder() {
 
   function getSingleWarehouseCatalogSnapshot() {
     let source = [];
-
     try {
-      if (
-        typeof warehouseCatalog !== 'undefined' &&
-        Array.isArray(warehouseCatalog) &&
-        warehouseCatalog.length
-      ) {
+      if (typeof warehouseCatalog !== 'undefined' && Array.isArray(warehouseCatalog) && warehouseCatalog.length) {
         source = warehouseCatalog;
       }
-    } catch (error) {
-      source = [];
-    }
+    } catch (_) {}
 
     if (!source.length) {
       source = Object.keys(KHO_CONFIG || {}).map(key => ({
@@ -7681,225 +7761,94 @@ async function loadFromLocalFolder() {
         active: item.active !== false,
         sortOrder: Number(item.sortOrder || 0)
       }))
-      .filter(item => {
-        if (!item.key || seen.has(item.key)) return false;
-        seen.add(item.key);
-        return true;
-      })
+      .filter(item => item.key && !seen.has(item.key) && seen.add(item.key))
       .sort((a, b) =>
         Number(a.sortOrder || 0) - Number(b.sortOrder || 0) ||
         String(a.displayName || '').localeCompare(String(b.displayName || ''), 'vi')
       );
   }
 
-  function resolveSingleWarehouseImportKey(value, catalogOverride = null) {
-    const raw = String(value || '').trim();
-    if (!raw) return '';
-
-    const normalized = normalizeSingleWarehouseImportText(raw);
-    const catalog = Array.isArray(catalogOverride)
-      ? catalogOverride
-      : getSingleWarehouseCatalogSnapshot();
-
-    // 1) Ưu tiên khớp tuyệt đối mã kho / tên hiển thị / alias.
-    const found = catalog.find(item => {
-      if (!item) return false;
-      if (normalizeSingleWarehouseImportText(item.key) === normalized) return true;
-      if (normalizeSingleWarehouseImportText(item.displayName) === normalized) return true;
-      return (item.aliases || []).some(alias =>
-        normalizeSingleWarehouseImportText(alias) === normalized
-      );
-    });
-    if (found && found.key) return String(found.key);
-
-    // 2) File xuất từ phần mềm nguồn thường thêm tiền tố/hậu tố vào tên kho.
-    // Khớp theo tên/alias đủ dài, chọn ứng viên cụ thể nhất để không gán nhầm.
-    const fuzzyMatches = [];
-    (catalog || []).forEach(item => {
-      if (!item || !item.key) return;
-      const labels = [item.key, item.displayName].concat(item.aliases || []);
-      let best = 0;
-      labels.forEach(label => {
-        const labelNormalized = normalizeSingleWarehouseImportText(label);
-        if (!labelNormalized || labelNormalized.length < 4) return;
-        if (normalized.includes(labelNormalized) || labelNormalized.includes(normalized)) {
-          best = Math.max(best, labelNormalized.length);
-        }
-      });
-      if (best > 0) fuzzyMatches.push({ key: String(item.key), score: best });
-    });
-    fuzzyMatches.sort((a, b) => b.score - a.score || String(a.key).localeCompare(String(b.key)));
-    if (fuzzyMatches.length && (!fuzzyMatches[1] || fuzzyMatches[0].score > fuzzyMatches[1].score)) {
-      return fuzzyMatches[0].key;
-    }
-
-    // 3) Tương thích cách nhận diện kho đã dùng ổn định từ FIX17.1.
-    // Dùng chuỗi đã bỏ dấu để nhận cả tên có/không dấu và các hậu tố trong Excel.
-    if (normalized.includes('dich truyen')) return 'Dich_Truyen';
-    if (normalized.includes('vat tu') || normalized.includes('hoa chat')) return 'Vat_Tu';
-    if (normalized.includes('tiem') || normalized.includes('vien')) return 'Tiem_Vien';
-    if (normalized.includes('khac')) return 'Khac';
-
-    const staticKey = Object.keys(KHO_CONFIG || {}).find(key =>
-      normalizeSingleWarehouseImportText(key) === normalized ||
-      normalizeSingleWarehouseImportText(KHO_CONFIG[key]) === normalized
-    );
-    return staticKey || '';
-  }
-
-
-
-  /* ===== FIX17.6.9: EXACT REAL-WORLD EXPORT WAREHOUSE MATCH ===== */
-  function inferClassicWarehouseCategoryForImport(value) {
+  function classifySingleWarehouseImport(value) {
     const normalized = normalizeSingleWarehouseImportText(value);
     if (!normalized) return '';
     if (normalized.includes('dich truyen')) return 'Dich_Truyen';
     if (normalized.includes('vat tu') || normalized.includes('hoa chat')) return 'Vat_Tu';
-    if (normalized.includes('tiem')) return 'Tiem_Vien';
-    if (normalized.includes('kho') && normalized.includes('vien')) return 'Tiem_Vien';
+    if (normalized.includes('tiem') || (normalized.includes('kho') && normalized.includes('vien'))) return 'Tiem_Vien';
     if (normalized === 'khac' || normalized.includes('kho khac')) return 'Khac';
     return '';
   }
 
-  function getCanonicalWarehouseCategoryForImport(value, catalogOverride = null) {
-    const raw = String(value || '').trim();
-    if (!raw) return '';
+  function warehouseCatalogLabels(item) {
+    return [item && item.key, item && item.displayName].concat((item && item.aliases) || [])
+      .map(normalizeSingleWarehouseImportText)
+      .filter(Boolean);
+  }
 
-    const classic = inferClassicWarehouseCategoryForImport(raw);
-    if (classic) return classic;
-
-    const catalog = Array.isArray(catalogOverride)
-      ? catalogOverride
-      : getSingleWarehouseCatalogSnapshot();
-    const resolved = resolveSingleWarehouseImportKey(raw, catalog);
-    if (['Tiem_Vien', 'Dich_Truyen', 'Vat_Tu', 'Khac'].includes(String(resolved || ''))) {
-      return String(resolved);
-    }
-
-    const normalizedResolved = normalizeSingleWarehouseImportText(resolved);
-    const record = (catalog || []).find(item => {
-      if (!item) return false;
-      return String(item.key || '') === String(resolved || '') ||
-        normalizeSingleWarehouseImportText(item.key) === normalizedResolved ||
-        normalizeSingleWarehouseImportText(item.key) === normalizeSingleWarehouseImportText(raw);
-    });
-
-    if (record) {
-      const labels = [record.key, record.displayName].concat(record.aliases || []);
-      for (const label of labels) {
-        const category = inferClassicWarehouseCategoryForImport(label);
-        if (category) return category;
-      }
+  function warehouseCatalogCategory(item) {
+    for (const label of warehouseCatalogLabels(item)) {
+      const category = classifySingleWarehouseImport(label);
+      if (category) return category;
     }
     return '';
   }
 
-  function resolveAcceptedSingleWarehouseImportKey(value, allowedKhoKeys, catalogOverride = null) {
-    const raw = String(value || '').trim();
-    if (!raw) return '';
-    const catalog = Array.isArray(catalogOverride)
-      ? catalogOverride
-      : getSingleWarehouseCatalogSnapshot();
-    let resolved = resolveSingleWarehouseImportKey(raw, catalog);
-
-    const allowed = Array.isArray(allowedKhoKeys)
-      ? allowedKhoKeys.map(String).filter(Boolean)
-      : [];
-    if (!allowed.length) return resolved || getCanonicalWarehouseCategoryForImport(raw, catalog);
-
-    if (resolved && allowed.includes(String(resolved))) return String(resolved);
-
-    const rawCategory = getCanonicalWarehouseCategoryForImport(raw, catalog);
-    for (const allowedKey of allowed) {
-      const allowedCategory = getCanonicalWarehouseCategoryForImport(allowedKey, catalog);
-      if (rawCategory && allowedCategory && rawCategory === allowedCategory) {
-        // Luôn dùng key mà tài khoản đã chọn/được phân quyền để backend nhận đúng catalog key.
-        return String(allowedKey);
-      }
-
-      const record = (catalog || []).find(item => String(item && item.key || '') === String(allowedKey));
-      if (record) {
-        const rawNorm = normalizeSingleWarehouseImportText(raw);
-        const labels = [record.key, record.displayName].concat(record.aliases || []);
-        const direct = labels.some(label => {
-          const n = normalizeSingleWarehouseImportText(label);
-          return Boolean(n && n.length >= 4 && (rawNorm.includes(n) || n.includes(rawNorm)));
-        });
-        if (direct) return String(allowedKey);
-      }
-    }
-    return '';
-  }
-  /* ===== END FIX17.6.9 ===== */
-
-  /* ===== FIX17.6.8: LEGACY-COMPATIBLE WAREHOUSE COLUMN DETECTION ===== */
-  function resolveStrongWarehouseKeyForImportColumn(value, catalogOverride = null) {
+  function resolveSingleWarehouseImportKey(value, catalogOverride = null, allowedKhoKeys = null) {
     const raw = String(value || '').trim();
     if (!raw) return '';
     const normalized = normalizeSingleWarehouseImportText(raw);
-    const catalog = Array.isArray(catalogOverride)
-      ? catalogOverride
-      : getSingleWarehouseCatalogSnapshot();
+    const catalog = Array.isArray(catalogOverride) ? catalogOverride : getSingleWarehouseCatalogSnapshot();
+    const allowed = Array.isArray(allowedKhoKeys) ? allowedKhoKeys.map(String).filter(Boolean) : [];
 
-    // Khớp exact theo mã / tên / alias luôn được xem là tín hiệu mạnh.
-    for (const item of (catalog || [])) {
+    let resolved = '';
+    let bestLength = 0;
+    for (const item of catalog) {
       if (!item || !item.key) continue;
-      const labels = [item.key, item.displayName].concat(item.aliases || []);
-      for (const label of labels) {
-        const n = normalizeSingleWarehouseImportText(label);
-        if (n && n === normalized) return String(item.key);
+      for (const label of warehouseCatalogLabels(item)) {
+        if (label === normalized) {
+          resolved = String(item.key);
+          bestLength = Number.MAX_SAFE_INTEGER;
+          break;
+        }
+        if (label.length >= 4 && (normalized.includes(label) || label.includes(normalized)) && label.length > bestLength) {
+          resolved = String(item.key);
+          bestLength = label.length;
+        }
       }
+      if (bestLength === Number.MAX_SAFE_INTEGER) break;
     }
 
-    // Chỉ dùng từ khóa đủ đặc hiệu để dò CỘT kho. Không coi "viên" đứng một mình
-    // là tín hiệu mạnh vì có thể đó là ĐVT của thuốc.
-    if (normalized.includes('dich truyen')) return 'Dich_Truyen';
-    if (normalized.includes('vat tu') || normalized.includes('hoa chat')) return 'Vat_Tu';
-    if (normalized.includes('tiem')) return 'Tiem_Vien';
-    if (normalized.includes('kho') && normalized.includes('vien')) return 'Tiem_Vien';
-    if (normalized === 'khac' || normalized.includes('kho khac')) return 'Khac';
-    return '';
+    if (allowed.length) {
+      if (resolved && allowed.includes(resolved)) return resolved;
+      const rawCategory = classifySingleWarehouseImport(raw) || (() => {
+        const item = catalog.find(record => String(record && record.key || '') === resolved);
+        return item ? warehouseCatalogCategory(item) : '';
+      })();
+      if (!rawCategory) return '';
+      for (const allowedKey of allowed) {
+        const record = catalog.find(item => String(item && item.key || '') === allowedKey);
+        const category = record ? warehouseCatalogCategory(record) : classifySingleWarehouseImport(allowedKey);
+        if (category && category === rawCategory) return allowedKey;
+      }
+      return '';
+    }
+
+    if (resolved) return resolved;
+    const category = classifySingleWarehouseImport(raw);
+    if (!category) return '';
+    const categoryRecord = catalog.find(item => warehouseCatalogCategory(item) === category);
+    return categoryRecord ? String(categoryRecord.key) : category;
   }
 
   function chooseWarehouseColumnForImport(rows, headerRowIndex, preferredIndex, allowedKhoKeys) {
     const safeRows = Array.isArray(rows) ? rows : [];
     const start = Math.max(0, Number(headerRowIndex || 0) + 1);
     const end = Math.min(safeRows.length, start + 120);
-    const allowed = Array.isArray(allowedKhoKeys) && allowedKhoKeys.length
-      ? new Set(allowedKhoKeys.map(String))
-      : null;
     const catalog = getSingleWarehouseCatalogSnapshot();
 
-    let maxCols = 0;
-    for (let i = start; i < end; i++) {
-      const row = safeRows[i];
-      if (Array.isArray(row)) maxCols = Math.max(maxCols, row.length);
-    }
-
-    const candidates = new Set();
-    if (Number.isInteger(preferredIndex) && preferredIndex >= 0) candidates.add(preferredIndex);
-
-    // Chỉ thêm cột thay thế khi nó chứa tín hiệu kho mạnh lặp lại.
-    for (let col = 0; col < maxCols; col++) {
-      let strongCount = 0;
-      for (let i = start; i < end; i++) {
-        const row = safeRows[i];
-        if (!Array.isArray(row)) continue;
-        if (resolveStrongWarehouseKeyForImportColumn(row[col], catalog)) strongCount++;
-      }
-      if (strongCount > 0) candidates.add(col);
-    }
-
-    let best = Number.isInteger(preferredIndex) && preferredIndex >= 0 ? preferredIndex : -1;
-    let bestTuple = [-1, -1, -1, -1];
-
-    for (const col of candidates) {
-      let selectedMatches = 0;
-      let recognized = 0;
-      let strong = 0;
-      let nonEmpty = 0;
+    const countMatches = col => {
+      if (!Number.isInteger(col) || col < 0) return { accepted: 0, recognized: 0, nonEmpty: 0, distinct: 0 };
+      let accepted = 0, recognized = 0, nonEmpty = 0;
       const distinct = new Set();
-
       for (let i = start; i < end; i++) {
         const row = safeRows[i];
         if (!Array.isArray(row)) continue;
@@ -7907,37 +7856,35 @@ async function loadFromLocalFolder() {
         if (!raw) continue;
         nonEmpty++;
         distinct.add(normalizeSingleWarehouseImportText(raw));
-        const strongKey = resolveStrongWarehouseKeyForImportColumn(raw, catalog);
-        if (strongKey) strong++;
-        let key = resolveSingleWarehouseImportKey(raw, catalog);
-        // Tương thích FIX17.1 cho Kho Khác: trước đây mọi tên không thuộc 3 nhóm chính
-        // được gom về Khác. Chỉ dùng fallback này khi người dùng thật sự chọn Khác.
-        if (!key && allowed && allowed.has('Khac')) key = mapKhoToKey(raw);
-        if (key) recognized++;
-        const acceptedKey = resolveAcceptedSingleWarehouseImportKey(raw, allowedKhoKeys, catalog);
-        if (acceptedKey) selectedMatches++;
+        if (resolveSingleWarehouseImportKey(raw, catalog)) recognized++;
+        if (resolveSingleWarehouseImportKey(raw, catalog, allowedKhoKeys)) accepted++;
       }
+      return { accepted, recognized, nonEmpty, distinct: distinct.size };
+    };
 
-      // Ưu tiên tuyệt đối cột có dữ liệu đúng kho đang chọn; sau đó mới xét tín hiệu mạnh,
-      // số dòng nhận diện và tính lặp (cột kho thường có ít giá trị lặp lại).
-      const repetition = nonEmpty > 0 ? Math.max(0, nonEmpty - distinct.size) : 0;
-      const preferredBonus = col === preferredIndex ? 1 : 0;
-      const tuple = [selectedMatches, strong, recognized + repetition, preferredBonus];
-      if (
-        tuple[0] > bestTuple[0] ||
-        (tuple[0] === bestTuple[0] && tuple[1] > bestTuple[1]) ||
-        (tuple[0] === bestTuple[0] && tuple[1] === bestTuple[1] && tuple[2] > bestTuple[2]) ||
-        (tuple[0] === bestTuple[0] && tuple[1] === bestTuple[1] && tuple[2] === bestTuple[2] && tuple[3] > bestTuple[3])
-      ) {
-        bestTuple = tuple;
-        best = col;
-      }
+    const preferred = countMatches(preferredIndex);
+    if (preferred.accepted > 0) return preferredIndex;
+
+    let maxCols = 0;
+    for (let i = start; i < end; i++) {
+      if (Array.isArray(safeRows[i])) maxCols = Math.max(maxCols, safeRows[i].length);
     }
 
-    return best;
+    let bestCol = Number.isInteger(preferredIndex) ? preferredIndex : -1;
+    let bestScore = -1;
+    for (let col = 0; col < maxCols; col++) {
+      const stat = countMatches(col);
+      if (!stat.accepted) continue;
+      const repetition = Math.max(0, stat.nonEmpty - stat.distinct);
+      const score = stat.accepted * 100000 + stat.recognized * 100 + repetition + (col === preferredIndex ? 1 : 0);
+      if (score > bestScore) {
+        bestScore = score;
+        bestCol = col;
+      }
+    }
+    return bestCol;
   }
-  /* ===== END FIX17.6.8 ===== */
-  function renderSingleWarehouseImportContext(resetForNewBatch = false) {
+function renderSingleWarehouseImportContext(resetForNewBatch = false) {
     const select = document.getElementById('uploadWarehouseSelect');
     const context = document.getElementById('singleWarehouseImportContext');
     const hint = document.getElementById('uploadWarehouseHint');
@@ -8319,26 +8266,17 @@ async function loadFromLocalFolder() {
     return keys.map(khoa => buildDuplicateCandidate(parsedFileData,khoa,khoa)).filter(Boolean);
   }
 
-  async function requestDuplicateCheckCandidates(candidates) {
-    if (!Array.isArray(candidates) || !candidates.length) return {};
+  async function requestDuplicateCheckCandidates(candidates){
+    if(!Array.isArray(candidates)||!candidates.length)return {};
     const response=await gasCall('checkVoucherDuplicatesServer',[JSON.stringify(candidates)]);
-    return response && response.results ? response.results : {};
+    if(response&&response.serverMs!==undefined)console.info('[IMPORT] Duplicate check',{candidates:candidates.length,serverMs:response.serverMs});
+    return response&&response.results?response.results:{};
   }
 
-  async function refreshParsedDuplicateStatus(khoaKeys=null) {
-    const candidates=buildDuplicateCheckCandidates(khoaKeys);
-    if (!candidates.length) { if (!khoaKeys) parsedDuplicateStatus={}; return {}; }
-    try {
-      const results=await requestDuplicateCheckCandidates(candidates);
-      if (!khoaKeys) parsedDuplicateStatus={};
-      candidates.forEach(candidate => {
-        parsedDuplicateStatus[candidate.key]=results[candidate.key] || {duplicate:false,partial:false,hasOverlap:false,matchedCount:0,tokenCount:0,duplicateWarehouseKeys:[],partialWarehouseKeys:[],newWarehouseKeys:[],suppressed:false,suppressedWarehouseKeys:[],suppressionNotices:[]};
-      });
-      return results;
-    } catch(error) {
-      console.error('Không kiểm tra được phiếu trùng:',error && error.message ? error.message : String(error || ''));
-      return {};
-    }
+  async function refreshParsedDuplicateStatus(khoaKeys=null){
+    const candidates=buildDuplicateCheckCandidates(khoaKeys);if(!candidates.length){if(!khoaKeys)parsedDuplicateStatus={};return {};}
+    const results=await requestDuplicateCheckCandidates(candidates);if(!khoaKeys)parsedDuplicateStatus={};
+    candidates.forEach(candidate=>{parsedDuplicateStatus[candidate.key]=Object.assign(defaultDuplicateStatus(false),results[candidate.key]||{},{checking:false,checkError:false});});return results;
   }
 
   function handleSingleFileDragOver(
@@ -8561,6 +8499,7 @@ async function parseImportFile(
     file,
     allowedKhoKeys
   ) {
+    const XLSX = await ensureSheetJsLoaded();
     const buffer = await readFileAsArrayBufferFast(file);
     const workbook = XLSX.read(new Uint8Array(buffer), { type: 'array' });
     const rows = XLSX.utils.sheet_to_json(
@@ -8661,152 +8600,139 @@ async function parseImportFile(
     return Boolean(source && (source.items || []).length > 0 && Object.keys(source.vouchers || {}).length > 0);
   }
 
-  function renderFolderImportSummary() {
-    const element=document.getElementById('folderImportSummary');
-    if (!element) return;
-    if (!folderImportSummary || !isFolderAutoLoad) { element.style.display='none'; element.innerText=''; return; }
-    const s=folderImportSummary;
-    element.innerText='Đã đọc '+s.filesRead+'/'+s.totalFiles+' file. Có '+s.newUnits+' nhóm phiếu mới; tự bỏ qua '+s.duplicateWarehouses+' phần kho trùng hoàn toàn'+(s.partialWarehouses>0 ? '; bỏ qua '+s.partialWarehouses+' phần kho chồng lấp cần nạp bằng file đơn' : '')+(Number(s.suppressedWarehouses || 0)>0 ? '; tự bỏ qua '+s.suppressedWarehouses+' phần kho đã xóa không phát nữa' : '')+(s.failedFiles>0 ? '; '+s.failedFiles+' file không đọc được' : '')+'.';
-    element.style.display='block';
+
+  function defaultDuplicateStatus(checking) {
+    return {duplicate:false,partial:false,hasOverlap:false,matchedCount:0,tokenCount:0,duplicateWarehouseKeys:[],partialWarehouseKeys:[],newWarehouseKeys:[],suppressed:false,suppressedWarehouseKeys:[],suppressionNotices:[],checking:Boolean(checking),checkError:false};
   }
 
-  async function handleFiles(files) {
-    if (!files || files.length===0) return;
-    showLoading(true,'Đang đọc và phân tích file...');
-    parsedFileData={}; parsedDuplicateStatus={}; folderImportSummary=null; renderFolderImportSummary();
-    const fileList=Array.from(files);
-    const selectedImportWarehouseKey = await requireSingleWarehouseImportSelection();
-    if (!selectedImportWarehouseKey) { showLoading(false); return; }
-    const allowedKhoKeys=[selectedImportWarehouseKey];
-    let nextIndex=0,failedCount=0;
-    const parsedUnits=new Array(fileList.length);
-    const worker=async()=>{ while(nextIndex<fileList.length){ const index=nextIndex++; try{ parsedUnits[index]=await parseImportFile(fileList[index],allowedKhoKeys); }catch(error){ failedCount++; console.error('Lỗi đọc file:',fileList[index]?fileList[index].name:'',error); } } };
-    const workerCount=Math.min(FILE_PARSE_CONCURRENCY,fileList.length);
-    await Promise.all(Array.from({length:workerCount},()=>worker()));
-    const skippedOtherWarehouseRows = parsedUnits
-      .filter(Boolean)
-      .reduce((sum, unit) => sum + Number(unit && unit.stats && unit.stats.skippedOtherWarehouseRows || 0), 0);
-    const acceptedWarehouseRows = parsedUnits
-      .filter(Boolean)
-      .reduce((sum, unit) => sum + Number(unit && unit.stats && unit.stats.acceptedRows || 0), 0);
-    const unknownWarehouseRows = parsedUnits
-      .filter(Boolean)
-      .reduce((sum, unit) => sum + Number(unit && unit.stats && unit.stats.unknownWarehouseRows || 0), 0);
-    const unknownWarehouseSamples = Array.from(new Set(parsedUnits
-      .filter(Boolean)
-      .reduce((acc, unit) => acc.concat(
-        unit && unit.stats && Array.isArray(unit.stats.unknownWarehouseSamples)
-          ? unit.stats.unknownWarehouseSamples
-          : []
-      ), [])
-    )).slice(0, 5);
-    const warehouseHint = document.getElementById('uploadWarehouseHint');
-    if (warehouseHint) {
-      const selectedWarehouseLabel = getSelectedSingleWarehouseImportLabel();
-      warehouseHint.textContent =
-        'Đã lấy ' + acceptedWarehouseRows + ' dòng thuộc ' + selectedWarehouseLabel + '.' +
-        (skippedOtherWarehouseRows > 0
-          ? ' Đã tự bỏ qua ' + skippedOtherWarehouseRows + ' dòng thuộc kho khác trong file.'
-          : ' Không có dòng kho khác cần bỏ qua.') +
-        (unknownWarehouseRows > 0
-          ? ' Có ' + unknownWarehouseRows + ' dòng chưa nhận diện được tên kho' + (unknownWarehouseSamples.length ? ' (' + unknownWarehouseSamples.join(', ') + ')' : '') + '.'
-          : '') +
-        ' Dữ liệu được nhóm thành phiếu độc lập theo từng khoa.';
-    }
-    const validUnits=parsedUnits.filter(unit=>unit && unit.data && Object.keys(unit.data).length);
-    if (!validUnits.length) {
-      showLoading(false);
-      setSingleWarehouseImportLocked(false);
-      await showMsg('Không tìm thấy dữ liệu thuộc kho “' + getSelectedSingleWarehouseImportLabel() + '” trong file đã chọn.' + (skippedOtherWarehouseRows > 0 ? ' Hệ thống đã bỏ qua ' + skippedOtherWarehouseRows + ' dòng thuộc kho khác.' : '') + (unknownWarehouseRows > 0 ? ' Có ' + unknownWarehouseRows + ' dòng chưa nhận diện được tên kho' + (unknownWarehouseSamples.length ? ': ' + unknownWarehouseSamples.join(', ') : '') + '.' : '') + ' Hãy kiểm tra lại kho và file Excel.', 'Không có dữ liệu đúng kho', 'warning');
-      return;
-    }
-    setSingleWarehouseImportLocked(true);
-    showLoading(true,'Đang kiểm tra phiếu trùng...');
+  function updateUploadCommitButton() {
+    const button=document.getElementById('btnCommitUploads');
+    if(!button)return;
+    if(uploadDuplicateCheckPending){button.disabled=true;button.textContent='⏳ ĐANG KIỂM TRA PHIẾU TRÙNG...';button.title='Hệ thống đang kiểm tra trùng. Nút sẽ tự bật khi hoàn tất.';return;}
+    if(uploadDuplicateCheckFailed){button.disabled=true;button.textContent='⚠️ KIỂM TRA TRÙNG CHƯA HOÀN TẤT';button.title='Vui lòng chọn lại file/thư mục để kiểm tra lại.';return;}
+    button.disabled=false;button.textContent='🚀 ĐƯA VÀO DANH SÁCH';button.title='';
+  }
 
-    if (isFolderAutoLoad) {
-      const candidates=[],candidateMeta={};
-      validUnits.forEach((unit,unitIndex)=>{
-        Object.keys(unit.data).forEach(khoa=>{
-          const candidateKey='F'+unitIndex+'::'+khoa;
-          const candidate=buildDuplicateCandidate(unit.data,khoa,candidateKey);
-          if(candidate){ candidates.push(candidate); candidateMeta[candidateKey]={unit:unit,khoa:khoa}; }
+  function setUploadDuplicateCheckState(pending,failed){uploadDuplicateCheckPending=Boolean(pending);uploadDuplicateCheckFailed=Boolean(failed);updateUploadCommitButton();}
+  function yieldUploadPaint(){return new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));}
+
+  function scheduleDuplicateIndexWarmup(force){
+    if(!currentUser||!['admin','phat'].includes(currentUser.role))return Promise.resolve(null);
+    const now=Date.now();
+    if(!force&&duplicateWarmupPromise)return duplicateWarmupPromise;
+    if(!force&&duplicateWarmupAt&&now-duplicateWarmupAt<DUPLICATE_WARMUP_TTL_MS)return Promise.resolve(null);
+    duplicateWarmupAt=now;
+    duplicateWarmupPromise=gasCall('warmDuplicateIndexServer',[],30000).then(result=>{if(result&&result.serverMs!==undefined)console.info('[IMPORT] Duplicate index warmed',result);return result;}).catch(error=>{console.warn('[IMPORT] Không prewarm được duplicate index:',error&&error.message?error.message:error);return null;}).finally(()=>{duplicateWarmupPromise=null;});
+    return duplicateWarmupPromise;
+  }
+
+  function markParsedDuplicateStatusesChecking(){Object.keys(parsedFileData||{}).forEach(khoa=>{parsedDuplicateStatus[khoa]=defaultDuplicateStatus(true);});}
+
+  function buildUploadCardHtml(khoa){
+    const source=parsedFileData[khoa];if(!source)return '';
+    const total=(source.items||[]).length,allDates=new Set(),allVouchers=new Set();
+    Object.keys(source.vouchers||{}).forEach(kKey=>{const vc=source.vouchers[kKey]||{};(vc.dates||[]).forEach(d=>allDates.add(d));['TQ','BT','HT'].forEach(type=>(vc[type]||[]).forEach(v=>allVouchers.add(String(v).split('|')[0])));});
+    const status=parsedDuplicateStatus[khoa]||defaultDuplicateStatus(false),checking=Boolean(status.checking),checkError=Boolean(status.checkError);
+    const isDup=!checking&&isDuplicateVoucher(khoa),isPartial=!checking&&isPartialDuplicateVoucher(khoa),isSuppressed=!checking&&isSuppressedDeletedVoucher(khoa);
+    let borderCard='border:1px solid #ccc;',bgHeader='#f0f0f0',colorHeader='var(--green)',bgBody='#fff',statusTag='';
+    if(checking){borderCard='border:2px solid #90caf9;';bgHeader='#e3f2fd';colorHeader='#0d47a1';bgBody='#f8fbff';statusTag=' <span style="font-size:14px;font-style:italic;">(⏳ đang kiểm tra trùng)</span>';}
+    else if(checkError){borderCard='border:2px solid #c62828;';bgHeader='#ffebee';colorHeader='#b71c1c';bgBody='#fff8f8';statusTag=' <span style="font-size:14px;font-style:italic;">(chưa kiểm tra được)</span>';}
+    else if(isSuppressed){borderCard='border:3px solid #c62828;';bgHeader='#ffcdd2';colorHeader='#b71c1c';bgBody='#fff5f5';statusTag=' <span style="font-size:14px;font-style:italic;">(đã xóa – không phát nữa)</span>';}
+    else if(isDup){borderCard='border:2px solid var(--danger);';bgHeader='#ffebee';colorHeader='var(--danger)';bgBody='#fff9f9';statusTag=' <span style="font-size:14px;font-style:italic;">(trùng hoàn toàn)</span>';}
+    else if(isPartial){borderCard='border:2px solid #ef6c00;';bgHeader='#fff3e0';colorHeader='#e65100';bgBody='#fffaf2';statusTag=' <span style="font-size:14px;font-style:italic;">(chồng lấp một phần – cần kiểm tra)</span>';}
+    const checked=(!checking&&!checkError&&!isDup&&!isPartial&&!isSuppressed)?'checked':'',disabled=(checking||checkError)?'disabled':'',safeKhoaJs=String(khoa).replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    return `<div style="${borderCard} margin-bottom:15px;border-radius:8px;overflow:hidden;"><div style="background:${bgHeader};padding:15px;font-weight:bold;font-size:20px;color:${colorHeader};display:flex;justify-content:space-between;align-items:center;gap:10px;"><label style="display:flex;align-items:center;flex-wrap:wrap;min-width:0;"><input type="checkbox" class="v-chk" value="${escapeHtmlValue(khoa)}" ${checked} ${disabled} style="width:20px;height:20px;margin:0 10px 0 0;">${escapeHtmlText(khoa)}${statusTag}</label><div style="display:flex;align-items:center;gap:15px;"><span style="color:var(--danger);font-size:18px;white-space:nowrap;">${total} khoản</span><button onclick="removeUploadItem('${safeKhoaJs}')" style="background:transparent;border:none;color:var(--danger);font-size:22px;padding:0;cursor:pointer;line-height:1;" title="Xóa khoa này">✖</button></div></div><div style="padding:15px;background:${bgBody};font-size:16px;"><div style="margin-bottom:8px;font-size:18px;"><b>📅 Ngày:</b> <span style="color:var(--danger);font-weight:bold;">${escapeHtmlText(Array.from(allDates).join(', '))}</span></div><div><b>🧾 Các phiếu:</b><br>${formatVoucherColors(Array.from(allVouchers))}</div></div></div>`;
+  }
+
+  function renderFolderImportSummary(){
+    const element=document.getElementById('folderImportSummary');if(!element)return;
+    if(!folderImportSummary||!isFolderAutoLoad){element.style.display='none';element.innerText='';return;}
+    const s=folderImportSummary,parts=['Đã đọc '+Number(s.filesRead||0)+'/'+Number(s.totalFiles||0)+' file.'];
+    if(s.checking)parts.push('Đang kiểm tra trùng '+Number(s.checkedGroups||0)+'/'+Number(s.totalGroups||0)+' nhóm phiếu.');
+    else if(s.checkError)parts.push('Kiểm tra trùng chưa hoàn tất.');else parts.push('Đã kiểm tra xong '+Number(s.totalGroups||0)+' nhóm phiếu.');
+    parts.push('Có '+Number(s.newUnits||0)+' nhóm phiếu hợp lệ đang chờ đưa vào danh sách.');
+    if(Number(s.duplicateWarehouses||0)>0)parts.push('Tự bỏ '+Number(s.duplicateWarehouses||0)+' phần kho trùng hoàn toàn.');
+    if(Number(s.partialWarehouses||0)>0)parts.push('Tự bỏ '+Number(s.partialWarehouses||0)+' phần kho chồng lấp; cần nạp bằng file đơn nếu muốn kiểm tra thủ công.');
+    if(Number(s.suppressedWarehouses||0)>0)parts.push('Đã xử lý '+Number(s.suppressedWarehouses||0)+' phần kho thuộc danh sách “Không phát nữa” theo quyền tài khoản.');
+    if(Number(s.failedFiles||0)>0)parts.push(Number(s.failedFiles||0)+' file không đọc được.');
+    element.innerText=parts.join(' ');element.style.display='block';
+  }
+
+  async function handleFiles(files){
+  if(!files||files.length===0)return;
+  const perfStarted=performance.now();
+  setUploadDuplicateCheckState(false,false);
+  scheduleDuplicateIndexWarmup(false);
+  showLoading(true,'Đang đọc và phân tích file...');
+  parsedFileData={};parsedDuplicateStatus={};folderImportSummary=null;renderFolderImportSummary();renderUploadList();
+  const fileList=Array.from(files);
+  const selectedImportWarehouseKey=await requireSingleWarehouseImportSelection();
+  if(!selectedImportWarehouseKey){showLoading(false);return;}
+  const allowedKhoKeys=[selectedImportWarehouseKey];
+  let nextIndex=0,failedCount=0;
+  const parsedUnits=new Array(fileList.length);
+  const parseStarted=performance.now();
+  const worker=async()=>{while(nextIndex<fileList.length){const index=nextIndex++;try{parsedUnits[index]=await parseImportFile(fileList[index],allowedKhoKeys);}catch(error){failedCount++;console.error('Lỗi đọc file:',fileList[index]?fileList[index].name:'',error);}}};
+  const workerCount=Math.min(FILE_PARSE_CONCURRENCY,fileList.length);
+  await Promise.all(Array.from({length:workerCount},()=>worker()));
+  const parseMs=Math.round(performance.now()-parseStarted);
+
+  const skippedOtherWarehouseRows=parsedUnits.filter(Boolean).reduce((sum,unit)=>sum+Number(unit&&unit.stats&&unit.stats.skippedOtherWarehouseRows||0),0);
+  const acceptedWarehouseRows=parsedUnits.filter(Boolean).reduce((sum,unit)=>sum+Number(unit&&unit.stats&&unit.stats.acceptedRows||0),0);
+  const unknownWarehouseRows=parsedUnits.filter(Boolean).reduce((sum,unit)=>sum+Number(unit&&unit.stats&&unit.stats.unknownWarehouseRows||0),0);
+  const unknownWarehouseSamples=Array.from(new Set(parsedUnits.filter(Boolean).reduce((acc,unit)=>acc.concat(unit&&unit.stats&&Array.isArray(unit.stats.unknownWarehouseSamples)?unit.stats.unknownWarehouseSamples:[]),[]))).slice(0,5);
+  const warehouseHint=document.getElementById('uploadWarehouseHint');
+  if(warehouseHint){const selectedWarehouseLabel=getSelectedSingleWarehouseImportLabel();warehouseHint.textContent='Đã lấy '+acceptedWarehouseRows+' dòng thuộc '+selectedWarehouseLabel+'.'+(skippedOtherWarehouseRows>0?' Đã tự bỏ qua '+skippedOtherWarehouseRows+' dòng thuộc kho khác trong file.':' Không có dòng kho khác cần bỏ qua.')+(unknownWarehouseRows>0?' Có '+unknownWarehouseRows+' dòng chưa nhận diện được tên kho'+(unknownWarehouseSamples.length?' ('+unknownWarehouseSamples.join(', ')+')':'')+'.':'')+' Dữ liệu được nhóm thành phiếu độc lập theo từng khoa.';}
+  const validUnits=parsedUnits.filter(unit=>unit&&unit.data&&Object.keys(unit.data).length);
+  if(!validUnits.length){showLoading(false);setSingleWarehouseImportLocked(false);await showMsg('Không tìm thấy dữ liệu thuộc kho “'+getSelectedSingleWarehouseImportLabel()+'” trong file đã chọn.'+(skippedOtherWarehouseRows>0?' Hệ thống đã bỏ qua '+skippedOtherWarehouseRows+' dòng thuộc kho khác.':'')+(unknownWarehouseRows>0?' Có '+unknownWarehouseRows+' dòng chưa nhận diện được tên kho'+(unknownWarehouseSamples.length?': '+unknownWarehouseSamples.join(', '):'')+'.':'')+' Hãy kiểm tra lại kho và file Excel.','Không có dữ liệu đúng kho','warning');return;}
+  setSingleWarehouseImportLocked(true);
+  const duplicateStarted=performance.now();
+
+  if(isFolderAutoLoad){
+    const candidates=[],candidateMeta={};
+    validUnits.forEach((unit,unitIndex)=>{Object.keys(unit.data).forEach(khoa=>{const candidateKey='F'+unitIndex+'::'+khoa;const candidate=buildDuplicateCandidate(unit.data,khoa,candidateKey);if(candidate){candidates.push(candidate);candidateMeta[candidateKey]={unit,khoa};}});});
+    folderImportSummary={totalFiles:fileList.length,filesRead:parsedUnits.filter(Boolean).length,totalGroups:candidates.length,checkedGroups:0,newUnits:0,duplicateWarehouses:0,partialWarehouses:0,suppressedWarehouses:0,failedFiles:failedCount,checking:true,checkError:false};
+    showLoading(false);setUploadDuplicateCheckState(true,false);renderFolderImportSummary();renderUploadList();await yieldUploadPaint();
+    let cursor=0;
+    try{
+      while(cursor<candidates.length){
+        const size=cursor===0?FOLDER_DUPLICATE_FIRST_BATCH_SIZE:FOLDER_DUPLICATE_BATCH_SIZE;
+        const batch=candidates.slice(cursor,cursor+size);
+        const results=await requestDuplicateCheckCandidates(batch);
+        batch.forEach(candidate=>{
+          const meta=candidateMeta[candidate.key],result=results[candidate.key]||defaultDuplicateStatus(false);
+          const exactKeys=Array.isArray(result.duplicateWarehouseKeys)?result.duplicateWarehouseKeys:[];
+          const partialKeys=Array.isArray(result.partialWarehouseKeys)?result.partialWarehouseKeys:[];
+          const suppressedKeys=Array.isArray(result.suppressedWarehouseKeys)?result.suppressedWarehouseKeys:[];
+          folderImportSummary.duplicateWarehouses+=exactKeys.length;folderImportSummary.partialWarehouses+=partialKeys.length;folderImportSummary.suppressedWarehouses+=suppressedKeys.length;
+          if(currentUser&&currentUser.role==='admin'&&result.suppressed){mergeParsedImportData(parsedFileData,{[meta.khoa]:meta.unit.data[meta.khoa]});parsedDuplicateStatus[meta.khoa]=Object.assign(defaultDuplicateStatus(false),result,{checking:false});return;}
+          removeWarehouseKeysFromImportData(meta.unit.data[meta.khoa],exactKeys.concat(partialKeys).concat(currentUser&&currentUser.role==='phat'?suppressedKeys:[]));
+          const remaining=meta.unit.data[meta.khoa];if(!hasImportData(remaining))return;
+          mergeParsedImportData(parsedFileData,{[meta.khoa]:remaining});
+          parsedDuplicateStatus[meta.khoa]=Object.assign(defaultDuplicateStatus(false),{newWarehouseKeys:Object.keys(remaining.vouchers||{})});
         });
-      });
-      let results={};
-      try { results=await requestDuplicateCheckCandidates(candidates); }
-      catch(error){ console.error('Không kiểm tra được phiếu trùng từ thư mục:',error.message || String(error)); }
-      let duplicateWarehouses=0,partialWarehouses=0,suppressedWarehouses=0,newUnits=0;
-      candidates.forEach(candidate=>{
-        const meta=candidateMeta[candidate.key];
-        const result=results[candidate.key] || {};
-        const exactKeys=Array.isArray(result.duplicateWarehouseKeys) ? result.duplicateWarehouseKeys : [];
-        const partialKeys=Array.isArray(result.partialWarehouseKeys) ? result.partialWarehouseKeys : [];
-        const suppressedKeys=Array.isArray(result.suppressedWarehouseKeys) ? result.suppressedWarehouseKeys : [];
-        duplicateWarehouses+=exactKeys.length;
-        partialWarehouses+=partialKeys.length;
-        suppressedWarehouses+=suppressedKeys.length;
-
-        if (currentUser && currentUser.role === 'admin' && result.suppressed) {
-          mergeParsedImportData(parsedFileData,{[meta.khoa]:meta.unit.data[meta.khoa]});
-          parsedDuplicateStatus[meta.khoa]=result;
-          newUnits++;
-          return;
-        }
-
-        removeWarehouseKeysFromImportData(
-          meta.unit.data[meta.khoa],
-          exactKeys
-            .concat(partialKeys)
-            .concat(currentUser && currentUser.role === 'phat' ? suppressedKeys : [])
-        );
-        const remaining=meta.unit.data[meta.khoa];
-        if(!hasImportData(remaining)) return;
-        mergeParsedImportData(parsedFileData,{[meta.khoa]:remaining});
-        parsedDuplicateStatus[meta.khoa]={duplicate:false,partial:false,hasOverlap:false,matchedCount:0,tokenCount:0,duplicateWarehouseKeys:[],partialWarehouseKeys:[],newWarehouseKeys:Object.keys(remaining.vouchers || {}),suppressed:false,suppressedWarehouseKeys:[],suppressionNotices:[]};
-        newUnits++;
-      });
-      folderImportSummary={totalFiles:fileList.length,filesRead:validUnits.length,newUnits:newUnits,duplicateWarehouses:duplicateWarehouses,partialWarehouses:partialWarehouses,suppressedWarehouses:suppressedWarehouses,failedFiles:failedCount};
-      renderFolderImportSummary();
-      if (currentUser && currentUser.role === 'admin') {
-        const folderSuppressed = Object.keys(parsedFileData).filter(isSuppressedDeletedVoucher);
-        if (folderSuppressed.length) {
-          await showMsg(
-            'Trong thư mục có phiếu đã bị xóa không phát nữa:\n\n' + folderSuppressed.map(formatSuppressionNoticeForImport).join('\n\n') + '\n\nHệ thống không tự nạp các phiếu này. Admin có thể tích chọn và xác nhận nếu thực sự muốn nạp lại.',
-            'Cảnh báo phiếu không phát nữa',
-            'warning'
-          );
-        }
+        cursor+=batch.length;folderImportSummary.checkedGroups=cursor;folderImportSummary.newUnits=Object.keys(parsedFileData).length;renderFolderImportSummary();renderUploadList();await yieldUploadPaint();
       }
-    } else {
-      validUnits.forEach(unit=>mergeParsedImportData(parsedFileData,unit.data));
-      await refreshParsedDuplicateStatus();
-      const suppressedKhoas=Object.keys(parsedFileData).filter(isSuppressedDeletedVoucher);
-      if (currentUser && currentUser.role === 'phat' && suppressedKhoas.length) {
-        await showMsg(
-          'Phát hiện phiếu từng bị Admin xóa với lựa chọn “Không phát nữa”:\n\n' + suppressedKhoas.map(formatSuppressionNoticeForImport).join('\n\n') + '\n\nVì bạn đang nạp bằng FILE riêng lẻ, phiếu được bỏ tích mặc định nhưng Người phát có thể tích chọn và xác nhận “Vẫn nạp lại”. Nếu nạp bằng THƯ MỤC thì hệ thống sẽ tự bỏ qua như phiếu trùng.',
-          'Phiếu đã xóa không phát nữa',
-          'warning'
-        );
-      }
-      if (currentUser && currentUser.role === 'admin' && suppressedKhoas.length) {
-        await showMsg(
-          'Phát hiện phiếu từng bị xóa không phát nữa:\n\n' + suppressedKhoas.map(formatSuppressionNoticeForImport).join('\n\n') + '\n\nCác phiếu này được bỏ tích mặc định. Admin vẫn có thể tích chọn và nạp lại sau khi xác nhận.',
-          'Phiếu đã xóa không phát nữa',
-          'warning'
-        );
-      }
-      const duplicateKhoas=Object.keys(parsedFileData).filter(isDuplicateVoucher);
-      const partialKhoas=Object.keys(parsedFileData).filter(isPartialDuplicateVoucher);
-      if(duplicateKhoas.length || partialKhoas.length){
-        const parts=[];
-        if(duplicateKhoas.length) parts.push('trùng hoàn toàn: '+duplicateKhoas.join(', '));
-        if(partialKhoas.length) parts.push('chồng lấp một phần: '+partialKhoas.join(', '));
-        await showMsg('Phát hiện phiếu '+parts.join('; ')+'.\\n\\nCác phiếu được bỏ tích mặc định. Phiếu chồng lấp có một số số phiếu cũ nhưng nội dung kho không giống hoàn toàn; chỉ tiếp tục khi bạn đã kiểm tra file.','Kiểm tra phiếu trùng','warning');
-      }
-    }
-    renderUploadList(); showLoading(false);
-    if(!isFolderAutoLoad && failedCount>0) await showMsg('Có '+failedCount+' file không đọc được. Các file còn lại đã được xử lý.','Một số file bị lỗi','warning');
+    }catch(error){console.error('Không kiểm tra được phiếu trùng từ thư mục:',error&&error.message?error.message:String(error));folderImportSummary.checking=false;folderImportSummary.checkError=true;setUploadDuplicateCheckState(false,true);renderFolderImportSummary();renderUploadList();await showMsg('Không hoàn tất được bước kiểm tra phiếu trùng. Hệ thống không cho đưa các phiếu chưa kiểm tra vào danh sách. Vui lòng chọn lại thư mục để thử lại.','Kiểm tra trùng chưa hoàn tất','warning');return;}
+    folderImportSummary.checking=false;folderImportSummary.newUnits=Object.keys(parsedFileData).length;setUploadDuplicateCheckState(false,false);renderFolderImportSummary();renderUploadList();
+    if(currentUser&&currentUser.role==='admin'){const folderSuppressed=Object.keys(parsedFileData).filter(isSuppressedDeletedVoucher);if(folderSuppressed.length)await showMsg('Trong thư mục có phiếu đã bị xóa không phát nữa:\n\n'+folderSuppressed.map(formatSuppressionNoticeForImport).join('\n\n')+'\n\nHệ thống không tự tích chọn các phiếu này. Admin có thể tích chọn và xác nhận nếu thực sự muốn nạp lại.','Cảnh báo phiếu không phát nữa','warning');}
+    if(!Object.keys(parsedFileData).length)await showMsg('Đã kiểm tra xong thư mục nhưng không còn phiếu mới hợp lệ để đưa vào danh sách.','Không có phiếu mới','info');
+  }else{
+    validUnits.forEach(unit=>mergeParsedImportData(parsedFileData,unit.data));
+    markParsedDuplicateStatusesChecking();showLoading(false);setUploadDuplicateCheckState(true,false);renderUploadList();await yieldUploadPaint();
+    try{await refreshParsedDuplicateStatus();}
+    catch(error){Object.keys(parsedFileData).forEach(khoa=>{parsedDuplicateStatus[khoa]=Object.assign(defaultDuplicateStatus(false),{checkError:true});});setUploadDuplicateCheckState(false,true);renderUploadList();await showMsg('Không kiểm tra được phiếu trùng. Hệ thống đã giữ preview nhưng không cho đưa vào danh sách để tránh nạp sai. Vui lòng chọn lại file để thử lại.','Không kiểm tra được phiếu trùng','warning');return;}
+    setUploadDuplicateCheckState(false,false);renderUploadList();
+    const suppressedKhoas=Object.keys(parsedFileData).filter(isSuppressedDeletedVoucher);
+    if(currentUser&&currentUser.role==='phat'&&suppressedKhoas.length)await showMsg('Phát hiện phiếu từng bị Admin xóa với lựa chọn “Không phát nữa”:\n\n'+suppressedKhoas.map(formatSuppressionNoticeForImport).join('\n\n')+'\n\nVì bạn đang nạp bằng FILE riêng lẻ, phiếu được bỏ tích mặc định nhưng Người phát có thể tích chọn và xác nhận “Vẫn nạp lại”. Nếu nạp bằng THƯ MỤC thì hệ thống sẽ tự bỏ qua như phiếu trùng.','Phiếu đã xóa không phát nữa','warning');
+    if(currentUser&&currentUser.role==='admin'&&suppressedKhoas.length)await showMsg('Phát hiện phiếu từng bị xóa không phát nữa:\n\n'+suppressedKhoas.map(formatSuppressionNoticeForImport).join('\n\n')+'\n\nCác phiếu này được bỏ tích mặc định. Admin vẫn có thể tích chọn và nạp lại sau khi xác nhận.','Phiếu đã xóa không phát nữa','warning');
+    const duplicateKhoas=Object.keys(parsedFileData).filter(isDuplicateVoucher),partialKhoas=Object.keys(parsedFileData).filter(isPartialDuplicateVoucher);
+    if(duplicateKhoas.length||partialKhoas.length){const parts=[];if(duplicateKhoas.length)parts.push('trùng hoàn toàn: '+duplicateKhoas.join(', '));if(partialKhoas.length)parts.push('chồng lấp một phần: '+partialKhoas.join(', '));await showMsg('Phát hiện phiếu '+parts.join('; ')+'.\n\nCác phiếu được bỏ tích mặc định. Phiếu chồng lấp có một số số phiếu cũ nhưng nội dung kho không giống hoàn toàn; chỉ tiếp tục khi bạn đã kiểm tra file.','Kiểm tra phiếu trùng','warning');}
   }
+  console.info('[IMPORT PERF]',{mode:isFolderAutoLoad?'folder':'manual',files:fileList.length,parseMs,duplicateMs:Math.round(performance.now()-duplicateStarted),totalMs:Math.round(performance.now()-perfStarted),waitingCards:Object.keys(parsedFileData||{}).length});
+  if(!isFolderAutoLoad&&failedCount>0)await showMsg('Có '+failedCount+' file không đọc được. Các file còn lại đã được xử lý.','Một số file bị lỗi','warning');
+}
+
 function parseRows(
     rows,
     allowedKhoKeys,
@@ -8827,10 +8753,6 @@ function parseRows(
         break;
       }
     }
-
-    // FIX17.6.9: giữ nguyên mapping dữ liệu FIX17.1 và tương thích file xuất thực tế nhưng không còn giả định cứng rằng
-    // cột NGAY_S luôn là cột kho trên mọi file xuất. Nếu NGAY_S không nhận diện được,
-    // tự tìm cột có tín hiệu kho thật sự và ưu tiên cột chứa đúng kho đang chọn.
     const effectiveWarehouseColumn = chooseWarehouseColumnForImport(
       rows,
       headerRowIndex,
@@ -8849,12 +8771,9 @@ function parseRows(
       ).trim();
       const catalog = getSingleWarehouseCatalogSnapshot();
       let detectedKhoKey = resolveSingleWarehouseImportKey(khoName, catalog);
-      if (!detectedKhoKey && allowedKhoKeys && allowedKhoKeys.includes('Khac')) {
-        detectedKhoKey = mapKhoToKey(khoName);
-      }
       if (detectedKhoKey) seen.add(String(detectedKhoKey));
 
-      let khoKey = resolveAcceptedSingleWarehouseImportKey(khoName, allowedKhoKeys, catalog);
+      let khoKey = resolveSingleWarehouseImportKey(khoName, catalog, allowedKhoKeys);
       if (!allowedKhoKeys || !allowedKhoKeys.length) {
         khoKey = khoKey || detectedKhoKey;
       }
@@ -8910,26 +8829,15 @@ async function removeUploadItem(khoa) {
   }
 
 
-  function renderUploadList() {
-    let container=document.getElementById('deptListContainer'); container.innerHTML='';
-    let keys=Object.keys(parsedFileData);
-    if(keys.length===0){ document.getElementById('uploadResultArea').style.display='none'; let fileInput=document.getElementById('fileInput'); if(fileInput) fileInput.value=''; let folderInput=document.getElementById('folderInput'); if(folderInput) folderInput.value=''; return; }
-    keys.forEach(khoa=>{
-      let total=parsedFileData[khoa].items.length,allDates=new Set(),allVouchers=new Set();
-      for(let kKey in parsedFileData[khoa].vouchers){ let vc=parsedFileData[khoa].vouchers[kKey]; (vc.dates || []).forEach(d=>allDates.add(d)); ['TQ','BT','HT'].forEach(type=>(vc[type] || []).forEach(v=>allVouchers.add(String(v).split('|')[0]))); }
-      let isDup=isDuplicateVoucher(khoa),isPartial=isPartialDuplicateVoucher(khoa),isSuppressed=isSuppressedDeletedVoucher(khoa);
-      let borderCard=isSuppressed?'border:3px solid #c62828;':(isDup?'border:2px solid var(--danger);':(isPartial?'border:2px solid #ef6c00;':'border:1px solid #ccc;'));
-      let bgHeader=isSuppressed?'#ffcdd2':(isDup?'#ffebee':(isPartial?'#fff3e0':'#f0f0f0'));
-      let colorHeader=isSuppressed?'#b71c1c':(isDup?'var(--danger)':(isPartial?'#e65100':'var(--green)'));
-      let statusTag=isSuppressed?' <span style="font-size:14px; font-style:italic;">(đã xóa – không phát nữa)</span>':(isDup?' <span style="font-size:14px; font-style:italic;">(trùng hoàn toàn)</span>':(isPartial?' <span style="font-size:14px; font-style:italic;">(chồng lấp một phần – cần kiểm tra)</span>':''));
-      let bgBody=isSuppressed?'#fff5f5':(isDup?'#fff9f9':(isPartial?'#fffaf2':'#fff'));
-      const checked=(isDup || isPartial || isSuppressed)?'':'checked';
-      container.innerHTML+=`<div style="${borderCard} margin-bottom:15px; border-radius:8px; overflow:hidden;"><div style="background:${bgHeader}; padding:15px; font-weight:bold; font-size:20px; color:${colorHeader}; display:flex; justify-content:space-between; align-items:center;"><label style="display:flex; align-items:center; flex-wrap:wrap;"><input type="checkbox" class="v-chk" value="${escapeHtmlValue(khoa)}" ${checked} style="width:20px; height:20px; margin:0 10px 0 0;">${escapeHtmlText(khoa)}${statusTag}</label><div style="display:flex; align-items:center; gap:15px;"><span style="color:var(--danger); font-size:18px; white-space:nowrap;">${total} khoản</span><button onclick="removeUploadItem('${String(khoa).replace(/'/g,"\\'")}')" style="background:transparent; border:none; color:var(--danger); font-size:22px; padding:0; cursor:pointer; line-height:1;" title="Xóa khoa này">✖</button></div></div><div style="padding:15px; background:${bgBody}; font-size:16px;"><div style="margin-bottom:8px; font-size:18px;"><b>📅 Ngày:</b> <span style="color:var(--danger); font-weight:bold;">${escapeHtmlText(Array.from(allDates).join(', '))}</span></div><div><b>🧾 Các phiếu:</b><br>${formatVoucherColors(Array.from(allVouchers))}</div></div></div>`;
-    });
-    document.getElementById('uploadResultArea').style.display='block';
+  function renderUploadList(){
+    const container=document.getElementById('deptListContainer'),resultArea=document.getElementById('uploadResultArea'),keys=Object.keys(parsedFileData||{});
+    if(!keys.length){if(container)container.innerHTML='';if(resultArea)resultArea.style.display='none';updateUploadCommitButton();return;}
+    const html=keys.map(buildUploadCardHtml).join('');if(container&&container.innerHTML!==html)container.innerHTML=html;if(resultArea)resultArea.style.display='block';updateUploadCommitButton();
   }
 
   async function pushToWaitList() {
+    if(uploadDuplicateCheckPending)return showMsg('Hệ thống vẫn đang kiểm tra phiếu trùng. Vui lòng chờ hoàn tất.','Đang kiểm tra','info');
+    if(uploadDuplicateCheckFailed)return showMsg('Bước kiểm tra phiếu trùng chưa hoàn tất. Vui lòng chọn lại file/thư mục để thử lại.','Chưa thể đưa phiếu','warning');
     let checksNode = document.querySelectorAll('.v-chk:checked');
     if(checksNode.length === 0) return showMsg("Vui lòng chọn ít nhất 1 khoa!");
     let checks = Array.from(checksNode);
@@ -10181,7 +10089,7 @@ function renderTrackingList() {
     let bulkBtn = document.getElementById('btnBulkDelete');
     if (bulkBtn) bulkBtn.style.display = (currentUser && currentUser.role === 'admin') ? 'inline-block' : 'none';
     renderBackgroundFinishPanel();
-    let c = document.getElementById('trackingListContainer'); c.innerHTML = "";
+    let c = document.getElementById('trackingListContainer');
     let arr = Object.values(cloudWaitList)
       .filter(v =>
         !isVoucherFinishingInBackground(
@@ -10352,11 +10260,40 @@ function renderTrackingList() {
       let order = { progress: 0, waiting: 1, done: 2 };
       groups.sort((a, b) => order[a.state] - order[b.state]);
     }
-    groups.forEach(g => {
-      if(g.items.length === 0) return;
-      c.innerHTML += `<div class="group-title ${g.cls}">${g.title} (${g.items.length})</div>`;
-      g.items.forEach(v => { c.innerHTML += buildCardHTML(v.id, v); });
+    const renderSignature = JSON.stringify({
+      role: currentUser && currentUser.role || '',
+      department: currentFilter || '',
+      warehouse: adminWarehouseFilter || '',
+      groups: groups.map(g => [
+        g.state,
+        g.items.map(v => [
+          v.id,
+          Number(v.version || 0),
+          v.state || '',
+          v.khoa || '',
+          v.finishTime || '',
+          v.warehouseKeys || '',
+          v.dateSummary || '',
+          v.voucherSummary || '',
+          v.time || '',
+          Boolean(v.deletedNoReimport),
+          v.duplicateNote || ''
+        ])
+      ])
     });
+
+    if (trackingListRenderSignature === renderSignature && c.childElementCount > 0) {
+      return;
+    }
+
+    const htmlParts = [];
+    groups.forEach(g => {
+      if (g.items.length === 0) return;
+      htmlParts.push(`<div class="group-title ${g.cls}">${g.title} (${g.items.length})</div>`);
+      g.items.forEach(v => htmlParts.push(buildCardHTML(v.id, v)));
+    });
+    c.innerHTML = htmlParts.join('');
+    trackingListRenderSignature = renderSignature;
     scheduleVoucherDetailPrefetch();
   }
 
@@ -10501,9 +10438,7 @@ function renderTrackingList() {
       })
       .getVoucherCardsServer();
   }
-
-  /* FIX15: nhận biết ngày ISO và ngày Việt Nam, không để trình duyệt tự đoán sai tháng/ngày */
-  function getHistoryLocalDateKey(value) {
+function getHistoryLocalDateKey(value) {
     if (value === null || value === undefined || value === '') return '';
 
     if (value instanceof Date && !Number.isNaN(value.getTime())) {
@@ -10888,13 +10823,39 @@ function renderTrackingList() {
         : 'none';
   }
 
+  function nextAdaptiveDetailSyncMs() {
+    const now = Date.now();
+    const activeBase = Math.max(650, Math.min(850, Number(detailSyncIntervalMs || 750)));
+    const recentAt = Math.max(detailRealtimeLastActivityAt, detailRealtimeLastChangeAt);
+    const idleMs = now - recentAt;
+    if (idleMs < 8000) return activeBase;
+    if (idleMs < 22000) return 1000;
+    return 1600;
+  }
+
+  function scheduleNextDetailSync(id, isViewer, delayMs) {
+    if (syncInterval) clearTimeout(syncInterval);
+    if (!id || id !== activeVoucherId || document.visibilityState === 'hidden') {
+      syncInterval = null;
+      return;
+    }
+    syncInterval = setTimeout(async () => {
+      syncInterval = null;
+      await syncDetail(id, isViewer, false);
+      if (id === activeVoucherId && document.visibilityState !== 'hidden') {
+        scheduleNextDetailSync(id, isViewer, nextAdaptiveDetailSyncMs());
+      }
+    }, Math.max(50, Number(delayMs || nextAdaptiveDetailSyncMs())));
+  }
+
   function startDetailSync(id, isViewer) {
-    if (syncInterval) clearInterval(syncInterval);
-    // 750 ms đủ nhanh để nhìn thấy thao tác người khác gần như tức thời,
-    // nhưng endpoint bình thường chỉ đọc Script Cache nên không quét Google Sheet mỗi nhịp.
-    const intervalMs = Math.max(650, Math.min(1000, Number(detailSyncIntervalMs || 750)));
-    syncInterval = setInterval(() => syncDetail(id, isViewer, false), intervalMs);
-    requestImmediateDetailSync(50);
+    if (syncInterval) clearTimeout(syncInterval);
+    detailRealtimeLastActivityAt = Date.now();
+    detailRealtimeLastChangeAt = Date.now();
+    detailLastSheetFallbackAt = 0;
+    detailSheetFallbackJitterMs = Math.floor(Math.random() * DETAIL_SHEET_FALLBACK_JITTER_MS);
+    scheduleNextDetailSync(id, isViewer, 120);
+    requestImmediateDetailSync(40);
   }
 
 function displayVoucherDetail(
@@ -11506,6 +11467,33 @@ function displayVoucherDetail(
         mutationId: state.mutationId || createMutationId('D'),
         deviceId: getNotificationDeviceId()
       }));
+  }
+
+  function detachPendingDistributionActionsForBackgroundFinish(voucherId) {
+    const targetVoucherId = String(voucherId || '');
+    const pendingActions = collectPendingDistributionActions(targetVoucherId);
+
+    Array.from(distributionIntentStates.values()).forEach(state => {
+      if (state.voucherId === targetVoucherId) {
+        distributionIntentStates.delete(state.key);
+      }
+    });
+
+    persistDistributionIntentStates();
+    updateBatchSaveIndicator();
+    return pendingActions;
+  }
+
+  function queueDistributionFinalizeAndReturnToList(voucherId, voucher) {
+    const id = String(voucherId || '');
+    const pendingActions = detachPendingDistributionActionsForBackgroundFinish(id);
+    queueVoucherFinishInBackground(id, voucher, pendingActions);
+    removeVoucherDetailCache(id);
+    delete cloudWaitList[id];
+    saveVoucherCardsLocalCache(cloudWaitList);
+    trackingListRenderSignature = '';
+    switchView('list');
+    return true;
   }
 
   function applyFinalizeSnapshot(voucherId, result) {
@@ -12436,6 +12424,7 @@ async function processDistributionBatch() {
   }
 
   async function toggleItem(idx) {
+    detailRealtimeLastActivityAt = Date.now();
     const voucherId = String(activeVoucherId || '');
     let voucher = cloudWaitList[voucherId];
     let item = voucher && voucher.items && voucher.items[idx];
@@ -13191,7 +13180,7 @@ async function processDistributionBatch() {
 
     syncInFlight = true;
     const requestSeq = ++detailSyncRequestSeq;
-    const forceSheet = Date.now() - detailLastSheetFallbackAt >= DETAIL_SHEET_FALLBACK_MS;
+    const forceSheet = Date.now() - detailLastSheetFallbackAt >= (DETAIL_SHEET_FALLBACK_MS + detailSheetFallbackJitterMs);
 
     try {
       const delta = await gasCall(
@@ -13219,6 +13208,8 @@ async function processDistributionBatch() {
         }
         return;
       }
+
+      detailRealtimeLastChangeAt = Date.now();
 
       if (delta.full && delta.voucher) {
         cloudWaitList[id] = delta.voucher;
@@ -13279,12 +13270,12 @@ function flattenNotificationResults(value) {
 
 
   /* ============================================================
-   * FIX6 - CHỐT PHÁT NỀN
+   * CHỐT PHÁT NỀN
    *
    * Người dùng được quay về danh sách ngay sau khi xác nhận.
    * Yêu cầu chốt được lưu trong localStorage, tự thử lại khi mất
    * mạng và an toàn khi nhiều thiết bị cùng chốt một phiếu vì
-   * finishVoucherServer là idempotent trong FIX5.
+   * finishVoucherServer là idempotent và an toàn khi gửi lại.
    * ============================================================ */
   function backgroundFinishStorageKey() {
     const username =
@@ -13528,7 +13519,8 @@ function flattenNotificationResults(value) {
 
   function queueVoucherFinishInBackground(
     voucherId,
-    voucher
+    voucher,
+    pendingActions = []
   ) {
     const id = String(voucherId || '').trim();
     if (!id) {
@@ -13554,6 +13546,7 @@ function flattenNotificationResults(value) {
       nextAttemptAt: 0,
       status: 'pending',
       lastError: '',
+      pendingActions: Array.isArray(pendingActions) ? pendingActions : [],
       snapshot:
         previous.snapshot ||
         compactVoucherSnapshotForBackgroundFinish(
@@ -13748,8 +13741,8 @@ function flattenNotificationResults(value) {
 
         try {
           const result = await gasCall(
-            'finishVoucherServer',
-            [id],
+            'finalizeVoucherWithPendingActionsServer',
+            [id, Array.isArray(entry.pendingActions) ? entry.pendingActions : []],
             60000
           );
 
@@ -13763,7 +13756,8 @@ function flattenNotificationResults(value) {
 
           if (
             result &&
-            result.success !== false
+            result.success !== false &&
+            result.finalized !== false
           ) {
             const latest = readBackgroundFinishQueue();
             delete latest[id];
@@ -13780,10 +13774,10 @@ function flattenNotificationResults(value) {
 
           const retryable = Boolean(
             result &&
-            (
-              result.retryable ||
-              result.incomplete
-            )
+            result.retryable &&
+            !(Array.isArray(result.conflicts) && result.conflicts.length) &&
+            !(Array.isArray(result.actionErrors) && result.actionErrors.length) &&
+            !(Array.isArray(result.unfinishedIndices) && result.unfinishedIndices.length)
           );
           const message =
             result && result.msg
@@ -13927,9 +13921,7 @@ function flattenNotificationResults(value) {
       }
     }
   );
-  /* ===== END FIX6 BACKGROUND FINISH ===== */
-
-  function notificationResultNote(results) {
+function notificationResultNote(results) {
     const list =
       flattenNotificationResults(
         results
@@ -14150,9 +14142,10 @@ async function processSplitAndExit(isFinish) {
       return false;
     }
 
-    // Mô hình mới: mỗi phiếu là dữ liệu của đúng một kho, tuyệt đối không tách phiếu.
+    // Mỗi phiếu chỉ có một kho. Khi đủ thuốc, chuyển yêu cầu FINALIZE sang hàng đợi nền bền vững
+    // để người phát quay về Danh sách ngay; server vẫn kiểm tra 100% và chống chốt trùng.
     if (isFinish) {
-      return finalizeDistributionZeroStuck(sourceVoucherId);
+      return queueDistributionFinalizeAndReturnToList(sourceVoucherId, voucher);
     }
 
     // Thoát không bị giữ lại bởi request nền chậm; queue đã lưu local và tiếp tục tự đồng bộ.
