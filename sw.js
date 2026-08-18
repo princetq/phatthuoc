@@ -1,4 +1,4 @@
-const CACHE_NAME = 'phatthuoc-fix17-9-1-mobile-history-date-single';
+const CACHE_NAME = 'phatthuoc-fix17-10-clean-qa-hardened-single';
 
 const APP_SHELL = [
   '/',
