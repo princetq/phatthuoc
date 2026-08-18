@@ -1,4 +1,4 @@
-const CACHE_NAME = 'phat-thuoc-pwa-v42-5-9-fix17-6-9-real-export-warehouse-fix-single-v1';
+const CACHE_NAME = 'phatthuoc-fix17-9-1-mobile-history-date-single';
 
 const APP_SHELL = [
   '/',
@@ -46,20 +46,24 @@ self.addEventListener('fetch', event => {
 
   if (request.mode === 'navigate') {
     event.respondWith(
-      fetch(request)
-        .then(response => {
-          const copy = response.clone();
+      caches.match('/index.html').then(cached => {
+        const networkUpdate = fetch(request)
+          .then(response => {
+            if (response && response.ok) {
+              const copy = response.clone();
+              caches.open(CACHE_NAME).then(cache => cache.put('/index.html', copy));
+            }
+            return response;
+          })
+          .catch(() => null);
 
-          caches.open(CACHE_NAME)
-            .then(cache =>
-              cache.put('/index.html', copy)
-            );
+        if (cached) {
+          event.waitUntil(networkUpdate);
+          return cached;
+        }
 
-          return response;
-        })
-        .catch(() =>
-          caches.match('/index.html')
-        )
+        return networkUpdate.then(response => response || caches.match('/index.html'));
+      })
     );
 
     return;
