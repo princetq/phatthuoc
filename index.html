@@ -1089,64 +1089,6 @@
     .group-done { color: var(--green); border-color: var(--green); }
     .group-checked { color: #007bff; border-color: #007bff; }
 
-
-    /* ===== AUTO-COLLAB: hiển thị rõ trên desktop và mobile ===== */
-    .collab-status-bar {
-      flex: 1 1 100%;
-      width: 100%;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      flex-wrap: wrap;
-      padding: 8px 10px;
-      border-radius: 8px;
-      background: rgba(255,255,255,0.18);
-      border: 1px solid rgba(255,255,255,0.32);
-      box-sizing: border-box;
-    }
-    .collab-status-bar[hidden] { display: none !important; }
-    .collab-status-summary { font-weight: 900; white-space: nowrap; }
-    .collab-status-people { display: flex; gap: 6px; flex-wrap: wrap; min-width: 0; }
-    .collab-person-chip {
-      display: inline-flex;
-      max-width: 220px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      background: rgba(255,255,255,0.9);
-      color: #14532d;
-      border-radius: 999px;
-      padding: 4px 9px;
-      font-size: 13px;
-      font-weight: 800;
-    }
-    tr.collab-claimed td {
-      background: #fff3cd !important;
-      color: #5f4300 !important;
-      border-color: #f0c36d !important;
-      transition: background-color .12s ease, color .12s ease;
-    }
-    tr.collab-claimed-own td { box-shadow: inset 4px 0 0 #f59e0b; }
-    tr.collab-claimed-other { cursor: not-allowed; }
-    .collab-claim-badge {
-      display: inline-block;
-      max-width: 100%;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: normal;
-      line-height: 1.2;
-      font-weight: 900;
-      color: #7a4b00;
-    }
-    tr.collab-requesting td { opacity: .78; }
-    tr.collab-pulse td { animation: collabPulse .65s ease; }
-    @keyframes collabPulse {
-      0%, 100% { transform: translateX(0); }
-      25% { transform: translateX(-2px); }
-      50% { transform: translateX(2px); }
-      75% { transform: translateX(-1px); }
-    }
-
     .dist-header { background: var(--green); color: #fff; padding: 15px 20px; border-radius: 8px 8px 0 0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
     .user-badge { background: rgba(255,255,255,0.25); padding: 8px 16px; border-radius: 20px; font-weight: 700; font-size: 18px; margin-right: 10px; }
     .dist-header button { font-size: 20px; padding: 10px 20px; }
@@ -1448,8 +1390,7 @@
       line-height: 1.1;
     }
 
-    body.low-vision-detail-active #detailModeText,
-    body.low-vision-detail-active .dist-header #btnPrintVoucher {
+    body.low-vision-detail-active #detailModeText {
       display: none !important;
     }
 
@@ -1578,10 +1519,7 @@
       }
     }
 
-
-
-
-    /* ===== FIX17.5.3: CHỌN IN 1 TỜ / 2 TỜ TRÊN 1 MẶT A4 ===== */
+    /* ===== PRINT 2-UP CONSECUTIVE PAGES: trang 1+2, 3+4... ===== */
     .print-options-content {
       max-width: 620px;
       padding: 24px;
@@ -1649,6 +1587,78 @@
     }
     #voucherPrintStage { display: none; }
 
+    /*
+     * Khu đo trang logic A4 dọc. Nó chỉ tồn tại trong lúc chuẩn bị chế độ 2 trang/mặt,
+     * nằm ngoài màn hình và không ảnh hưởng giao diện người dùng.
+     */
+    #voucherPrintMeasure {
+      position: absolute !important;
+      left: -100000px !important;
+      top: 0 !important;
+      width: 190mm !important;
+      visibility: hidden !important;
+      pointer-events: none !important;
+      z-index: -1 !important;
+      background: #fff !important;
+    }
+    .print-logical-page {
+      width: 190mm !important;
+      height: 277mm !important;
+      max-width: 190mm !important;
+      min-width: 190mm !important;
+      box-sizing: border-box !important;
+      overflow: hidden !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      position: relative !important;
+      background: #fff !important;
+      color: #000 !important;
+    }
+    .print-logical-page .dist-header {
+      position: static !important;
+      background: #fff !important;
+      color: #000 !important;
+      padding: 0 0 2mm !important;
+      margin: 0 0 2mm !important;
+      border-bottom: 2px solid #000 !important;
+      box-shadow: none !important;
+      border-radius: 0 !important;
+    }
+    .print-logical-page .dist-header button,
+    .print-logical-page .tab-header,
+    .print-logical-page #batchSaveIndicator,
+    .print-logical-page .batch-save-indicator {
+      display: none !important;
+    }
+    .print-logical-page .tab-content,
+    .print-logical-body {
+      display: block !important;
+      border: none !important;
+      padding: 0 !important;
+      margin: 0 !important;
+    }
+    .print-logical-page .user-badge {
+      color: #000 !important;
+      background: transparent !important;
+    }
+    .print-logical-page table {
+      width: 100% !important;
+      table-layout: auto !important;
+    }
+    .print-logical-page tr.distributed td,
+    .print-logical-page tr.negative-row td {
+      background: transparent !important;
+      color: #000 !important;
+    }
+    .print-logical-page .phat-badge {
+      color: #000 !important;
+      border: 1px solid #000;
+    }
+    .print-logical-page th.col-ghichu,
+    .print-logical-page td.col-ghichu { display: table-cell !important; }
+    .print-logical-page th:nth-child(7),
+    .print-logical-page td:nth-child(7) { display: none !important; }
+
     @media (max-width: 600px) {
       .print-options-content { padding: 18px 14px; border-radius: 15px; }
       .print-options-title { font-size: 21px; }
@@ -1666,10 +1676,11 @@
       .print-option-desc { font-size: 13px; }
     }
 
+
     @media print {
       body * { visibility: hidden !important; }
 
-      /* In mặc định / In 1 tờ: giữ bố cục A4 dọc như trước. */
+      /* In 1 tờ: A4 dọc, giữ bố cục cũ. */
       body:not(.print-mode-double) #view-detail,
       body:not(.print-mode-double) #view-detail * {
         visibility: visible !important;
@@ -1685,8 +1696,7 @@
       body:not(.print-mode-double) .dist-header button,
       body:not(.print-mode-double) .tab-header,
       body:not(.print-mode-double) .app-footer,
-      body:not(.print-mode-double) #batchSaveIndicator,
-      body:not(.print-mode-double) #collabStatusBar {
+      body:not(.print-mode-double) #batchSaveIndicator {
         display: none !important;
       }
       body:not(.print-mode-double) .tab-content { display: none !important; border: none !important; padding: 0 !important; }
@@ -1707,24 +1717,42 @@
       body:not(.print-mode-double) th:nth-child(7),
       body:not(.print-mode-double) td:nth-child(7) { display: none !important; }
 
-      /* In 2 tờ: hai bản giống nhau, thu nhỏ theo tỉ lệ A5 và đặt cạnh nhau trên A4 ngang. */
+      /*
+       * In 2 tờ = 2 TRANG LIÊN TIẾP trên 1 mặt A4 ngang:
+       * mặt 1: trang 1 + trang 2; mặt 2: trang 3 + trang 4; ...
+       * Không nhân đôi cùng một trang.
+       */
       body.print-mode-double #voucherPrintStage,
       body.print-mode-double #voucherPrintStage * {
         visibility: visible !important;
       }
       body.print-mode-double #voucherPrintStage {
-        display: grid !important;
+        display: block !important;
         position: absolute;
         left: 0;
         top: 0;
         width: 285mm;
+        margin: 0;
+        padding: 0;
+        overflow: visible;
+        background: #fff !important;
+      }
+      body.print-mode-double .print-physical-sheet {
+        width: 285mm;
         height: 198mm;
+        display: grid !important;
         grid-template-columns: 142.5mm 142.5mm;
         grid-template-rows: 198mm;
         margin: 0;
         padding: 0;
         overflow: hidden;
         background: #fff !important;
+        break-after: page;
+        page-break-after: always;
+      }
+      body.print-mode-double .print-physical-sheet:last-child {
+        break-after: auto;
+        page-break-after: auto;
       }
       body.print-mode-double .print-sheet-half {
         width: 142.5mm;
@@ -1732,71 +1760,29 @@
         box-sizing: border-box;
         overflow: hidden;
         position: relative;
-        padding: 2mm 3mm 1mm;
         background: #fff !important;
       }
       body.print-mode-double .print-sheet-half + .print-sheet-half {
         border-left: .25mm dashed #999;
-        padding-left: 4mm;
       }
       body.print-mode-double .print-copy-scale {
+        position: absolute;
+        left: 6mm;
+        top: 3.5mm;
         width: 190mm;
-        transform: scale(.67);
+        height: 277mm;
+        transform: scale(.68);
         transform-origin: top left;
       }
-      body.print-mode-double .print-voucher-copy {
+      body.print-mode-double .print-logical-page {
         width: 190mm !important;
+        height: 277mm !important;
         max-width: 190mm !important;
         min-width: 190mm !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        position: static !important;
-        background: #fff !important;
-        color: #000 !important;
+        overflow: hidden !important;
       }
-      body.print-mode-double .print-voucher-copy .dist-header {
-        position: static !important;
-        background: #fff !important;
-        color: #000 !important;
-        padding: 0 0 2mm !important;
-        margin: 0 0 2mm !important;
-        border-bottom: 2px solid #000 !important;
-        box-shadow: none !important;
-        border-radius: 0 !important;
-      }
-      body.print-mode-double .print-voucher-copy .detail-header-title { flex: 1 1 100% !important; }
-      body.print-mode-double .print-voucher-copy .detail-header-actions { display: flex !important; }
-      body.print-mode-double .print-voucher-copy .dist-header button,
-      body.print-mode-double .print-voucher-copy .tab-header,
-      body.print-mode-double .print-voucher-copy #batchSaveIndicator,
-      body.print-mode-double .print-voucher-copy #collabStatusBar {
-        display: none !important;
-      }
-      body.print-mode-double .print-voucher-copy .tab-content {
-        display: block !important;
-        border: none !important;
-        padding: 0 !important;
-        margin: 0 !important;
-      }
-      body.print-mode-double .print-voucher-copy .user-badge {
-        color: #000 !important;
-        background: transparent !important;
-      }
-      body.print-mode-double .print-voucher-copy table {
-        width: 100% !important;
-        table-layout: auto !important;
-      }
-      body.print-mode-double .print-voucher-copy tr.distributed td,
-      body.print-mode-double .print-voucher-copy tr.negative-row td {
-        background: transparent !important;
-        color: #000 !important;
-      }
-      body.print-mode-double .print-voucher-copy .phat-badge { color: #000 !important; border: 1px solid #000; }
-      body.print-mode-double .print-voucher-copy th.col-ghichu,
-      body.print-mode-double .print-voucher-copy td.col-ghichu { display: table-cell !important; }
-      body.print-mode-double .print-voucher-copy th:nth-child(7),
-      body.print-mode-double .print-voucher-copy td:nth-child(7) { display: none !important; }
     }
+
 
     @media (max-width: 768px) {
       body { font-size: 16px; padding-bottom: 50px; }
@@ -1888,7 +1874,6 @@
       
       .user-badge { font-size: 12px; padding: 4px 10px; flex-grow: 1; text-align: center; }
       .dist-header button { font-size: 14px; padding: 6px 12px; }
-      .dist-header #btnPrintVoucher { display: inline-flex !important; align-items:center; justify-content:center; }
 
 
       /*
@@ -1964,36 +1949,6 @@
 
       #view-detail #btnCloseDetail {
         margin-left: auto;
-      }
-
-
-      #view-detail .collab-status-bar {
-        order: 4;
-        flex: 1 0 100%;
-        width: 100%;
-        padding: 6px 7px;
-        gap: 5px;
-        border-radius: 6px;
-      }
-      #view-detail .collab-status-summary {
-        flex: 1 1 100%;
-        width: 100%;
-        text-align: center;
-        font-size: 13px;
-        white-space: normal;
-      }
-      #view-detail .collab-status-people {
-        width: 100%;
-        justify-content: center;
-        gap: 4px;
-      }
-      #view-detail .collab-person-chip {
-        max-width: 145px;
-        font-size: 11px;
-        padding: 3px 7px;
-      }
-      #view-detail .collab-claim-badge {
-        font-size: 12px;
       }
 
       .tab-header {
@@ -2401,11 +2356,16 @@
   }
 
 
+
     /* ===== SHARED MOBILE ACTION VISIBILITY: SINGLE + MULTI ===== */
     @media (max-width: 768px) {
-      #btnUpload,
-      #btnPrintVoucher {
+      #btnUpload {
         display: none !important;
+      }
+      #btnPrintVoucher {
+        display: inline-flex !important;
+        align-items: center;
+        justify-content: center;
       }
     }
 </style>
@@ -2505,7 +2465,7 @@
   <div class="card">
     <h1 style="color:var(--green); text-align:center; margin-top:0;">NẠP FILE EXCEL VÀO HỆ THỐNG</h1>
 
-    <div id="singleWarehouseImportContext" style="display:none; margin:0 0 18px; padding:14px 16px; border:2px solid #90caf9; border-radius:10px; background:#f4f9ff;">
+    <div id="singleWarehouseImportContext" style="margin:0 0 18px; padding:14px 16px; border:2px solid #90caf9; border-radius:10px; background:#f4f9ff;">
       <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
         <label for="uploadWarehouseSelect" style="font-weight:800; color:#0d47a1; min-width:120px;">🏢 Kho đang nạp:</label>
         <select id="uploadWarehouseSelect" onchange="handleSingleWarehouseImportChange()" style="flex:1; min-width:220px; max-width:520px; margin:0;"></select>
@@ -2660,10 +2620,6 @@
       <button id="btnFinishVoucher" class="btn-indigo" style="display:none;" onclick="finishDistribution()">✅ Chốt Phát</button>
       <button id="btnFinishCheck" class="btn-primary" style="display:none; background: #007bff;" onclick="finishCheck()">✅ Chốt Đối Chiếu</button>
       <button id="btnCloseDetail" class="btn-warning" onclick="closeDetail()">⬅ Thoát</button>
-    </div>
-    <div id="collabStatusBar" class="collab-status-bar" hidden aria-live="polite">
-      <span id="collabStatusSummary" class="collab-status-summary">👥 Phát song song</span>
-      <span id="collabStatusPeople" class="collab-status-people"></span>
     </div>
   </div>
   <div id="distTabsHeader" class="tab-header"></div>
@@ -2936,7 +2892,6 @@
 </div>
 
 
-
 <div id="printOptionsModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="printOptionsTitle">
   <div class="modal-content print-options-content">
     <h3 id="printOptionsTitle" class="print-options-title">🖨️ Chọn chế độ in</h3>
@@ -2950,7 +2905,7 @@
       <button type="button" class="print-option-card" onclick="printVoucherWithMode('double')">
         <span class="print-option-icon">📑</span>
         <span class="print-option-name">In 2 tờ</span>
-        <span class="print-option-desc">A4 ngang · hai bản giống nhau trên cùng một mặt giấy, tự thu nhỏ để vừa trang.</span>
+        <span class="print-option-desc">A4 ngang · ghép trang 1 + 2 trên mặt đầu, trang 3 + 4 trên mặt tiếp theo...</span>
       </button>
     </div>
     <button type="button" class="btn-admin print-options-cancel" onclick="closePrintOptions()">Hủy</button>
@@ -2986,7 +2941,7 @@
 
 <script>
   /* ===== GITHUB PAGES ↔ APPS SCRIPT BRIDGE V2 ===== */
-  window.PHATTHUOC_REALTIME_OPT = 'FIX17_5_6_IMPORT_RESOLVER_HOTFIX_SINGLE';
+  window.PHATTHUOC_REALTIME_OPT = 'FIX17_6_1_PRINT_2UP_PAGES_SINGLE';
   const GAS_BRIDGE_URL = 'https://script.google.com/macros/s/AKfycbzhDWWBV13NuxpVfYqaOe3BIzuAQYGE8obpn6Yr76qW4wa7v7bfk5WJU-IAxWaHiJiYJA/exec';
   let gasBridgeReady = false;
   let gasBridgeWindow = null;
@@ -3938,12 +3893,13 @@
   }
 
   function beginFastImportCommitUI() {
-    skipNextListReload = true;
-    switchView('list');
-    showImportCommitBanner(true, 'Đang đưa phiếu vào danh sách… Bạn có thể tiếp tục theo dõi các phiếu đang phát.');
+    // Không chuyển màn hình sớm. Chờ máy chủ commit xong và dựng được thẻ phiếu mới
+    // rồi mới mở Danh sách để người dùng không nhìn thấy một danh sách chưa có phiếu vừa nạp.
+    showLoading(true, 'Đang đưa phiếu vào danh sách...');
   }
 
   function finishFastImportCommitUI() {
+    showLoading(false);
     showImportCommitBanner(false);
   }
 
@@ -3967,7 +3923,6 @@
     window.__realtimeRecoveryHooksInstalled = true;
     const wake = () => {
       requestImmediateDetailSync(0);
-      keepAliveOwnCollaborationClaim();
       const list = document.getElementById('view-list');
       if (list && list.style.display !== 'none') loadWaitList({ silent: true });
       flushReadyNotificationDispatch();
@@ -3983,292 +3938,6 @@
     document.addEventListener('touchstart', () => requestImmediateDetailSync(0), { passive: true });
   }
   /* ===== END REALTIME V1 ===== */
-
-
-  /* ===== AUTO-COLLAB UI V2 ===== */
-  let collaborationSnapshot = {
-    mode: 'solo',
-    activeCount: 0,
-    active: [],
-    claims: []
-  };
-  let collaborationActionInFlight = false;
-  let collaborationVisualSignature = '';
-
-  function collaborationDeviceId() {
-    return getNotificationDeviceId();
-  }
-
-  function collaborationClaimForIndex(idx) {
-    const claims = collaborationSnapshot && Array.isArray(collaborationSnapshot.claims)
-      ? collaborationSnapshot.claims
-      : [];
-    return claims.find(claim => Number(claim && claim.index) === Number(idx)) || null;
-  }
-
-  function isOwnCollaborationClaim(claim) {
-    return Boolean(
-      claim &&
-      String(claim.ownerDeviceId || '') === String(collaborationDeviceId() || '')
-    );
-  }
-
-
-  /* ===== AUTO-COLLAB CLAIM KEEPALIVE V3 =====
-   * Claim cơ bản vẫn có TTL 90 giây. Khi chính thiết bị đang giữ dòng,
-   * app còn mở phiếu và ở foreground, hệ thống gia hạn nền mỗi 25 giây.
-   * Server giới hạn một lần giữ liên tục tối đa 5 phút để tránh khóa rác.
-   */
-  const COLLAB_CLAIM_KEEPALIVE_INTERVAL_MS = 25000;
-  let collaborationClaimKeepAliveTimer = null;
-  let collaborationClaimKeepAliveInFlight = false;
-
-  function ownCollaborationClaim() {
-    const claims = collaborationSnapshot && Array.isArray(collaborationSnapshot.claims)
-      ? collaborationSnapshot.claims
-      : [];
-    return claims.find(isOwnCollaborationClaim) || null;
-  }
-
-  function stopCollaborationClaimKeepAlive() {
-    if (collaborationClaimKeepAliveTimer) {
-      clearInterval(collaborationClaimKeepAliveTimer);
-      collaborationClaimKeepAliveTimer = null;
-    }
-  }
-
-  function startCollaborationClaimKeepAlive() {
-    if (collaborationClaimKeepAliveTimer) return;
-    collaborationClaimKeepAliveTimer = setInterval(() => {
-      keepAliveOwnCollaborationClaim();
-    }, COLLAB_CLAIM_KEEPALIVE_INTERVAL_MS);
-  }
-
-  async function keepAliveOwnCollaborationClaim() {
-    if (collaborationClaimKeepAliveInFlight || !activeVoucherId || document.visibilityState !== 'visible') return;
-    const claim = ownCollaborationClaim();
-    if (!claim) {
-      stopCollaborationClaimKeepAlive();
-      return;
-    }
-
-    collaborationClaimKeepAliveInFlight = true;
-    try {
-      const result = await gasCall(
-        'keepAliveVoucherClaimServer',
-        [String(activeVoucherId || ''), {
-          deviceId: collaborationDeviceId(),
-          index: Number(claim.index),
-          itemId: String(claim.itemId || '')
-        }],
-        8000
-      );
-      if (result && result.collab) applyCollaborationSnapshot(result.collab);
-      if (result && result.renewed === false) requestImmediateDetailSync(0);
-    } catch (error) {
-      // Không hiện popup: nếu mạng thật sự mất, claim tự hết TTL và realtime sẽ cập nhật khi kết nối lại.
-      console.warn('Gia hạn dòng đang phát tạm gián đoạn:', error && error.message ? error.message : String(error));
-    } finally {
-      collaborationClaimKeepAliveInFlight = false;
-    }
-  }
-  /* ===== END AUTO-COLLAB CLAIM KEEPALIVE V3 ===== */
-
-  function collaborationDisplayName(entry) {
-    const name = String(entry && (entry.fullName || entry.username) || 'Người phát').trim();
-    return name || 'Người phát';
-  }
-
-  function renderCollaborationBanner() {
-    const bar = document.getElementById('collabStatusBar');
-    const summary = document.getElementById('collabStatusSummary');
-    const people = document.getElementById('collabStatusPeople');
-    if (!bar || !summary || !people) return;
-
-    const active = collaborationSnapshot && Array.isArray(collaborationSnapshot.active)
-      ? collaborationSnapshot.active
-      : [];
-    const mode = collaborationSnapshot && collaborationSnapshot.mode === 'collab';
-
-    if (!mode) {
-      bar.hidden = true;
-      people.innerHTML = '';
-      return;
-    }
-
-    bar.hidden = false;
-    const claims = collaborationSnapshot && Array.isArray(collaborationSnapshot.claims)
-      ? collaborationSnapshot.claims
-      : [];
-    const deviceCount = Math.max(Number(collaborationSnapshot.activeCount || 0), active.length);
-    summary.textContent = deviceCount >= 2
-      ? `👥 Phát song song · ${deviceCount} thiết bị đang phát`
-      : (claims.length
-          ? `👥 Phát song song · ${claims.length} dòng đang được xử lý`
-          : '👥 Đang chuyển về chế độ một người');
-
-    const byName = new Map();
-    [...active, ...claims.map(claim => ({
-      deviceId: claim.ownerDeviceId,
-      fullName: claim.fullName,
-      username: claim.username
-    }))].forEach(entry => {
-      const name = collaborationDisplayName(entry);
-      const current = byName.get(name) || { devices: new Set(), mine: false };
-      if (entry && entry.deviceId) current.devices.add(String(entry.deviceId));
-      if (String(entry && entry.deviceId || '') === String(collaborationDeviceId() || '')) current.mine = true;
-      byName.set(name, current);
-    });
-
-    people.innerHTML = Array.from(byName.entries()).slice(0, 5).map(([name, meta]) => {
-      const deviceTotal = meta.devices ? meta.devices.size : 1;
-      const suffix = deviceTotal > 1 ? ` · ${deviceTotal} máy` : '';
-      const mine = meta.mine ? ' · bạn' : '';
-      return `<span class="collab-person-chip" title="${escapeHtmlValue(name)}">${escapeHtmlText(name)}${suffix}${mine}</span>`;
-    }).join('');
-  }
-
-  function renderCollaborationClaimVisual(idx, item, claim) {
-    const row = document.getElementById('tr_' + idx);
-    const status = document.getElementById('st_' + idx);
-    if (!row || !status || !item || item.status !== 'Chưa phát' || !claim) return;
-
-    row.classList.remove('status-updating', 'missed-item', 'distributed');
-    row.classList.add('item-row', 'collab-claimed');
-    row.classList.toggle('collab-claimed-own', isOwnCollaborationClaim(claim));
-    row.classList.toggle('collab-claimed-other', !isOwnCollaborationClaim(claim));
-
-    const name = collaborationDisplayName(claim);
-    const compact = window.matchMedia && window.matchMedia('(max-width: 700px)').matches;
-    const label = isOwnCollaborationClaim(claim)
-      ? (compact ? '🟡 Bạn đang phát' : `🟡 Bạn đang phát · ${name}`)
-      : (compact ? `🟡 ${name}` : `🟡 ${name} đang phát`);
-    status.innerHTML = `<span class="collab-claim-badge" title="${escapeHtmlValue(name)}">${escapeHtmlText(label)}</span>`;
-  }
-
-  function renderAllCollaborationClaims() {
-    const voucher = cloudWaitList[activeVoucherId];
-    if (!voucher || !Array.isArray(voucher.items)) return;
-
-    voucher.items.forEach((item, idx) => {
-      const pending = distributionIntentStates.get(distributionActionKey(activeVoucherId, idx));
-      if (pending && (pending.inFlight || pending.desiredDistributed !== pending.confirmedDistributed)) return;
-      const checkPending = checkIntentStates.get(checkActionKey(activeVoucherId, idx));
-      if (checkPending && (checkPending.inFlight || checkPending.queued || checkPending.desiredChecked !== checkPending.confirmedChecked)) return;
-      const claim = collaborationClaimForIndex(idx);
-      if (item.status === 'Chưa phát' && claim) renderCollaborationClaimVisual(idx, item, claim);
-      else renderServerItemStateBase(idx, item);
-    });
-  }
-
-  function applyCollaborationSnapshot(snapshot) {
-    if (!snapshot || typeof snapshot !== 'object') return;
-    const next = {
-      mode: snapshot.mode === 'collab' ? 'collab' : 'solo',
-      activeCount: Number(snapshot.activeCount || 0),
-      active: Array.isArray(snapshot.active) ? snapshot.active : [],
-      claims: Array.isArray(snapshot.claims) ? snapshot.claims : [],
-      serverNow: Number(snapshot.serverNow || 0),
-      claimTtlMs: Number(snapshot.claimTtlMs || 0),
-      claimMaxHoldMs: Number(snapshot.claimMaxHoldMs || 0)
-    };
-    const signature = JSON.stringify({
-      mode: next.mode,
-      active: next.active.map(entry => [String(entry.deviceId || ''), String(entry.fullName || entry.username || '')]).sort(),
-      claims: next.claims.map(claim => [Number(claim.index), String(claim.ownerDeviceId || ''), String(claim.fullName || claim.username || '')]).sort()
-    });
-    collaborationSnapshot = next;
-    if (ownCollaborationClaim() && activeVoucherId && document.visibilityState === 'visible') {
-      startCollaborationClaimKeepAlive();
-    } else {
-      stopCollaborationClaimKeepAlive();
-    }
-    if (signature === collaborationVisualSignature) return;
-    collaborationVisualSignature = signature;
-    renderCollaborationBanner();
-    renderAllCollaborationClaims();
-  }
-
-  function pulseClaimedRow(idx) {
-    const row = document.getElementById('tr_' + idx);
-    if (!row) return;
-    row.classList.remove('collab-pulse');
-    void row.offsetWidth;
-    row.classList.add('collab-pulse');
-    setTimeout(() => row.classList.remove('collab-pulse'), 650);
-  }
-
-  async function handleCollaborativeDistributionTap(idx, item) {
-    if (collaborationActionInFlight || distributionFinalizeInFlight || detailActionInFlight) return;
-    const claim = collaborationClaimForIndex(idx);
-
-    if (claim && !isOwnCollaborationClaim(claim)) {
-      renderCollaborationClaimVisual(idx, item, claim);
-      pulseClaimedRow(idx);
-      return;
-    }
-
-    collaborationActionInFlight = true;
-    mutationInFlight = true;
-    const row = document.getElementById('tr_' + idx);
-    const status = document.getElementById('st_' + idx);
-    if (row) row.classList.add('collab-requesting');
-    if (status) status.innerHTML = `<span class="collab-claim-badge">${claim ? '⏳ Đang xác nhận...' : '⏳ Đang nhận dòng...'}</span>`;
-
-    try {
-      const action = {
-        idx: Number(idx),
-        itemId: item.itemId || '',
-        desiredDistributed: true,
-        expectedItemVersion: Number(item.itemVersion || 0),
-        mutationId: createMutationId('C'),
-        deviceId: collaborationDeviceId(),
-        collabOperation: claim && isOwnCollaborationClaim(claim) ? 'complete' : 'claim'
-      };
-      const result = await gasCall(
-        'saveItemActionsBatchServer',
-        [String(activeVoucherId || ''), 'distribute', [action]],
-        18000
-      );
-
-      if (!result || result.success === false) {
-        throw new Error((result && result.msg) || 'Chưa thể cập nhật dòng thuốc.');
-      }
-
-      if (result.collab) applyCollaborationSnapshot(result.collab);
-      const itemResult = Array.isArray(result.results) ? result.results[0] : null;
-
-      if (itemResult && itemResult.item) {
-        applyBatchItemResult(String(activeVoucherId || ''), {
-          ...itemResult,
-          version: result.version,
-          state: result.state,
-          finishTime: result.finishTime
-        });
-      }
-
-      if (itemResult && itemResult.collabClaimedByOther) {
-        if (result.collab) applyCollaborationSnapshot(result.collab);
-        pulseClaimedRow(idx);
-        return;
-      }
-
-      if (itemResult && itemResult.success === false) {
-        throw new Error(itemResult.msg || 'Dòng thuốc vừa thay đổi trên thiết bị khác.');
-      }
-
-      requestImmediateDetailSync(80);
-    } catch (error) {
-      console.warn('Phát song song:', error);
-      requestImmediateDetailSync(0);
-    } finally {
-      if (row) row.classList.remove('collab-requesting');
-      collaborationActionInFlight = false;
-      mutationInFlight = false;
-    }
-  }
-  /* ===== END AUTO-COLLAB UI V2 ===== */
-
 
 
 
@@ -4717,9 +4386,7 @@
   }
   let appPopupResolver = null;
 
-
-
-  /* ===== FIX17.5.3: IN 1 TỜ / 2 TỜ TRÊN 1 MẶT A4 ===== */
+  /* ===== PRINT 1-UP / 2-UP CONSECUTIVE PAGES ===== */
   let voucherPrintCleanupTimer = null;
 
   function openPrintOptions() {
@@ -4754,7 +4421,9 @@
     clone.removeAttribute('id');
     clone.classList.add('print-voucher-copy');
 
-    clone.querySelectorAll('.tab-header, #collabStatusBar, #batchSaveIndicator, button').forEach(el => el.remove());
+    /* Loại id để không tạo id trùng trong DOM tạm dùng để đo/in. */
+    clone.querySelectorAll('[id]').forEach(el => el.removeAttribute('id'));
+    clone.querySelectorAll('.tab-header, #batchSaveIndicator, .batch-save-indicator, button').forEach(el => el.remove());
 
     const tabs = Array.from(clone.querySelectorAll('.tab-content'));
     if (tabs.length) {
@@ -4768,22 +4437,179 @@
     return clone;
   }
 
+  function logicalPrintPageFits(page) {
+    if (!page) return true;
+    return page.scrollHeight <= page.clientHeight + 2;
+  }
+
+  function createLogicalPrintPage(measureRoot, pages, headerTemplate, includeHeader) {
+    const page = document.createElement('section');
+    page.className = 'print-voucher-copy print-logical-page';
+    page.setAttribute('data-logical-page', String(pages.length + 1));
+
+    if (includeHeader && headerTemplate) {
+      page.appendChild(headerTemplate.cloneNode(true));
+    }
+
+    const body = document.createElement('div');
+    body.className = 'print-logical-body';
+    page.appendChild(body);
+    measureRoot.appendChild(page);
+    pages.push(page);
+    return { page, body };
+  }
+
+  function createCategoryPrintFragment(categoryBlock, continuation) {
+    const wrapper = categoryBlock.cloneNode(false);
+    wrapper.classList.add('print-category-fragment');
+
+    const originalTable = Array.from(categoryBlock.children)
+      .find(child => child && child.tagName === 'TABLE') || categoryBlock.querySelector('table');
+
+    if (!originalTable) {
+      return { wrapper: categoryBlock.cloneNode(true), tbody: null };
+    }
+
+    Array.from(categoryBlock.children).forEach(child => {
+      if (child === originalTable) return;
+      const heading = child.cloneNode(true);
+      if (continuation && heading.textContent) {
+        const text = heading.textContent.trim();
+        if (text && !/\(tiếp\)$/i.test(text)) {
+          heading.textContent = text + ' (tiếp)';
+        }
+      }
+      wrapper.appendChild(heading);
+    });
+
+    const table = originalTable.cloneNode(false);
+    const thead = originalTable.querySelector('thead');
+    if (thead) table.appendChild(thead.cloneNode(true));
+    const tbody = document.createElement('tbody');
+    table.appendChild(tbody);
+    wrapper.appendChild(table);
+
+    return { wrapper, tbody };
+  }
+
+  function buildLogicalVoucherPages() {
+    const prepared = makeVoucherPrintClone();
+    if (!prepared) return [];
+
+    const measureRoot = document.createElement('div');
+    measureRoot.id = 'voucherPrintMeasure';
+    document.body.appendChild(measureRoot);
+
+    const headerTemplate = prepared.querySelector('.dist-header');
+    const activeContent = prepared.querySelector('.tab-content.active') || prepared.querySelector('.tab-content');
+    const pages = [];
+    let current = createLogicalPrintPage(measureRoot, pages, headerTemplate, true);
+
+    if (!activeContent) {
+      current.body.appendChild(prepared);
+      return { pages, measureRoot };
+    }
+
+    const moveSimpleBlock = originalBlock => {
+      const node = originalBlock.cloneNode(true);
+      current.body.appendChild(node);
+
+      if (!logicalPrintPageFits(current.page)) {
+        node.remove();
+        current = createLogicalPrintPage(measureRoot, pages, headerTemplate, false);
+        current.body.appendChild(node);
+      }
+    };
+
+    const moveCategoryBlock = categoryBlock => {
+      const originalTable = Array.from(categoryBlock.children)
+        .find(child => child && child.tagName === 'TABLE') || categoryBlock.querySelector('table');
+      const originalBody = originalTable && originalTable.querySelector('tbody');
+
+      if (!originalTable || !originalBody) {
+        moveSimpleBlock(categoryBlock);
+        return;
+      }
+
+      const rows = Array.from(originalBody.children);
+      let continuation = false;
+      let fragmentInfo = createCategoryPrintFragment(categoryBlock, continuation);
+      current.body.appendChild(fragmentInfo.wrapper);
+
+      /* Nếu riêng tiêu đề + thead không còn chỗ, chuyển cả nhóm sang trang kế. */
+      if (!logicalPrintPageFits(current.page)) {
+        fragmentInfo.wrapper.remove();
+        current = createLogicalPrintPage(measureRoot, pages, headerTemplate, false);
+        fragmentInfo = createCategoryPrintFragment(categoryBlock, continuation);
+        current.body.appendChild(fragmentInfo.wrapper);
+      }
+
+      rows.forEach(originalRow => {
+        let row = originalRow.cloneNode(true);
+        fragmentInfo.tbody.appendChild(row);
+
+        if (logicalPrintPageFits(current.page)) return;
+
+        row.remove();
+        continuation = true;
+        current = createLogicalPrintPage(measureRoot, pages, headerTemplate, false);
+        fragmentInfo = createCategoryPrintFragment(categoryBlock, continuation);
+        current.body.appendChild(fragmentInfo.wrapper);
+        row = originalRow.cloneNode(true);
+        fragmentInfo.tbody.appendChild(row);
+
+        /* Một dòng cực cao vẫn phải được giữ nguyên, không cắt/nhân đôi. */
+      });
+    };
+
+    Array.from(activeContent.children).forEach(block => {
+      const hasDirectTable = Array.from(block.children || [])
+        .some(child => child && child.tagName === 'TABLE');
+      if (hasDirectTable) moveCategoryBlock(block);
+      else moveSimpleBlock(block);
+    });
+
+    return { pages, measureRoot };
+  }
+
   function buildDoubleVoucherPrintStage() {
     const stage = document.getElementById('voucherPrintStage');
     if (!stage) return false;
     stage.innerHTML = '';
 
-    for (let copyIndex = 0; copyIndex < 2; copyIndex++) {
-      const clone = makeVoucherPrintClone();
-      if (!clone) return false;
-      const half = document.createElement('div');
-      half.className = 'print-sheet-half';
-      const scale = document.createElement('div');
-      scale.className = 'print-copy-scale';
-      scale.appendChild(clone);
-      half.appendChild(scale);
-      stage.appendChild(half);
+    const built = buildLogicalVoucherPages();
+    if (!built || !Array.isArray(built.pages) || !built.pages.length) {
+      if (built && built.measureRoot) built.measureRoot.remove();
+      return false;
     }
+
+    const logicalPages = built.pages;
+
+    for (let pageIndex = 0; pageIndex < logicalPages.length; pageIndex += 2) {
+      const physicalSheet = document.createElement('section');
+      physicalSheet.className = 'print-physical-sheet';
+      physicalSheet.setAttribute('data-sheet', String(Math.floor(pageIndex / 2) + 1));
+
+      for (let side = 0; side < 2; side++) {
+        const half = document.createElement('div');
+        half.className = 'print-sheet-half';
+        const logicalPage = logicalPages[pageIndex + side];
+
+        if (logicalPage) {
+          const scale = document.createElement('div');
+          scale.className = 'print-copy-scale';
+          scale.appendChild(logicalPage);
+          half.appendChild(scale);
+        }
+
+        physicalSheet.appendChild(half);
+      }
+
+      stage.appendChild(physicalSheet);
+    }
+
+    /* Các trang logic đã được chuyển vào stage; chỉ bỏ vỏ đo ngoài màn hình. */
+    built.measureRoot.remove();
     return true;
   }
 
@@ -4795,6 +4621,8 @@
     document.body.classList.remove('print-mode-single', 'print-mode-double');
     const stage = document.getElementById('voucherPrintStage');
     if (stage) stage.innerHTML = '';
+    const measure = document.getElementById('voucherPrintMeasure');
+    if (measure) measure.remove();
     const style = document.getElementById('voucherDynamicPrintPageStyle');
     if (style) style.remove();
   }
@@ -4805,19 +4633,17 @@
 
     const normalized = mode === 'double' ? 'double' : 'single';
     if (normalized === 'double' && !buildDoubleVoucherPrintStage()) {
-      showMsg('Không thể chuẩn bị nội dung in. Vui lòng mở lại phiếu rồi thử lại.', 'Không thể in', 'warning');
+      showMsg('Không thể chia nội dung thành các trang in. Vui lòng mở lại phiếu rồi thử lại.', 'Không thể in', 'warning');
       return;
     }
 
     document.body.classList.add(normalized === 'double' ? 'print-mode-double' : 'print-mode-single');
     setDynamicPrintPageStyle(normalized);
 
-    // Đợi trình duyệt hoàn tất layout trước khi mở hộp thoại in, đặc biệt trên Android/PWA.
     requestAnimationFrame(() => {
       requestAnimationFrame(() => window.print());
     });
 
-    // Fallback chỉ dọn trạng thái tạm sau thời gian dài nếu trình duyệt không phát sự kiện afterprint.
     voucherPrintCleanupTimer = setTimeout(cleanupVoucherPrintMode, 120000);
   }
 
@@ -7330,7 +7156,6 @@
 
     if(syncInterval) clearInterval(syncInterval);
     syncInterval = null;
-    stopCollaborationClaimKeepAlive();
     currentVoucherVersion = 0;
     syncInFlight = false;
     mutationInFlight = false;
@@ -7595,7 +7420,6 @@
     if(syncInterval) clearInterval(syncInterval);
 
     if (viewName !== 'detail') {
-      stopCollaborationClaimKeepAlive();
       exitLowVisionDetailMode();
       cancelPendingDetailOpen();
       detailRefreshing = false;
@@ -7691,75 +7515,6 @@ async function loadFromLocalFolder() {
     if(lower.includes('tiêm') || lower.includes('viên')) return 'Tiem_Vien';
     if(lower.includes('vật tư') || lower.includes('hóa chất')) return 'Vat_Tu';
     return 'Khac';
-  }
-
-  let singleWarehouseImportContextReady = false;
-  let singleWarehouseImportContextGeneration = 0;
-
-  function normalizeSingleWarehouseImportText(value) {
-    if (typeof normalizeCatalogSearchText === 'function') {
-      return normalizeCatalogSearchText(value);
-    }
-    return String(value || '')
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .replace(/đ/g, 'd')
-      .replace(/Đ/g, 'D')
-      .toLowerCase()
-      .replace(/\s+/g, ' ')
-      .trim();
-  }
-
-  function getSingleWarehouseCatalogSnapshot() {
-    let source = [];
-    if (
-      typeof warehouseCatalog !== 'undefined' &&
-      Array.isArray(warehouseCatalog) &&
-      warehouseCatalog.length
-    ) {
-      source = warehouseCatalog.map(item => ({
-        key: String(item && item.key || '').trim(),
-        displayName: String(item && (item.displayName || item.key) || '').trim(),
-        active: item && item.active !== false,
-        aliases: Array.isArray(item && item.aliases) ? item.aliases.slice() : []
-      }));
-    } else {
-      source = Object.keys(KHO_CONFIG || {}).map(key => ({
-        key: String(key),
-        displayName: String(KHO_CONFIG[key] || key),
-        active: true,
-        aliases: []
-      }));
-    }
-    return source.filter(item => item.key && item.active !== false);
-  }
-
-  function resolveSingleWarehouseImportKey(value, catalogOverride = null) {
-    const raw = String(value || '').trim();
-    if (!raw) return '';
-
-    if (typeof resolveClientWarehouse === 'function') {
-      try {
-        const record = resolveClientWarehouse(raw, true);
-        if (record && record.active !== false && record.key) {
-          return String(record.key);
-        }
-      } catch (_) {}
-    }
-
-    const normalized = normalizeSingleWarehouseImportText(raw);
-    const catalog = Array.isArray(catalogOverride)
-      ? catalogOverride
-      : getSingleWarehouseCatalogSnapshot();
-    const matched = catalog.find(item =>
-      normalizeSingleWarehouseImportText(item.key) === normalized ||
-      normalizeSingleWarehouseImportText(item.displayName) === normalized ||
-      (item.aliases || []).some(alias => normalizeSingleWarehouseImportText(alias) === normalized)
-    );
-    if (matched) return String(matched.key || '');
-
-    // Fallback tương thích v42 với 3 nhóm kho cố định cũ.
-    return mapKhoToKey(raw);
   }
 
   function getAllowedKhoKeysForCurrentUser() {
@@ -8912,6 +8667,11 @@ async function removeUploadItem(khoa) {
         setSingleWarehouseImportLocked(false);
         const uploadWarehouseSelect = document.getElementById('uploadWarehouseSelect');
         if (uploadWarehouseSelect && getSingleWarehouseImportOptions().length > 1) uploadWarehouseSelect.value = '';
+        if (insertedNow) {
+          // insertedCards đã được merge + render phía trên; chuyển sang Danh sách chỉ sau khi phiếu đã xuất hiện trong model UI.
+          skipNextListReload = true;
+          switchView('list');
+        }
       })
       .withFailureHandler(error => {
         finishFastImportCommitUI();
@@ -11063,7 +10823,7 @@ function displayVoucherDetail(
     e.currentTarget.classList.add('active'); document.getElementById('content-'+k).classList.add('active');
   }
 
-  function renderServerItemStateBase(idx, item) {
+  function renderServerItemState(idx, item) {
     const trElem = document.getElementById('tr_' + idx);
     const statusElem = document.getElementById('st_' + idx);
     const sttElem = document.getElementById('stt_' + idx);
@@ -11083,14 +10843,6 @@ function displayVoucherDetail(
       sttElem.innerHTML = isDone
         ? (isChecked ? '<span style="display:inline-block;background:#007bff;color:#fff;width:22px;height:22px;line-height:22px;border-radius:4px;text-align:center;font-size:14px;">✔</span>' : '✅')
         : origStt;
-    }
-  }
-
-  function renderServerItemState(idx, item) {
-    renderServerItemStateBase(idx, item);
-    const claim = collaborationClaimForIndex(idx);
-    if (item && item.status === 'Chưa phát' && claim) {
-      renderCollaborationClaimVisual(idx, item, claim);
     }
   }
 
@@ -11230,13 +10982,12 @@ function displayVoucherDetail(
         desiredDistributed: Boolean(state.desiredDistributed),
         expectedItemVersion: Number(state.confirmedItemVersion || 0),
         mutationId: state.mutationId || createMutationId('D'),
-        deviceId: collaborationDeviceId()
+        deviceId: getNotificationDeviceId()
       }));
   }
 
   function applyFinalizeSnapshot(voucherId, result) {
     if (!result || !Array.isArray(result.items)) return;
-    if (result.collab) applyCollaborationSnapshot(result.collab);
     const voucher = cloudWaitList[voucherId];
     if (!voucher) return;
 
@@ -11818,7 +11569,7 @@ async function processDistributionBatch() {
         desiredDistributed: state.sentDesired,
         expectedItemVersion: Number(state.confirmedItemVersion || 0),
         mutationId: state.sentMutationId,
-        deviceId: collaborationDeviceId()
+        deviceId: getNotificationDeviceId()
       }));
 
       const result = await gasCall(
@@ -11838,7 +11589,6 @@ async function processDistributionBatch() {
         throw error;
       }
 
-      if (result.collab) applyCollaborationSnapshot(result.collab);
       const resultMap = new Map(
         (result.results || []).map(item => [Number(item.index), item])
       );
@@ -11848,41 +11598,6 @@ async function processDistributionBatch() {
         const itemResult = resultMap.get(state.idx);
         state.inFlight = false;
         state.syncPaused = false;
-
-        if (itemResult && itemResult.collabClaimed) {
-          if (itemResult.item) {
-            applyBatchItemResult(voucherId, {
-              ...itemResult,
-              version: result.version,
-              state: result.state,
-              finishTime: result.finishTime
-            });
-            state.confirmedDistributed = itemResult.item.status !== 'Chưa phát';
-            state.confirmedItemVersion = Number(itemResult.item.itemVersion || state.confirmedItemVersion || 0);
-          }
-          state.desiredDistributed = state.confirmedDistributed;
-          removeDistributionIntentState(state);
-          if (result.collab) applyCollaborationSnapshot(result.collab);
-          return;
-        }
-
-        if (itemResult && itemResult.collabClaimedByOther) {
-          if (itemResult.item) {
-            applyBatchItemResult(voucherId, {
-              ...itemResult,
-              version: result.version,
-              state: result.state,
-              finishTime: result.finishTime
-            });
-            state.confirmedDistributed = itemResult.item.status !== 'Chưa phát';
-            state.confirmedItemVersion = Number(itemResult.item.itemVersion || state.confirmedItemVersion || 0);
-          }
-          state.desiredDistributed = state.confirmedDistributed;
-          removeDistributionIntentState(state);
-          if (result.collab) applyCollaborationSnapshot(result.collab);
-          pulseClaimedRow(state.idx);
-          return;
-        }
 
         if (!itemResult || itemResult.success === false) {
           if (itemResult && itemResult.item) {
@@ -12242,16 +11957,6 @@ async function processDistributionBatch() {
       voucher = cloudWaitList[voucherId];
       item = voucher && voucher.items && voucher.items[idx];
       if (!item) return;
-    }
-
-    // Khi server/client đã xác nhận đang phát song song, dòng chưa phát phải được CLAIM trước.
-    if (
-      item.status === 'Chưa phát' &&
-      collaborationSnapshot && collaborationSnapshot.mode === 'collab'
-    ) {
-      const existingPending = distributionIntentStates.get(distributionActionKey(voucherId, idx));
-      if (existingPending && (existingPending.inFlight || existingPending.desiredDistributed !== existingPending.confirmedDistributed)) return;
-      return handleCollaborativeDistributionTap(idx, item);
     }
 
     const key = distributionActionKey(voucherId, idx);
@@ -12975,7 +12680,6 @@ async function processDistributionBatch() {
       if (requestSeq !== detailSyncRequestSeq || id !== activeVoucherId) return;
       if (delta && delta.sheetFallback) detailLastSheetFallbackAt = Date.now();
       if (!delta) return;
-      if (delta.collab) applyCollaborationSnapshot(delta.collab);
 
       if (delta.deleted) {
         removeVoucherDetailCache(id);
@@ -13857,24 +13561,14 @@ function flattenNotificationResults(value) {
 
       if (!result.finalized) {
         const missing = result.unfinishedIndices || [];
-        const activeClaims = Array.isArray(result.activeClaims) ? result.activeClaims : [];
-        const claimIndices = new Set(activeClaims.map(claim => Number(claim.index)).filter(Number.isInteger));
-        const missingWithoutClaims = missing.filter(idx => !claimIndices.has(Number(idx)));
         const problematic = [
           ...(result.conflicts || []),
           ...(result.actionErrors || []),
-          ...missingWithoutClaims
+          ...missing
         ];
         highlightUnfinishedDistributionItems(problematic);
-        if (result.collab) applyCollaborationSnapshot(result.collab);
 
-        if (activeClaims.length && !problematic.length) {
-          await showMsg(
-            'Còn ' + activeClaims.length + ' thuốc đang được phát song song. Hệ thống sẽ cập nhật ngay khi người phát hoàn tất.',
-            'Đang phát song song',
-            'info'
-          );
-        } else if ((result.conflicts || []).length || (result.actionErrors || []).length) {
+        if ((result.conflicts || []).length || (result.actionErrors || []).length) {
           await showMsg(
             'Dữ liệu phiếu vừa thay đổi. Hệ thống đã tải lại trạng thái mới nhất. Vui lòng kiểm tra các dòng được đánh dấu rồi chốt lại.',
             'Cần kiểm tra lại',
@@ -13882,9 +13576,7 @@ function flattenNotificationResults(value) {
           );
         } else {
           await showMsg(
-            activeClaims.length
-              ? ('Còn ' + missingWithoutClaims.length + ' thuốc chưa phát và ' + activeClaims.length + ' thuốc đang được người khác phát.')
-              : ('Còn ' + missingWithoutClaims.length + ' thuốc chưa phát. Vui lòng kiểm tra các mục được bôi đỏ.'),
+            'Còn ' + missing.length + ' thuốc chưa phát. Vui lòng kiểm tra các mục được bôi đỏ.',
             'Chưa thể chốt phát',
             'danger'
           );
