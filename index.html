@@ -1678,6 +1678,22 @@
 
 
     @media print {
+      /*
+       * 2-up: ẩn khỏi layout in toàn bộ giao diện thật, không chỉ visibility.
+       * visibility:hidden vẫn chiếm chỗ và từng tạo thêm các trang trắng sau vùng in.
+       */
+      body.print-mode-double {
+        margin: 0 !important;
+        padding: 0 !important;
+        min-height: 0 !important;
+      }
+      body.print-mode-double > *:not(#voucherPrintStage) {
+        display: none !important;
+      }
+      body.print-mode-double > #voucherPrintStage {
+        display: block !important;
+      }
+
       body * { visibility: hidden !important; }
 
       /* In 1 tờ: A4 dọc, giữ bố cục cũ. */
@@ -1728,7 +1744,7 @@
       }
       body.print-mode-double #voucherPrintStage {
         display: block !important;
-        position: absolute;
+        position: static;
         left: 0;
         top: 0;
         width: 285mm;
@@ -2357,15 +2373,15 @@
 
 
 
-    /* ===== SHARED MOBILE ACTION VISIBILITY: SINGLE + MULTI ===== */
-    @media (max-width: 768px) {
-      #btnUpload {
-        display: none !important;
-      }
+    /* ===== SHARED MOBILE ACTION VISIBILITY: SINGLE + MULTI =====
+       Điện thoại/PWA: ẩn Nạp phiếu + In phiếu.
+       Bao phủ cả portrait và landscape Android; desktop vẫn giữ nguyên. ===== */
+    @media (max-width: 768px),
+           ((hover: none) and (pointer: coarse) and (max-width: 1100px)) {
+      #btnUpload,
       #btnPrintVoucher {
-        display: inline-flex !important;
-        align-items: center;
-        justify-content: center;
+        display: none !important;
+        visibility: hidden !important;
       }
     }
 </style>
@@ -3751,6 +3767,8 @@
 
   let currentUser = null;
   let parsedFileData = {};
+  let singleWarehouseImportContextReady = false;
+  let singleWarehouseImportContextGeneration = 0;
   let parsedDuplicateStatus = {};
   let cloudWaitList = {};
   let cloudHistoryData = [];
@@ -7000,6 +7018,15 @@
 
         currentUser = res.user;
 
+        if (res.catalogs && typeof applyAppCatalogs === 'function') {
+          try {
+            applyAppCatalogs(res.catalogs);
+          } catch (catalogError) {
+            console.warn('Không áp dụng được danh mục kho từ phiên đăng nhập:', catalogError && catalogError.message ? catalogError.message : catalogError);
+          }
+        }
+        singleWarehouseImportContextReady = false;
+
         detailSyncIntervalMs = Math.max(
           650,
           Number(res.syncIntervalMs || 750)
@@ -7517,6 +7544,170 @@ async function loadFromLocalFolder() {
     return 'Khac';
   }
 
+
+  /* ===== SINGLE-WAREHOUSE IMPORT CONTEXT: LOCAL-FIRST, NEVER-STUCK ===== */
+  function normalizeSingleWarehouseImportText(value) {
+    return String(value || '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/đ/g, 'd')
+      .replace(/Đ/g, 'D')
+      .toLowerCase()
+      .replace(/[‐‑‒–—―−]/g, '-')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  function getSingleWarehouseCatalogSnapshot() {
+    let source = [];
+
+    try {
+      if (
+        typeof warehouseCatalog !== 'undefined' &&
+        Array.isArray(warehouseCatalog) &&
+        warehouseCatalog.length
+      ) {
+        source = warehouseCatalog;
+      }
+    } catch (error) {
+      source = [];
+    }
+
+    if (!source.length) {
+      source = Object.keys(KHO_CONFIG || {}).map(key => ({
+        key,
+        displayName: KHO_CONFIG[key],
+        aliases: [],
+        active: true,
+        sortOrder: 0
+      }));
+    }
+
+    const seen = new Set();
+    return source
+      .filter(item => item && item.active !== false)
+      .map(item => ({
+        key: String(item.key || '').trim(),
+        displayName: String(item.displayName || item.name || item.key || '').trim(),
+        aliases: Array.isArray(item.aliases) ? item.aliases.slice() : [],
+        active: item.active !== false,
+        sortOrder: Number(item.sortOrder || 0)
+      }))
+      .filter(item => {
+        if (!item.key || seen.has(item.key)) return false;
+        seen.add(item.key);
+        return true;
+      })
+      .sort((a, b) =>
+        Number(a.sortOrder || 0) - Number(b.sortOrder || 0) ||
+        String(a.displayName || '').localeCompare(String(b.displayName || ''), 'vi')
+      );
+  }
+
+  function resolveSingleWarehouseImportKey(value, catalogOverride = null) {
+    const raw = String(value || '').trim();
+    if (!raw) return '';
+
+    const normalized = normalizeSingleWarehouseImportText(raw);
+    const catalog = Array.isArray(catalogOverride)
+      ? catalogOverride
+      : getSingleWarehouseCatalogSnapshot();
+
+    const found = catalog.find(item => {
+      if (!item) return false;
+      if (normalizeSingleWarehouseImportText(item.key) === normalized) return true;
+      if (normalizeSingleWarehouseImportText(item.displayName) === normalized) return true;
+      return (item.aliases || []).some(alias =>
+        normalizeSingleWarehouseImportText(alias) === normalized
+      );
+    });
+
+    if (found && found.key) return String(found.key);
+
+    const staticKey = Object.keys(KHO_CONFIG || {}).find(key =>
+      normalizeSingleWarehouseImportText(key) === normalized ||
+      normalizeSingleWarehouseImportText(KHO_CONFIG[key]) === normalized
+    );
+
+    return staticKey || '';
+  }
+
+  function renderSingleWarehouseImportContext(resetForNewBatch = false) {
+    const select = document.getElementById('uploadWarehouseSelect');
+    const context = document.getElementById('singleWarehouseImportContext');
+    const hint = document.getElementById('uploadWarehouseHint');
+    if (!select || !context) return;
+
+    const options = getSingleWarehouseImportOptions();
+    const hasParsedData = Object.keys(parsedFileData || {}).length > 0;
+    const oldValue = String(select.value || '');
+    select.innerHTML = '';
+
+    if (!options.length) {
+      select.innerHTML = '<option value="">Không có kho được phép nạp</option>';
+      select.disabled = true;
+      context.style.display = 'block';
+      if (hint) {
+        hint.textContent = 'Chưa tải được kho được phép nạp. Hãy mở lại màn hình Nạp phiếu; nếu vẫn còn, kiểm tra phân quyền kho của tài khoản.';
+        hint.style.color = '#c62828';
+        hint.style.fontWeight = '800';
+      }
+      singleWarehouseImportContextReady = true;
+      return;
+    }
+
+    if (options.length > 1) {
+      select.innerHTML += '<option value="">-- Chọn kho cho lần nạp này --</option>';
+    }
+
+    options.forEach(item => {
+      const option = document.createElement('option');
+      option.value = String(item.key || '');
+      option.textContent = String(item.displayName || item.key || '');
+      select.appendChild(option);
+    });
+
+    if (options.length === 1) {
+      select.value = String(options[0].key || '');
+    } else if (options.some(item => String(item.key) === oldValue) && (hasParsedData || !resetForNewBatch)) {
+      select.value = oldValue;
+    } else {
+      select.value = '';
+    }
+
+    context.style.display = options.length > 1 ? 'block' : 'none';
+    if (hint) {
+      hint.style.color = '#455a64';
+      hint.style.fontWeight = '';
+      if (options.length > 1) {
+        hint.textContent = select.value
+          ? ('Đang nạp ' + getSelectedSingleWarehouseImportLabel() + '. File có thể chứa dữ liệu nhiều kho; hệ thống chỉ lấy đúng kho này và nhóm phiếu theo từng khoa.')
+          : 'Chọn kho trước khi đọc Excel. Nếu file có dữ liệu nhiều kho, hệ thống chỉ lấy đúng kho đang nạp và tự bỏ qua các kho còn lại.';
+      }
+    }
+
+    setSingleWarehouseImportLocked(hasParsedData);
+    singleWarehouseImportContextReady = true;
+  }
+
+  function refreshSingleWarehouseCatalogInBackground(generation, resetForNewBatch) {
+    if (typeof loadAppCatalogs !== 'function') return;
+
+    Promise.resolve()
+      .then(() => loadAppCatalogs())
+      .then(() => {
+        if (generation !== singleWarehouseImportContextGeneration) return;
+        renderSingleWarehouseImportContext(resetForNewBatch);
+      })
+      .catch(error => {
+        console.warn(
+          'Không đồng bộ được danh mục kho nền:',
+          error && error.message ? error.message : error
+        );
+      });
+  }
+  /* ===== END SINGLE-WAREHOUSE IMPORT CONTEXT ===== */
+
   function getAllowedKhoKeysForCurrentUser() {
     if (!currentUser) return [];
     const options = getSingleWarehouseImportOptions();
@@ -7591,74 +7782,47 @@ async function loadFromLocalFolder() {
 
   async function prepareSingleWarehouseImportContext(resetForNewBatch = false) {
     const generation = ++singleWarehouseImportContextGeneration;
-    showSingleWarehouseImportContextLoading();
 
-    try {
-      if (typeof loadAppCatalogs === 'function') {
-        await loadAppCatalogs();
-      }
-    } catch (error) {
-      console.warn('Không tải được danh mục kho cho màn hình nạp:', error && error.message ? error.message : error);
-    }
-
-    if (generation !== singleWarehouseImportContextGeneration) return;
-
-    const select = document.getElementById('uploadWarehouseSelect');
-    const context = document.getElementById('singleWarehouseImportContext');
-    const hint = document.getElementById('uploadWarehouseHint');
-    if (!select || !context) return;
-
-    const options = getSingleWarehouseImportOptions();
-    const hasParsedData = Object.keys(parsedFileData || {}).length > 0;
-    const oldValue = String(select.value || '');
-    select.innerHTML = '';
-
-    if (!options.length) {
-      select.innerHTML = '<option value="">Không có kho được phép nạp</option>';
-      select.disabled = true;
-      context.style.display = 'block';
-      if (hint) {
-        hint.textContent = 'Tài khoản này chưa có kho được phép nạp phiếu. Vui lòng kiểm tra phân quyền tài khoản.';
-        hint.style.color = '#c62828';
-        hint.style.fontWeight = '800';
-      }
-      singleWarehouseImportContextReady = true;
+    /*
+     * Ưu tiên dữ liệu đã có trên máy (catalog từ login hoặc KHO_CONFIG tĩnh),
+     * vì vậy selector không bị đứng ở "Đang tải danh sách kho..." chỉ vì một request nền chậm.
+     */
+    const localOptions = getSingleWarehouseImportOptions();
+    if (localOptions.length) {
+      renderSingleWarehouseImportContext(resetForNewBatch);
+      refreshSingleWarehouseCatalogInBackground(generation, resetForNewBatch);
       return;
     }
 
-    if (options.length > 1) {
-      select.innerHTML += '<option value="">-- Chọn kho cho lần nạp này --</option>';
-    }
-    options.forEach(item => {
-      const option = document.createElement('option');
-      option.value = String(item.key || '');
-      option.textContent = String(item.displayName || item.key || '');
-      select.appendChild(option);
-    });
+    showSingleWarehouseImportContextLoading();
 
-    if (options.length === 1) {
-      select.value = String(options[0].key || '');
-    } else if (hasParsedData && options.some(item => String(item.key) === oldValue)) {
-      select.value = oldValue;
-    } else if (!resetForNewBatch && options.some(item => String(item.key) === oldValue)) {
-      select.value = oldValue;
-    } else {
-      select.value = '';
+    if (typeof loadAppCatalogs !== 'function') {
+      renderSingleWarehouseImportContext(resetForNewBatch);
+      return;
     }
 
-    context.style.display = options.length > 1 ? 'block' : 'none';
-    if (hint) {
-      hint.style.color = '#455a64';
-      hint.style.fontWeight = '';
-      if (options.length > 1) {
-        hint.textContent = select.value
-          ? ('Đang nạp ' + getSelectedSingleWarehouseImportLabel() + '. File có thể chứa dữ liệu nhiều kho; hệ thống chỉ lấy đúng kho này và nhóm phiếu theo từng khoa.')
-          : 'Chọn kho trước khi đọc Excel. Nếu file có dữ liệu nhiều kho, hệ thống chỉ lấy đúng kho đang nạp và tự bỏ qua các kho còn lại.';
-      }
+    let timeoutId = null;
+    try {
+      await Promise.race([
+        loadAppCatalogs(),
+        new Promise((_, reject) => {
+          timeoutId = setTimeout(
+            () => reject(new Error('Quá thời gian tải danh mục kho.')),
+            8000
+          );
+        })
+      ]);
+    } catch (error) {
+      console.warn(
+        'Không tải kịp danh mục kho cho màn hình nạp:',
+        error && error.message ? error.message : error
+      );
+    } finally {
+      if (timeoutId) clearTimeout(timeoutId);
     }
 
-    setSingleWarehouseImportLocked(hasParsedData);
-    singleWarehouseImportContextReady = true;
+    if (generation !== singleWarehouseImportContextGeneration) return;
+    renderSingleWarehouseImportContext(resetForNewBatch);
   }
 
   function handleSingleWarehouseImportChange() {
