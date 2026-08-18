@@ -3013,7 +3013,7 @@
 
 <script>
   /* ===== GITHUB PAGES ↔ APPS SCRIPT BRIDGE V2 ===== */
-  window.PHATTHUOC_REALTIME_OPT = 'FIX17_6_7_PRINT_SAFE_2UP_SINGLE';
+  window.PHATTHUOC_REALTIME_OPT = 'FIX17_6_9_REAL_EXPORT_WAREHOUSE_FIX_SINGLE';
   const GAS_BRIDGE_URL = 'https://script.google.com/macros/s/AKfycbzhDWWBV13NuxpVfYqaOe3BIzuAQYGE8obpn6Yr76qW4wa7v7bfk5WJU-IAxWaHiJiYJA/exec';
   let gasBridgeReady = false;
   let gasBridgeWindow = null;
@@ -7747,6 +7747,196 @@ async function loadFromLocalFolder() {
     return staticKey || '';
   }
 
+
+
+  /* ===== FIX17.6.9: EXACT REAL-WORLD EXPORT WAREHOUSE MATCH ===== */
+  function inferClassicWarehouseCategoryForImport(value) {
+    const normalized = normalizeSingleWarehouseImportText(value);
+    if (!normalized) return '';
+    if (normalized.includes('dich truyen')) return 'Dich_Truyen';
+    if (normalized.includes('vat tu') || normalized.includes('hoa chat')) return 'Vat_Tu';
+    if (normalized.includes('tiem')) return 'Tiem_Vien';
+    if (normalized.includes('kho') && normalized.includes('vien')) return 'Tiem_Vien';
+    if (normalized === 'khac' || normalized.includes('kho khac')) return 'Khac';
+    return '';
+  }
+
+  function getCanonicalWarehouseCategoryForImport(value, catalogOverride = null) {
+    const raw = String(value || '').trim();
+    if (!raw) return '';
+
+    const classic = inferClassicWarehouseCategoryForImport(raw);
+    if (classic) return classic;
+
+    const catalog = Array.isArray(catalogOverride)
+      ? catalogOverride
+      : getSingleWarehouseCatalogSnapshot();
+    const resolved = resolveSingleWarehouseImportKey(raw, catalog);
+    if (['Tiem_Vien', 'Dich_Truyen', 'Vat_Tu', 'Khac'].includes(String(resolved || ''))) {
+      return String(resolved);
+    }
+
+    const normalizedResolved = normalizeSingleWarehouseImportText(resolved);
+    const record = (catalog || []).find(item => {
+      if (!item) return false;
+      return String(item.key || '') === String(resolved || '') ||
+        normalizeSingleWarehouseImportText(item.key) === normalizedResolved ||
+        normalizeSingleWarehouseImportText(item.key) === normalizeSingleWarehouseImportText(raw);
+    });
+
+    if (record) {
+      const labels = [record.key, record.displayName].concat(record.aliases || []);
+      for (const label of labels) {
+        const category = inferClassicWarehouseCategoryForImport(label);
+        if (category) return category;
+      }
+    }
+    return '';
+  }
+
+  function resolveAcceptedSingleWarehouseImportKey(value, allowedKhoKeys, catalogOverride = null) {
+    const raw = String(value || '').trim();
+    if (!raw) return '';
+    const catalog = Array.isArray(catalogOverride)
+      ? catalogOverride
+      : getSingleWarehouseCatalogSnapshot();
+    let resolved = resolveSingleWarehouseImportKey(raw, catalog);
+
+    const allowed = Array.isArray(allowedKhoKeys)
+      ? allowedKhoKeys.map(String).filter(Boolean)
+      : [];
+    if (!allowed.length) return resolved || getCanonicalWarehouseCategoryForImport(raw, catalog);
+
+    if (resolved && allowed.includes(String(resolved))) return String(resolved);
+
+    const rawCategory = getCanonicalWarehouseCategoryForImport(raw, catalog);
+    for (const allowedKey of allowed) {
+      const allowedCategory = getCanonicalWarehouseCategoryForImport(allowedKey, catalog);
+      if (rawCategory && allowedCategory && rawCategory === allowedCategory) {
+        // Luôn dùng key mà tài khoản đã chọn/được phân quyền để backend nhận đúng catalog key.
+        return String(allowedKey);
+      }
+
+      const record = (catalog || []).find(item => String(item && item.key || '') === String(allowedKey));
+      if (record) {
+        const rawNorm = normalizeSingleWarehouseImportText(raw);
+        const labels = [record.key, record.displayName].concat(record.aliases || []);
+        const direct = labels.some(label => {
+          const n = normalizeSingleWarehouseImportText(label);
+          return Boolean(n && n.length >= 4 && (rawNorm.includes(n) || n.includes(rawNorm)));
+        });
+        if (direct) return String(allowedKey);
+      }
+    }
+    return '';
+  }
+  /* ===== END FIX17.6.9 ===== */
+
+  /* ===== FIX17.6.8: LEGACY-COMPATIBLE WAREHOUSE COLUMN DETECTION ===== */
+  function resolveStrongWarehouseKeyForImportColumn(value, catalogOverride = null) {
+    const raw = String(value || '').trim();
+    if (!raw) return '';
+    const normalized = normalizeSingleWarehouseImportText(raw);
+    const catalog = Array.isArray(catalogOverride)
+      ? catalogOverride
+      : getSingleWarehouseCatalogSnapshot();
+
+    // Khớp exact theo mã / tên / alias luôn được xem là tín hiệu mạnh.
+    for (const item of (catalog || [])) {
+      if (!item || !item.key) continue;
+      const labels = [item.key, item.displayName].concat(item.aliases || []);
+      for (const label of labels) {
+        const n = normalizeSingleWarehouseImportText(label);
+        if (n && n === normalized) return String(item.key);
+      }
+    }
+
+    // Chỉ dùng từ khóa đủ đặc hiệu để dò CỘT kho. Không coi "viên" đứng một mình
+    // là tín hiệu mạnh vì có thể đó là ĐVT của thuốc.
+    if (normalized.includes('dich truyen')) return 'Dich_Truyen';
+    if (normalized.includes('vat tu') || normalized.includes('hoa chat')) return 'Vat_Tu';
+    if (normalized.includes('tiem')) return 'Tiem_Vien';
+    if (normalized.includes('kho') && normalized.includes('vien')) return 'Tiem_Vien';
+    if (normalized === 'khac' || normalized.includes('kho khac')) return 'Khac';
+    return '';
+  }
+
+  function chooseWarehouseColumnForImport(rows, headerRowIndex, preferredIndex, allowedKhoKeys) {
+    const safeRows = Array.isArray(rows) ? rows : [];
+    const start = Math.max(0, Number(headerRowIndex || 0) + 1);
+    const end = Math.min(safeRows.length, start + 120);
+    const allowed = Array.isArray(allowedKhoKeys) && allowedKhoKeys.length
+      ? new Set(allowedKhoKeys.map(String))
+      : null;
+    const catalog = getSingleWarehouseCatalogSnapshot();
+
+    let maxCols = 0;
+    for (let i = start; i < end; i++) {
+      const row = safeRows[i];
+      if (Array.isArray(row)) maxCols = Math.max(maxCols, row.length);
+    }
+
+    const candidates = new Set();
+    if (Number.isInteger(preferredIndex) && preferredIndex >= 0) candidates.add(preferredIndex);
+
+    // Chỉ thêm cột thay thế khi nó chứa tín hiệu kho mạnh lặp lại.
+    for (let col = 0; col < maxCols; col++) {
+      let strongCount = 0;
+      for (let i = start; i < end; i++) {
+        const row = safeRows[i];
+        if (!Array.isArray(row)) continue;
+        if (resolveStrongWarehouseKeyForImportColumn(row[col], catalog)) strongCount++;
+      }
+      if (strongCount > 0) candidates.add(col);
+    }
+
+    let best = Number.isInteger(preferredIndex) && preferredIndex >= 0 ? preferredIndex : -1;
+    let bestTuple = [-1, -1, -1, -1];
+
+    for (const col of candidates) {
+      let selectedMatches = 0;
+      let recognized = 0;
+      let strong = 0;
+      let nonEmpty = 0;
+      const distinct = new Set();
+
+      for (let i = start; i < end; i++) {
+        const row = safeRows[i];
+        if (!Array.isArray(row)) continue;
+        const raw = String(row[col] == null ? '' : row[col]).trim();
+        if (!raw) continue;
+        nonEmpty++;
+        distinct.add(normalizeSingleWarehouseImportText(raw));
+        const strongKey = resolveStrongWarehouseKeyForImportColumn(raw, catalog);
+        if (strongKey) strong++;
+        let key = resolveSingleWarehouseImportKey(raw, catalog);
+        // Tương thích FIX17.1 cho Kho Khác: trước đây mọi tên không thuộc 3 nhóm chính
+        // được gom về Khác. Chỉ dùng fallback này khi người dùng thật sự chọn Khác.
+        if (!key && allowed && allowed.has('Khac')) key = mapKhoToKey(raw);
+        if (key) recognized++;
+        const acceptedKey = resolveAcceptedSingleWarehouseImportKey(raw, allowedKhoKeys, catalog);
+        if (acceptedKey) selectedMatches++;
+      }
+
+      // Ưu tiên tuyệt đối cột có dữ liệu đúng kho đang chọn; sau đó mới xét tín hiệu mạnh,
+      // số dòng nhận diện và tính lặp (cột kho thường có ít giá trị lặp lại).
+      const repetition = nonEmpty > 0 ? Math.max(0, nonEmpty - distinct.size) : 0;
+      const preferredBonus = col === preferredIndex ? 1 : 0;
+      const tuple = [selectedMatches, strong, recognized + repetition, preferredBonus];
+      if (
+        tuple[0] > bestTuple[0] ||
+        (tuple[0] === bestTuple[0] && tuple[1] > bestTuple[1]) ||
+        (tuple[0] === bestTuple[0] && tuple[1] === bestTuple[1] && tuple[2] > bestTuple[2]) ||
+        (tuple[0] === bestTuple[0] && tuple[1] === bestTuple[1] && tuple[2] === bestTuple[2] && tuple[3] > bestTuple[3])
+      ) {
+        bestTuple = tuple;
+        best = col;
+      }
+    }
+
+    return best;
+  }
+  /* ===== END FIX17.6.8 ===== */
   function renderSingleWarehouseImportContext(resetForNewBatch = false) {
     const select = document.getElementById('uploadWarehouseSelect');
     const context = document.getElementById('singleWarehouseImportContext');
@@ -8624,9 +8814,11 @@ function parseRows(
     stats = null
   ) {
     let h = { khoa: -1, kho: -1, loaiPhieu: -1, ma: -1, ten: -1, dvt: -1, sl: -1, phieuTQ: -1, phieuBT: -1, phieuHT: -1 };
+    let headerRowIndex = 0;
     for(let i=0; i<Math.min(20, rows.length); i++) {
       let rowHeader = rows[i].map(x => String(x).trim().toUpperCase());
       if(rowHeader.includes("NGAY") && rowHeader.includes("TENKHO")) {
+        headerRowIndex = i;
         h.khoa = rowHeader.indexOf("NGAY"); h.kho = rowHeader.indexOf("NGAY_S");
         h.loaiPhieu = rowHeader.indexOf("TENKHOAPHONG"); h.ma = rowHeader.indexOf("TENKHO");
         h.ten = rowHeader.indexOf("TENNHOMIN"); h.dvt = rowHeader.indexOf("MABIETDUOC");
@@ -8635,24 +8827,48 @@ function parseRows(
         break;
       }
     }
+
+    // FIX17.6.9: giữ nguyên mapping dữ liệu FIX17.1 và tương thích file xuất thực tế nhưng không còn giả định cứng rằng
+    // cột NGAY_S luôn là cột kho trên mọi file xuất. Nếu NGAY_S không nhận diện được,
+    // tự tìm cột có tín hiệu kho thật sự và ưu tiên cột chứa đúng kho đang chọn.
+    const effectiveWarehouseColumn = chooseWarehouseColumnForImport(
+      rows,
+      headerRowIndex,
+      h.kho,
+      allowedKhoKeys
+    );
+
     const seen = new Set();
-    for(let i=1; i<rows.length; i++) {
+    for(let i=headerRowIndex + 1; i<rows.length; i++) {
       let r = rows[i]; if(!r || r.length === 0) continue;
       let khoa = String(r[h.khoa]||"").trim();
-      let khoName = String(r[h.kho]||"").trim();
-      let khoKey = resolveSingleWarehouseImportKey(khoName);
-      if (khoKey) seen.add(khoKey);
+      let khoName = String(
+        effectiveWarehouseColumn >= 0 && effectiveWarehouseColumn < r.length
+          ? (r[effectiveWarehouseColumn] || '')
+          : (r[h.kho] || '')
+      ).trim();
+      const catalog = getSingleWarehouseCatalogSnapshot();
+      let detectedKhoKey = resolveSingleWarehouseImportKey(khoName, catalog);
+      if (!detectedKhoKey && allowedKhoKeys && allowedKhoKeys.includes('Khac')) {
+        detectedKhoKey = mapKhoToKey(khoName);
+      }
+      if (detectedKhoKey) seen.add(String(detectedKhoKey));
+
+      let khoKey = resolveAcceptedSingleWarehouseImportKey(khoName, allowedKhoKeys, catalog);
+      if (!allowedKhoKeys || !allowedKhoKeys.length) {
+        khoKey = khoKey || detectedKhoKey;
+      }
       if (!khoKey) {
         if (stats && khoa && khoName) {
-          stats.unknownWarehouseRows++;
-          if (stats.unknownWarehouseSamples.length < 5 && !stats.unknownWarehouseSamples.includes(khoName)) {
-            stats.unknownWarehouseSamples.push(khoName);
+          if (detectedKhoKey) {
+            stats.skippedOtherWarehouseRows++;
+          } else {
+            stats.unknownWarehouseRows++;
+            if (stats.unknownWarehouseSamples.length < 5 && !stats.unknownWarehouseSamples.includes(khoName)) {
+              stats.unknownWarehouseSamples.push(khoName);
+            }
           }
         }
-        continue;
-      }
-      if (allowedKhoKeys && !allowedKhoKeys.includes(khoKey)) {
-        if (stats && khoa && khoName) stats.skippedOtherWarehouseRows++;
         continue;
       }
       let ma = String(r[h.ma]||"").trim(); let ten = String(r[h.ten]||"").trim(); let dvt = String(r[h.dvt]||"").trim(); let sl = parseFloat(r[h.sl]);
@@ -8666,8 +8882,12 @@ function parseRows(
       targetData[khoa].items.push({ khoKey: khoKey, ma: ma, ten: ten, dvt: dvt, sl: sl, loaiThuoc: String(r[h.loaiPhieu]||"").trim(), status: 'Chưa phát' });
       if (stats) stats.acceptedRows++;
     }
-    if (stats) stats.warehouseKeysSeen = Array.from(seen);
+    if (stats) {
+      stats.warehouseKeysSeen = Array.from(seen);
+      stats.detectedWarehouseColumn = effectiveWarehouseColumn;
+    }
   }
+
 async function clearAllUploads() {
       const ok = await showConfirm("Bạn có chắc chắn muốn hủy bỏ toàn bộ danh sách nạp này không?", "Hủy danh sách nạp", { type: 'danger', confirmText: 'Hủy toàn bộ', confirmClass: 'btn-danger' });
       if(ok) {
