@@ -1,4 +1,4 @@
-const CACHE_NAME = 'phat-thuoc-pwa-v42-fix17-5-5-auto-collab-keepalive-single-v1';
+const CACHE_NAME = 'phat-thuoc-pwa-v42-fix17-5-6-auto-collab-keepalive-single-v1';
 
 const APP_SHELL = [
   '/',
