@@ -1603,7 +1603,7 @@
     }
     .print-logical-page {
       width: 190mm !important;
-      height: 277mm !important;
+      height: 280mm !important;
       max-width: 190mm !important;
       min-width: 190mm !important;
       box-sizing: border-box !important;
@@ -1643,7 +1643,60 @@
     }
     .print-logical-page table {
       width: 100% !important;
-      table-layout: auto !important;
+      table-layout: fixed !important;
+      font-size: 14px !important;
+      line-height: 1.16 !important;
+    }
+    /*
+     * 2-up ưu tiên mật độ thông tin: giảm khoảng đệm thay vì thu chữ quá nhỏ.
+     * Các rule này cũng vô hiệu ảnh hưởng của chế độ hỗ trợ mắt kém trong DOM đo trang.
+     */
+    .print-logical-page th,
+    .print-logical-page td {
+      padding: 4px 5px !important;
+      line-height: 1.16 !important;
+      vertical-align: middle !important;
+      font-size: 14px !important;
+    }
+    .print-logical-page th {
+      position: static !important;
+      font-size: 13px !important;
+    }
+    .print-logical-page .ten-thuoc-main,
+    body.low-vision-detail-active .print-logical-page .ten-thuoc-main {
+      font-size: 14px !important;
+      line-height: 1.16 !important;
+    }
+    .print-logical-page .v-num-mobile,
+    body.low-vision-detail-active .print-logical-page .v-num-mobile {
+      font-size: 13px !important;
+      line-height: 1.16 !important;
+    }
+    .print-logical-page .voucher-header {
+      padding: 5px 7px !important;
+      margin: 0 0 4px !important;
+      border-radius: 3px !important;
+      font-size: 13px !important;
+      line-height: 1.18 !important;
+    }
+    .print-logical-page .voucher-header > div {
+      margin-bottom: 2px !important;
+    }
+    .print-logical-page .print-category-fragment {
+      margin: 0 0 4px !important;
+      border-width: 1px !important;
+      border-radius: 3px !important;
+    }
+    .print-logical-page .print-category-fragment > div:first-child {
+      padding: 3px 5px !important;
+      font-size: 13px !important;
+      line-height: 1.1 !important;
+    }
+    .print-logical-page .dist-header {
+      padding-bottom: 1mm !important;
+      margin-bottom: 1mm !important;
+      font-size: 13px !important;
+      line-height: 1.15 !important;
     }
     .print-logical-page tr.distributed td,
     .print-logical-page tr.negative-row td {
@@ -1783,16 +1836,16 @@
       }
       body.print-mode-double .print-copy-scale {
         position: absolute;
-        left: 6mm;
-        top: 3.5mm;
+        left: 4.5mm;
+        top: 1mm;
         width: 190mm;
-        height: 277mm;
-        transform: scale(.68);
+        height: 280mm;
+        transform: scale(.70);
         transform-origin: top left;
       }
       body.print-mode-double .print-logical-page {
         width: 190mm !important;
-        height: 277mm !important;
+        height: 280mm !important;
         max-width: 190mm !important;
         min-width: 190mm !important;
         overflow: hidden !important;
@@ -2957,7 +3010,7 @@
 
 <script>
   /* ===== GITHUB PAGES ↔ APPS SCRIPT BRIDGE V2 ===== */
-  window.PHATTHUOC_REALTIME_OPT = 'FIX17_6_1_PRINT_2UP_PAGES_SINGLE';
+  window.PHATTHUOC_REALTIME_OPT = 'FIX17_6_5_COMPACT_2UP_PRINT_SINGLE';
   const GAS_BRIDGE_URL = 'https://script.google.com/macros/s/AKfycbzhDWWBV13NuxpVfYqaOe3BIzuAQYGE8obpn6Yr76qW4wa7v7bfk5WJU-IAxWaHiJiYJA/exec';
   let gasBridgeReady = false;
   let gasBridgeWindow = null;
@@ -4490,14 +4543,9 @@
 
     Array.from(categoryBlock.children).forEach(child => {
       if (child === originalTable) return;
-      const heading = child.cloneNode(true);
-      if (continuation && heading.textContent) {
-        const text = heading.textContent.trim();
-        if (text && !/\(tiếp\)$/i.test(text)) {
-          heading.textContent = text + ' (tiếp)';
-        }
-      }
-      wrapper.appendChild(heading);
+      /* Trang tiếp nối đi thẳng vào header cột + dòng thuốc, không lặp tiêu đề nhóm. */
+      if (continuation) return;
+      wrapper.appendChild(child.cloneNode(true));
     });
 
     const table = originalTable.cloneNode(false);
@@ -4569,6 +4617,12 @@
         if (logicalPrintPageFits(current.page)) return;
 
         row.remove();
+
+        /* Không để lại tiêu đề nhóm/header cột mồ côi ở cuối trang nếu chưa chứa dòng nào. */
+        if (fragmentInfo.tbody && fragmentInfo.tbody.children.length === 0) {
+          fragmentInfo.wrapper.remove();
+        }
+
         continuation = true;
         current = createLogicalPrintPage(measureRoot, pages, headerTemplate, false);
         fragmentInfo = createCategoryPrintFragment(categoryBlock, continuation);
