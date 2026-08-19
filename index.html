@@ -2472,7 +2472,34 @@
     .import-process-stage { margin-top: 12px; color: #17352b; font-size: 18px; font-weight: 900; line-height: 1.4; }
     .import-process-detail { margin-top: 8px; color: #546e7a; font-size: 15px; line-height: 1.5; min-height: 23px; }
     .import-process-track { height: 12px; margin-top: 18px; background: #e8f3ed; border-radius: 999px; overflow: hidden; }
-    .import-process-bar { height: 100%; width: 0%; background: var(--green); border-radius: inherit; transition: width .22s ease; }
+    .import-process-bar {
+      position: relative;
+      height: 100%;
+      width: 0%;
+      overflow: hidden;
+      background: var(--green);
+      border-radius: inherit;
+      transition: width .12s linear;
+      will-change: width;
+    }
+    .import-process-bar::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 42%;
+      left: -48%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,.48), transparent);
+      animation: importProcessShimmer 1.35s linear infinite;
+    }
+    @keyframes importProcessShimmer {
+      from { transform: translateX(0); }
+      to { transform: translateX(360%); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .import-process-bar::after { animation: none; }
+      .import-process-bar { transition: none; }
+    }
     .import-process-percent { margin-top: 7px; color: var(--green); font-weight: 900; font-size: 14px; }
     .import-process-stats { margin-top: 14px; padding: 10px 12px; background: #f5faf7; border-radius: 10px; color: #315347; font-weight: 700; line-height: 1.55; display: none; }
     .import-process-note { margin-top: 13px; color: #607d8b; font-size: 14px; line-height: 1.45; }
@@ -3148,7 +3175,7 @@
 
 <script>
   /* ===== GITHUB PAGES ↔ APPS SCRIPT BRIDGE V2 ===== */
-  window.PHATTHUOC_REALTIME_OPT = 'FIX17_13_CLEAN_OVERLAP_REVIEW_SINGLE';
+  window.PHATTHUOC_REALTIME_OPT = 'FIX17_14_CLEAN_SMOOTH_IMPORT_ADMIN_SCOPE_SINGLE';
   const GAS_BRIDGE_URL = 'https://script.google.com/macros/s/AKfycbzhDWWBV13NuxpVfYqaOe3BIzuAQYGE8obpn6Yr76qW4wa7v7bfk5WJU-IAxWaHiJiYJA/exec';
   let gasBridgeReady = false;
   let gasBridgeWindow = null;
@@ -4689,14 +4716,20 @@ const BACKGROUND_FINISH_STORAGE_PREFIX =
   let importProcessStartedAt = 0;
   let importProcessSlowTimer = null;
   let importProcessVerySlowTimer = null;
+  let importProcessProgressTimer = null;
+  let importProcessDisplayedProgress = 0;
+  let importProcessTargetProgress = 0;
+  let importProcessProgressWaiters = [];
   let importProcessPreviousBodyOverflow = '';
   let importProcessRetryAction = 'preprocess';
 
   function clearImportProcessTimers() {
     if (importProcessSlowTimer) clearTimeout(importProcessSlowTimer);
     if (importProcessVerySlowTimer) clearTimeout(importProcessVerySlowTimer);
+    if (importProcessProgressTimer) clearInterval(importProcessProgressTimer);
     importProcessSlowTimer = null;
     importProcessVerySlowTimer = null;
+    importProcessProgressTimer = null;
   }
 
   function setImportProcessText(id, value) {
@@ -4704,10 +4737,95 @@ const BACKGROUND_FINISH_STORAGE_PREFIX =
     if (element) element.textContent = value == null ? '' : String(value);
   }
 
+function renderImportProcessProgress(value) {
+    const progress = Math.max(0, Math.min(100, Number(value) || 0));
+    importProcessDisplayedProgress = progress;
+    const rounded = Math.round(progress);
+    const bar = document.getElementById('importProcessBar');
+    if (bar) bar.style.width = progress.toFixed(2) + '%';
+    setImportProcessText('importProcessPercent', rounded + '%');
+    if (importProcessProgressWaiters.length) {
+      const remaining = [];
+      importProcessProgressWaiters.forEach(waiter => {
+        if (progress + 0.01 >= waiter.target) waiter.resolve();
+        else remaining.push(waiter);
+      });
+      importProcessProgressWaiters = remaining;
+    }
+  }
+
+  function ensureImportProcessProgressAnimation() {
+    if (importProcessProgressTimer) return;
+    importProcessProgressTimer = setInterval(() => {
+      const modal = document.getElementById('importProcessModal');
+      if (!modal || modal.style.display !== 'flex' || modal.classList.contains('is-error')) {
+        clearInterval(importProcessProgressTimer);
+        importProcessProgressTimer = null;
+        return;
+      }
+
+      const gap = importProcessTargetProgress - importProcessDisplayedProgress;
+      if (gap <= 0.01) return;
+
+      // Chạy đều, đủ chậm để người dùng cảm nhận tiến trình nhưng không cố tình giữ họ chờ quá lâu.
+      let step = 0.9;
+      if (importProcessTargetProgress >= 100) {
+        if (gap > 35) step = 7.0;
+        else if (gap > 18) step = 5.0;
+        else if (gap > 8) step = 3.0;
+        else step = 1.5;
+      } else {
+        if (gap > 35) step = 2.2;
+        else if (gap > 18) step = 1.55;
+        else if (gap > 8) step = 1.15;
+      }
+
+      renderImportProcessProgress(
+        Math.min(importProcessTargetProgress, importProcessDisplayedProgress + step)
+      );
+    }, 75);
+  }
+
+  function setImportProcessProgressTarget(value, options = {}) {
+    let target = Math.max(0, Math.min(100, Number(value) || 0));
+    if (options.reset === true) {
+      importProcessDisplayedProgress = 0;
+      importProcessTargetProgress = 0;
+      importProcessProgressWaiters = [];
+      renderImportProcessProgress(0);
+    }
+
+    // Trong một lần xử lý, thanh chỉ đi tới; callback cũ không được kéo phần trăm lùi lại.
+    target = Math.max(importProcessTargetProgress, target);
+    importProcessTargetProgress = target;
+    ensureImportProcessProgressAnimation();
+  }
+
+  function waitForImportProcessProgress(target, timeoutMs = 2400) {
+    target = Math.max(0, Math.min(100, Number(target) || 0));
+    if (importProcessDisplayedProgress + 0.01 >= target) return Promise.resolve();
+
+    return new Promise(resolve => {
+      let settled = false;
+      const done = () => {
+        if (settled) return;
+        settled = true;
+        resolve();
+      };
+      importProcessProgressWaiters.push({ target, resolve: done });
+      setTimeout(done, Math.max(250, Number(timeoutMs) || 2400));
+      ensureImportProcessProgressAnimation();
+    });
+  }
+
+
   function openImportProcessModal(options = {}) {
     const modal = document.getElementById('importProcessModal');
     if (!modal) return;
     clearImportProcessTimers();
+    importProcessDisplayedProgress = 0;
+    importProcessTargetProgress = 0;
+    importProcessProgressWaiters = [];
     importProcessStartedAt = Date.now();
     modal.classList.remove('is-error');
     modal.style.display = 'flex';
@@ -4722,7 +4840,8 @@ const BACKGROUND_FINISH_STORAGE_PREFIX =
     if (stats) { stats.style.display = 'none'; stats.textContent = ''; }
     const actions = document.getElementById('importProcessActions');
     if (actions) actions.style.display = 'none';
-    updateImportProcessModal({ progress: Number(options.progress || 3) });
+    renderImportProcessProgress(0);
+    setImportProcessProgressTarget(Number(options.progress || 3));
     importProcessSlowTimer = setTimeout(() => {
       if (modal.style.display === 'flex' && !modal.classList.contains('is-error')) {
         setImportProcessText('importProcessNote', 'Máy chủ đang xử lý dữ liệu. Vui lòng chờ trong giây lát.');
@@ -4744,10 +4863,7 @@ const BACKGROUND_FINISH_STORAGE_PREFIX =
     if (options.detail !== undefined) setImportProcessText('importProcessDetail', options.detail);
     if (options.note !== undefined) setImportProcessText('importProcessNote', options.note);
     if (options.progress !== undefined) {
-      const progress = Math.max(0, Math.min(100, Math.round(Number(options.progress) || 0)));
-      const bar = document.getElementById('importProcessBar');
-      if (bar) bar.style.width = progress + '%';
-      setImportProcessText('importProcessPercent', progress + '%');
+      setImportProcessProgressTarget(options.progress);
     }
     if (options.stats !== undefined) {
       const stats = document.getElementById('importProcessStats');
@@ -4766,6 +4882,7 @@ const BACKGROUND_FINISH_STORAGE_PREFIX =
       modal.classList.remove('is-error');
     }
     clearImportProcessTimers();
+    importProcessProgressWaiters = [];
     document.body.style.overflow = importProcessPreviousBodyOverflow;
   }
 
@@ -4779,8 +4896,12 @@ const BACKGROUND_FINISH_STORAGE_PREFIX =
       progress: 100,
       note: 'Đang mở danh sách phiếu chờ...'
     });
+
+    // Chỉ đóng sau khi thanh đã thật sự chạy tới 100%; không bao giờ nhảy 100% trước dữ liệu.
+    await waitForImportProcessProgress(100, 4200);
+    if (importProcessDisplayedProgress < 99.99) renderImportProcessProgress(100);
     const elapsed = Date.now() - importProcessStartedAt;
-    const waitMs = Math.max(320, 620 - elapsed);
+    const waitMs = Math.max(420, 720 - elapsed);
     await new Promise(resolve => setTimeout(resolve, waitMs));
     closeImportProcessModal();
   }
@@ -4789,6 +4910,7 @@ const BACKGROUND_FINISH_STORAGE_PREFIX =
     const modal = document.getElementById('importProcessModal');
     if (!modal) return;
     clearImportProcessTimers();
+    importProcessTargetProgress = importProcessDisplayedProgress;
     modal.classList.add('is-error');
     setImportProcessText('importProcessIcon', '⚠');
     setImportProcessText('importProcessTitle', 'KHÔNG THỂ HOÀN TẤT');
@@ -7990,6 +8112,22 @@ async function loadFromLocalFolder() {
     return 'Khac';
   }
 
+function currentUserHasAllWarehouseAccess() {
+    return Boolean(currentUser) && String(currentUser.kho || '').trim() === 'Tất cả';
+  }
+
+  function getCurrentUserWarehouseKeys() {
+    if (!currentUser) return [];
+    if (currentUserHasAllWarehouseAccess()) return null;
+    return [...new Set(
+      String(currentUser.kho || '')
+        .split(',')
+        .map(value => mapKhoToKey(value.trim()))
+        .filter(key => key && key !== 'Tất cả')
+    )];
+  }
+
+
 
   /* ===== SINGLE-WAREHOUSE IMPORT CONTEXT: LOCAL-FIRST, NEVER-STUCK ===== */
   function normalizeSingleWarehouseImportText(value) {
@@ -8241,7 +8379,7 @@ function renderSingleWarehouseImportContext(resetForNewBatch = false) {
     const active = getSingleWarehouseCatalogSnapshot();
     if (!currentUser) return [];
     const khoText = String(currentUser.kho || '').trim();
-    if (currentUser.role === 'admin' || normalizeSingleWarehouseImportText(khoText) === normalizeSingleWarehouseImportText('Tất cả')) {
+    if (normalizeSingleWarehouseImportText(khoText) === normalizeSingleWarehouseImportText('Tất cả')) {
       return active;
     }
     const allowed = new Set(
@@ -8273,8 +8411,7 @@ function renderSingleWarehouseImportContext(resetForNewBatch = false) {
     const khoText = String(currentUser && currentUser.kho || '').trim();
     const likelyMultiple = Boolean(
       currentUser &&
-      (currentUser.role === 'admin' ||
-       normalizeSingleWarehouseImportText(khoText) === normalizeSingleWarehouseImportText('Tất cả') ||
+      (normalizeSingleWarehouseImportText(khoText) === normalizeSingleWarehouseImportText('Tất cả') ||
        khoText.split(',').map(x => x.trim()).filter(Boolean).length > 1)
     );
 
@@ -10712,13 +10849,8 @@ function renderTrackingList() {
           v && v.id
         )
       );
-    if (
-      currentUser.role !== 'admin' &&
-      currentUser.kho !== 'Tất cả'
-    ) {
-      let myKhos = currentUser.kho
-        .split(',')
-        .map(s => mapKhoToKey(s.trim()));
+    if (!currentUserHasAllWarehouseAccess()) {
+      let myKhos = getCurrentUserWarehouseKeys() || [];
 
       arr = arr.filter(v => {
         const keys = String(v.warehouseKeys || '')
@@ -11791,7 +11923,7 @@ function displayVoucherDetail(
     const headerParts = [];
     const bodyParts = [];
     let first = true;
-    let myKhos = (currentUser.role === 'admin' || currentUser.kho === 'Tất cả') ? null : currentUser.kho.split(',').map(s => mapKhoToKey(s.trim()));
+    let myKhos = currentUserHasAllWarehouseAccess() ? null : (getCurrentUserWarehouseKeys() || []);
     
     refreshDetailAccessUi(
       voucherData,
