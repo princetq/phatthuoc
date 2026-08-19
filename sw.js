@@ -1,4 +1,4 @@
-const CACHE_NAME = 'phatthuoc-fix17-10-clean-qa-hardened-single';
+const CACHE_NAME = 'phatthuoc-fix17-13-clean-overlap-review-single';
 
 const APP_SHELL = [
   '/',
