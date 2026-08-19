@@ -1,4 +1,4 @@
-const CACHE_NAME = 'phatthuoc-fix17-13-clean-overlap-review-single';
+const CACHE_NAME = 'phatthuoc-fix17-14-clean-smooth-import-admin-scope-single';
 
 const APP_SHELL = [
   '/',
