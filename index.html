@@ -1648,38 +1648,38 @@
       width: 100% !important;
       table-layout: fixed !important;
       border-collapse: collapse !important;
-      font-size: 10px !important;
-      line-height: 1.14 !important;
+      font-size: 11px !important;
+      line-height: 1.18 !important;
       margin: 0 !important;
     }
     .print-logical-page th,
     .print-logical-page td {
-      padding: 2.7px 3.4px !important;
-      line-height: 1.14 !important;
+      padding: 3.3px 3.6px !important;
+      line-height: 1.18 !important;
       vertical-align: middle !important;
-      font-size: 10px !important;
+      font-size: 11px !important;
       box-sizing: border-box !important;
     }
     .print-logical-page th {
       position: static !important;
-      font-size: 9.3px !important;
+      font-size: 10.2px !important;
     }
     .print-logical-page .ten-thuoc-main,
     body.low-vision-detail-active .print-logical-page .ten-thuoc-main {
-      font-size: 10px !important;
-      line-height: 1.14 !important;
+      font-size: 11px !important;
+      line-height: 1.18 !important;
     }
     .print-logical-page .v-num-mobile,
     body.low-vision-detail-active .print-logical-page .v-num-mobile {
-      font-size: 9.3px !important;
-      line-height: 1.14 !important;
+      font-size: 10.2px !important;
+      line-height: 1.16 !important;
     }
     .print-logical-page .voucher-header {
       padding: 3px 4.5px !important;
       margin: 0 0 3px !important;
       border-radius: 2px !important;
-      font-size: 9.4px !important;
-      line-height: 1.14 !important;
+      font-size: 10.2px !important;
+      line-height: 1.16 !important;
     }
     .print-logical-page .voucher-header > div {
       margin-bottom: 1px !important;
@@ -1691,8 +1691,8 @@
     }
     .print-logical-page .print-category-fragment > div:first-child {
       padding: 2px 3.5px !important;
-      font-size: 9.4px !important;
-      line-height: 1.08 !important;
+      font-size: 10.2px !important;
+      line-height: 1.12 !important;
     }
     .print-logical-page tr.distributed td,
     .print-logical-page tr.negative-row td {
@@ -4521,8 +4521,9 @@ const BACKGROUND_FINISH_STORAGE_PREFIX =
   let folderImportSummary = null;
 
   const DUPLICATE_WARMUP_TTL_MS = 60000;
-  const FOLDER_DUPLICATE_FIRST_BATCH_SIZE = 8;
-  const FOLDER_DUPLICATE_BATCH_SIZE = 24;
+  /* FIX17.17: giảm round-trip Apps Script khi nạp thư mục, nhưng chặn payload quá lớn. */
+  const FOLDER_DUPLICATE_BATCH_MAX_CANDIDATES = 160;
+  const FOLDER_DUPLICATE_BATCH_MAX_JSON_CHARS = 850000;
   let uploadDuplicateCheckPending = false;
   let uploadDuplicateCheckFailed = false;
   let duplicateWarmupPromise = null;
@@ -4894,15 +4895,12 @@ function renderImportProcessProgress(value) {
       detail: detail || 'Danh sách phiếu chờ đã sẵn sàng.',
       stats: stats || '',
       progress: 100,
-      note: 'Đang mở danh sách phiếu chờ...'
+      note: 'Đã hoàn tất.'
     });
 
-    // Chỉ đóng sau khi thanh đã thật sự chạy tới 100%; không bao giờ nhảy 100% trước dữ liệu.
-    await waitForImportProcessProgress(100, 4200);
-    if (importProcessDisplayedProgress < 99.99) renderImportProcessProgress(100);
-    const elapsed = Date.now() - importProcessStartedAt;
-    const waitMs = Math.max(420, 720 - elapsed);
-    await new Promise(resolve => setTimeout(resolve, waitMs));
+    /* FIX17.15 FAST IMPORT: dữ liệu đã xong thì progress không được giữ người dùng chờ. */
+    renderImportProcessProgress(100);
+    await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
     closeImportProcessModal();
   }
 
@@ -8683,6 +8681,22 @@ function renderSingleWarehouseImportContext(resetForNewBatch = false) {
     return keys.map(khoa => buildDuplicateCandidate(parsedFileData,khoa,khoa)).filter(Boolean);
   }
 
+  function takeFolderDuplicateBatch(candidates, cursor) {
+    const start = Math.max(0, Number(cursor) || 0);
+    const out = [];
+    let estimatedChars = 64;
+    for (let i = start; i < candidates.length && out.length < FOLDER_DUPLICATE_BATCH_MAX_CANDIDATES; i++) {
+      const candidate = candidates[i];
+      let candidateChars = 0;
+      try { candidateChars = JSON.stringify(candidate).length; } catch (_) { candidateChars = 4096; }
+      if (out.length && estimatedChars + candidateChars > FOLDER_DUPLICATE_BATCH_MAX_JSON_CHARS) break;
+      out.push(candidate);
+      estimatedChars += candidateChars;
+    }
+    if (!out.length && start < candidates.length) out.push(candidates[start]);
+    return out;
+  }
+
   async function requestDuplicateCheckCandidates(candidates, sessionState=null, options={}){
     if(!Array.isArray(candidates)||!candidates.length)return {};
     const useSession=Boolean(sessionState&&typeof sessionState==='object');
@@ -8937,9 +8951,8 @@ function renderSingleWarehouseImportContext(resetForNewBatch = false) {
     });
 
     if (merged) {
-      saveVoucherCardsLocalCache(
-        cloudWaitList
-      );
+      // Cache chỉ là tối ưu khởi động; không để JSON.stringify chặn việc hiện Danh sách phát.
+      saveVoucherCardsLocalCacheDeferred(cloudWaitList);
     }
 
     return merged;
@@ -9252,6 +9265,25 @@ async function parseImportFile(
   }
 
 
+  function revealUploadWaitingListNow() {
+    /* FIX17.17: sau khi đọc/kiểm tra xong, preview phải là thứ người dùng nhìn thấy ngay. */
+    renderUploadList();
+    if (document.getElementById('view-upload') && document.getElementById('view-upload').style.display === 'none') {
+      switchView('upload');
+    }
+    requestAnimationFrame(() => renderUploadList());
+  }
+
+  function revealInsertedCardsNow(insertedCards) {
+    /* FIX17.17: server đã commit thì phiếu mới phải hiện ngay trong Danh sách phát. */
+    mergeInsertedVoucherCards(insertedCards || {});
+    prepareVoucherListForInsertedCards(insertedCards || {});
+    skipNextListReload = true;
+    renderTrackingList();
+    switchView('list');
+    requestAnimationFrame(() => renderTrackingList());
+  }
+
   async function handleFiles(files) {
     if (!files || files.length === 0) return;
     const fileList = Array.from(files);
@@ -9350,8 +9382,7 @@ async function parseImportFile(
       const duplicateSession = { fingerprints: [] };
       try {
         while (cursor < candidates.length) {
-          const size = cursor === 0 ? FOLDER_DUPLICATE_FIRST_BATCH_SIZE : FOLDER_DUPLICATE_BATCH_SIZE;
-          const batch = candidates.slice(cursor, cursor + size);
+          const batch = takeFolderDuplicateBatch(candidates, cursor);
           const results = await requestDuplicateCheckCandidates(batch, duplicateSession);
           batch.forEach(candidate => {
             const meta = candidateMeta[candidate.key];
@@ -9404,7 +9435,7 @@ async function parseImportFile(
       folderImportSummary.newUnits = Object.keys(parsedFileData).length;
       setUploadDuplicateCheckState(false, false);
       renderFolderImportSummary();
-      renderUploadList();
+      revealUploadWaitingListNow();
       await completeImportProcessModal(
         'Đã kiểm tra xong thư mục',
         Object.keys(parsedFileData).length ? 'Danh sách phiếu hợp lệ đã sẵn sàng.' : 'Không còn phiếu mới hợp lệ để đưa vào danh sách.',
@@ -9425,7 +9456,7 @@ async function parseImportFile(
       if (mergeConflictKhoas.length) {
         mergeConflictKhoas.forEach(khoa => { parsedDuplicateStatus[khoa] = Object.assign(defaultDuplicateStatus(false), { mergeConflict: true }); });
         setUploadDuplicateCheckState(false, true);
-        renderUploadList();
+        revealUploadWaitingListNow();
         await completeImportProcessModal('Cần kiểm tra dữ liệu', 'Danh sách đã được dựng nhưng có file chồng lấp nội bộ cần kiểm tra.', ['Khoa cần kiểm tra: ' + mergeConflictKhoas.length]);
         await showMsg('Có cùng số phiếu nhưng nội dung thuốc khác nhau giữa các file tại: ' + mergeConflictKhoas.join(', ') + '. Hệ thống đã chặn việc gộp để tránh cộng sai số lượng. Hãy nạp từng file riêng để kiểm tra đúng phiếu.', 'Phát hiện file chồng lấp nội bộ', 'warning');
         return;
@@ -9444,7 +9475,7 @@ async function parseImportFile(
         return;
       }
       setUploadDuplicateCheckState(false, false);
-      renderUploadList();
+      revealUploadWaitingListNow();
       const suppressedKhoas = Object.keys(parsedFileData).filter(isSuppressedDeletedVoucher);
       const duplicateKhoas = Object.keys(parsedFileData).filter(isDuplicateVoucher);
       const partialKhoas = Object.keys(parsedFileData).filter(isPartialDuplicateVoucher);
@@ -9747,11 +9778,19 @@ async function removeUploadItem(khoa) {
 
         const insertedNow = Number(r.inserted || 0) > 0;
         if (insertedNow) {
-          mergeInsertedVoucherCards(r.insertedCards || {});
-          prepareVoucherListForInsertedCards(r.insertedCards || {});
-          saveVoucherCardsLocalCache(cloudWaitList);
-          renderTrackingList();
-          enqueueReadyNotificationDispatch(r.notificationVoucherIds || Object.keys(r.insertedCards || {}));
+          revealInsertedCardsNow(r.insertedCards || {});
+          /* FIX17.17: server đã commit => bỏ lớp modal NGAY để người dùng nhìn thấy phiếu. */
+          finishFastImportCommitUI();
+          requestAnimationFrame(() => {
+            skipNextListReload = true;
+            renderTrackingList();
+          });
+
+          // Server đã commit: cache + notification chạy sau, tuyệt đối không chặn thời điểm nhìn thấy phiếu.
+          setTimeout(() => {
+            saveVoucherCardsLocalCacheDeferred(cloudWaitList);
+            enqueueReadyNotificationDispatch(r.notificationVoucherIds || Object.keys(r.insertedCards || {}));
+          }, 0);
         } else {
           switchView('upload');
         }
@@ -9797,7 +9836,8 @@ async function removeUploadItem(khoa) {
           }
         });
 
-        renderUploadList();
+        if (insertedNow) setTimeout(renderUploadList, 0);
+        else renderUploadList();
 
         if (blockedSuppressed.length) {
           const suppressedMessage = blockedSuppressed.map(item => {
@@ -9847,13 +9887,12 @@ async function removeUploadItem(khoa) {
         const uploadWarehouseSelect = document.getElementById('uploadWarehouseSelect');
         if (uploadWarehouseSelect && getSingleWarehouseImportOptions().length > 1) uploadWarehouseSelect.value = '';
         if (insertedNow) {
-          // Chỉ đóng modal sau khi insertedCards đã tồn tại trong model và Danh sách phát đã được render.
-          if (!hadServerBlocks) {
-            updateImportProcessModal({ stage: 'Đã cập nhật Danh sách phát', detail: 'Phiếu mới đã sẵn sàng.', progress: 100, stats: ['Đã thêm: ' + Number(r.inserted || 0) + ' phiếu'] });
-            await completeImportProcessModal('Đưa phiếu thành công', 'Phiếu mới đã có trong Danh sách phát.', ['Đã thêm: ' + Number(r.inserted || 0) + ' phiếu']);
-          }
+          /* FIX17.17 invariant: callback thành công không còn await animation/modal.
+             Phiếu đã được merge + render + mở view-list + đóng modal ở đầu callback. */
           skipNextListReload = true;
-          switchView('list');
+          renderTrackingList();
+          if (document.getElementById('view-list') && document.getElementById('view-list').style.display === 'none') switchView('list');
+          requestAnimationFrame(() => renderTrackingList());
         } else if (!hadServerBlocks) {
           finishFastImportCommitUI();
         }
@@ -10775,6 +10814,16 @@ let d = new Date(v.time);
     } catch (error) {
       // Không chặn ứng dụng nếu trình duyệt hết dung lượng.
     }
+  }
+
+  let voucherCardsCacheDeferredTimer = null;
+  function saveVoucherCardsLocalCacheDeferred(data) {
+    if (voucherCardsCacheDeferredTimer) clearTimeout(voucherCardsCacheDeferredTimer);
+    const snapshot = data;
+    voucherCardsCacheDeferredTimer = setTimeout(() => {
+      voucherCardsCacheDeferredTimer = null;
+      saveVoucherCardsLocalCache(snapshot);
+    }, 0);
   }
 
   function unpackVoucherCardsResponse(response) {
