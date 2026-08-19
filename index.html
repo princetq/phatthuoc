@@ -2442,6 +2442,111 @@
         visibility: hidden !important;
       }
     }
+
+
+    /* Import modal flow: người dùng chỉ thấy danh sách chờ sau khi tiền xử lý hoàn tất. */
+    .import-process-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 100200;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      background: rgba(15, 35, 28, 0.48);
+      backdrop-filter: blur(3px);
+    }
+    .import-process-card {
+      width: min(560px, 100%);
+      max-height: calc(100vh - 36px);
+      overflow: auto;
+      background: #fff;
+      border-radius: 18px;
+      box-shadow: 0 18px 60px rgba(0,0,0,.24);
+      padding: 24px;
+      text-align: center;
+      border: 1px solid rgba(20, 120, 75, .18);
+    }
+    .import-process-icon { font-size: 34px; line-height: 1; margin-bottom: 8px; }
+    .import-process-title { margin: 0; color: var(--green); font-size: 24px; font-weight: 900; }
+    .import-process-stage { margin-top: 12px; color: #17352b; font-size: 18px; font-weight: 900; line-height: 1.4; }
+    .import-process-detail { margin-top: 8px; color: #546e7a; font-size: 15px; line-height: 1.5; min-height: 23px; }
+    .import-process-track { height: 12px; margin-top: 18px; background: #e8f3ed; border-radius: 999px; overflow: hidden; }
+    .import-process-bar { height: 100%; width: 0%; background: var(--green); border-radius: inherit; transition: width .22s ease; }
+    .import-process-percent { margin-top: 7px; color: var(--green); font-weight: 900; font-size: 14px; }
+    .import-process-stats { margin-top: 14px; padding: 10px 12px; background: #f5faf7; border-radius: 10px; color: #315347; font-weight: 700; line-height: 1.55; display: none; }
+    .import-process-note { margin-top: 13px; color: #607d8b; font-size: 14px; line-height: 1.45; }
+    .import-process-actions { display: none; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 18px; }
+    .import-process-actions button { min-width: 130px; }
+    .import-process-overlay.is-error .import-process-title,
+    .import-process-overlay.is-error .import-process-stage { color: #b71c1c; }
+    .import-process-overlay.is-error .import-process-bar { background: #c62828; }
+    @media (max-width: 600px) {
+      .import-process-overlay { padding: 12px; align-items: center; }
+      .import-process-card { padding: 20px 16px; border-radius: 15px; }
+      .import-process-title { font-size: 21px; }
+      .import-process-stage { font-size: 17px; }
+      .import-process-actions { flex-direction: column; }
+      .import-process-actions button { width: 100%; min-height: 44px; }
+    }
+
+
+    .duplicate-overlap-panel {
+      margin-top: 14px;
+      border: 1px solid #efb25f;
+      border-radius: 10px;
+      overflow: hidden;
+      background: #fffaf2;
+    }
+    .duplicate-overlap-title {
+      padding: 10px 12px;
+      background: #fff0d5;
+      color: #9a4a00;
+      font-weight: 800;
+      font-size: 15px;
+    }
+    .duplicate-child-row {
+      padding: 12px;
+      border-top: 1px solid #f2d4aa;
+      display: grid;
+      gap: 7px;
+    }
+    .duplicate-child-row:first-of-type { border-top: 0; }
+    .duplicate-child-name { font-weight: 800; color: #7a3d00; line-height: 1.35; }
+    .duplicate-child-meta { font-size: 14px; line-height: 1.45; color: #444; }
+    .duplicate-child-existing {
+      padding: 9px 10px;
+      border-radius: 8px;
+      background: rgba(255,255,255,.78);
+      border: 1px solid #f0d1a5;
+    }
+    .duplicate-child-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    .duplicate-child-view-btn {
+      border: 0;
+      border-radius: 8px;
+      min-height: 38px;
+      padding: 8px 11px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    .duplicate-child-view-btn { background: #e8f2ff; color: #0d47a1; }
+    .duplicate-overlap-note { padding: 11px 12px 12px; border-top: 1px solid #f2d4aa; color: #6d3a00; font-size: 13px; line-height: 1.5; background: #fff7e8; }
+    .duplicate-view-content { max-width: 920px; width: min(94vw, 920px); max-height: 88vh; overflow: auto; }
+    .duplicate-view-head { display: grid; gap: 6px; margin: 0 0 14px; padding: 12px; border-radius: 10px; background: #f4f8fc; }
+    .duplicate-view-vouchers { margin: 12px 0; padding: 12px; border: 1px solid #d8e2ec; border-radius: 10px; background: #fff; }
+    .duplicate-view-voucher-line { padding: 7px 8px; border-radius: 7px; line-height: 1.35; }
+    .duplicate-view-voucher-line.is-focus { background: #fff2bf; outline: 2px solid #e5a000; font-weight: 800; }
+    .duplicate-view-table-wrap { overflow-x: auto; margin-top: 12px; }
+    .duplicate-view-table { width: 100%; border-collapse: collapse; min-width: 680px; font-size: 14px; }
+    .duplicate-view-table th, .duplicate-view-table td { border: 1px solid #d7dfe7; padding: 7px 8px; vertical-align: top; }
+    .duplicate-view-table th { background: #eef4f8; text-align: left; }
+    .duplicate-view-close { width: 100%; margin-top: 14px; }
+    @media (max-width: 700px) {
+      .duplicate-view-content { width: 96vw; max-height: 92vh; padding: 18px 14px; }
+      .duplicate-child-actions { display: grid; grid-template-columns: 1fr; }
+      .duplicate-child-view-btn { width: 100%; }
+    }
+
 </style>
 </head>
 <body>
@@ -2449,6 +2554,25 @@
 <div class="loading-overlay" id="loadingSpinner">
   <div class="spinner"></div>
   <div id="loadingText" style="margin-top:10px; font-weight:900; color:var(--green);">Đang xử lý...</div>
+</div>
+
+
+
+<div id="importProcessModal" class="import-process-overlay" role="dialog" aria-modal="true" aria-labelledby="importProcessTitle" aria-describedby="importProcessDetail">
+  <div class="import-process-card">
+    <div id="importProcessIcon" class="import-process-icon">⏳</div>
+    <h2 id="importProcessTitle" class="import-process-title">ĐANG XỬ LÝ PHIẾU</h2>
+    <div id="importProcessStage" class="import-process-stage">Đang chuẩn bị dữ liệu...</div>
+    <div id="importProcessDetail" class="import-process-detail">Vui lòng chờ trong giây lát.</div>
+    <div class="import-process-track" aria-hidden="true"><div id="importProcessBar" class="import-process-bar"></div></div>
+    <div id="importProcessPercent" class="import-process-percent">0%</div>
+    <div id="importProcessStats" class="import-process-stats"></div>
+    <div id="importProcessNote" class="import-process-note">Vui lòng không đóng ứng dụng trong khi hệ thống đang xử lý.</div>
+    <div id="importProcessActions" class="import-process-actions">
+      <button id="btnRetryImportProcess" class="btn-primary" type="button" onclick="retryLastImportProcessing()">↻ Thử lại</button>
+      <button class="btn-danger" type="button" onclick="closeImportProcessModal()">Đóng</button>
+    </div>
+  </div>
 </div>
 
 <div id="loginScreen">
@@ -3000,6 +3124,15 @@
   </div>
 </div>
 
+
+<div id="duplicateContainingVoucherModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="duplicateContainingVoucherTitle">
+  <div class="modal-content duplicate-view-content">
+    <h3 id="duplicateContainingVoucherTitle" style="margin-top:0;">Phiếu đang chứa phiếu con chồng lấp</h3>
+    <div id="duplicateContainingVoucherBody">Đang tải dữ liệu...</div>
+    <button type="button" class="btn-admin duplicate-view-close" onclick="closeDuplicateContainingVoucherModal()">← Quay lại phiếu đang nạp</button>
+  </div>
+</div>
+
 <div class="app-footer glass-panel">
   Khoa Dược - BVĐK Tuyên Quang<br>
   <span style="font-size: 13px; font-weight: normal; color: #555;">Xây dựng và phát triển bởi DS. Ngọc Anh</span>
@@ -3015,7 +3148,7 @@
 
 <script>
   /* ===== GITHUB PAGES ↔ APPS SCRIPT BRIDGE V2 ===== */
-  window.PHATTHUOC_REALTIME_OPT = 'FIX17_10_CLEAN_QA_HARDENED_SINGLE';
+  window.PHATTHUOC_REALTIME_OPT = 'FIX17_13_CLEAN_OVERLAP_REVIEW_SINGLE';
   const GAS_BRIDGE_URL = 'https://script.google.com/macros/s/AKfycbzhDWWBV13NuxpVfYqaOe3BIzuAQYGE8obpn6Yr76qW4wa7v7bfk5WJU-IAxWaHiJiYJA/exec';
   let gasBridgeReady = false;
   let gasBridgeWindow = null;
@@ -3971,14 +4104,19 @@ let currentUser = null;
     el.style.display = show ? 'block' : 'none';
   }
 
-  function beginFastImportCommitUI() {
-    // Không chuyển màn hình sớm. Chờ máy chủ commit xong và dựng được thẻ phiếu mới
-    // rồi mới mở Danh sách để người dùng không nhìn thấy một danh sách chưa có phiếu vừa nạp.
-    showLoading(true, 'Đang đưa phiếu vào danh sách...');
+  function beginFastImportCommitUI(totalCount) {
+    importProcessRetryAction = 'commit';
+    openImportProcessModal({
+      title: 'ĐANG ĐƯA PHIẾU VÀO DANH SÁCH',
+      stage: 'Đang gửi dữ liệu đến máy chủ...',
+      detail: 'Vui lòng chờ trong giây lát. Phiếu chỉ được mở trong Danh sách phát sau khi máy chủ xác nhận ghi thành công.',
+      progress: 18
+    });
+    if (Number(totalCount || 0) > 0) updateImportProcessModal({ stats: ['Phiếu đang gửi: ' + Number(totalCount || 0)] });
   }
 
   function finishFastImportCommitUI() {
-    showLoading(false);
+    closeImportProcessModal();
     showImportCommitBanner(false);
   }
 
@@ -4544,6 +4682,139 @@ const BACKGROUND_FINISH_STORAGE_PREFIX =
       );
     }, 20000);
   }
+
+
+  let lastImportFilesForRetry = [];
+  let lastImportWasFolderForRetry = false;
+  let importProcessStartedAt = 0;
+  let importProcessSlowTimer = null;
+  let importProcessVerySlowTimer = null;
+  let importProcessPreviousBodyOverflow = '';
+  let importProcessRetryAction = 'preprocess';
+
+  function clearImportProcessTimers() {
+    if (importProcessSlowTimer) clearTimeout(importProcessSlowTimer);
+    if (importProcessVerySlowTimer) clearTimeout(importProcessVerySlowTimer);
+    importProcessSlowTimer = null;
+    importProcessVerySlowTimer = null;
+  }
+
+  function setImportProcessText(id, value) {
+    const element = document.getElementById(id);
+    if (element) element.textContent = value == null ? '' : String(value);
+  }
+
+  function openImportProcessModal(options = {}) {
+    const modal = document.getElementById('importProcessModal');
+    if (!modal) return;
+    clearImportProcessTimers();
+    importProcessStartedAt = Date.now();
+    modal.classList.remove('is-error');
+    modal.style.display = 'flex';
+    importProcessPreviousBodyOverflow = document.body.style.overflow || '';
+    document.body.style.overflow = 'hidden';
+    setImportProcessText('importProcessIcon', options.icon || '⏳');
+    setImportProcessText('importProcessTitle', options.title || 'ĐANG XỬ LÝ PHIẾU');
+    setImportProcessText('importProcessStage', options.stage || 'Đang chuẩn bị dữ liệu...');
+    setImportProcessText('importProcessDetail', options.detail || 'Vui lòng chờ trong giây lát.');
+    setImportProcessText('importProcessNote', 'Vui lòng không đóng ứng dụng trong khi hệ thống đang xử lý.');
+    const stats = document.getElementById('importProcessStats');
+    if (stats) { stats.style.display = 'none'; stats.textContent = ''; }
+    const actions = document.getElementById('importProcessActions');
+    if (actions) actions.style.display = 'none';
+    updateImportProcessModal({ progress: Number(options.progress || 3) });
+    importProcessSlowTimer = setTimeout(() => {
+      if (modal.style.display === 'flex' && !modal.classList.contains('is-error')) {
+        setImportProcessText('importProcessNote', 'Máy chủ đang xử lý dữ liệu. Vui lòng chờ trong giây lát.');
+      }
+    }, 2800);
+    importProcessVerySlowTimer = setTimeout(() => {
+      if (modal.style.display === 'flex' && !modal.classList.contains('is-error')) {
+        setImportProcessText('importProcessNote', 'Quá trình đang mất nhiều thời gian hơn bình thường. Ứng dụng vẫn tiếp tục xử lý; vui lòng không đóng ứng dụng.');
+      }
+    }, 12000);
+  }
+
+  function updateImportProcessModal(options = {}) {
+    const modal = document.getElementById('importProcessModal');
+    if (!modal || modal.style.display !== 'flex') return;
+    if (options.icon !== undefined) setImportProcessText('importProcessIcon', options.icon);
+    if (options.title !== undefined) setImportProcessText('importProcessTitle', options.title);
+    if (options.stage !== undefined) setImportProcessText('importProcessStage', options.stage);
+    if (options.detail !== undefined) setImportProcessText('importProcessDetail', options.detail);
+    if (options.note !== undefined) setImportProcessText('importProcessNote', options.note);
+    if (options.progress !== undefined) {
+      const progress = Math.max(0, Math.min(100, Math.round(Number(options.progress) || 0)));
+      const bar = document.getElementById('importProcessBar');
+      if (bar) bar.style.width = progress + '%';
+      setImportProcessText('importProcessPercent', progress + '%');
+    }
+    if (options.stats !== undefined) {
+      const stats = document.getElementById('importProcessStats');
+      if (stats) {
+        const text = Array.isArray(options.stats) ? options.stats.filter(Boolean).join(' • ') : String(options.stats || '');
+        stats.textContent = text;
+        stats.style.display = text ? 'block' : 'none';
+      }
+    }
+  }
+
+  function closeImportProcessModal() {
+    const modal = document.getElementById('importProcessModal');
+    if (modal) {
+      modal.style.display = 'none';
+      modal.classList.remove('is-error');
+    }
+    clearImportProcessTimers();
+    document.body.style.overflow = importProcessPreviousBodyOverflow;
+  }
+
+  async function completeImportProcessModal(stage, detail, stats) {
+    updateImportProcessModal({
+      icon: '✓',
+      title: 'HOÀN TẤT XỬ LÝ',
+      stage: stage || 'Đã chuẩn bị xong danh sách phiếu',
+      detail: detail || 'Danh sách phiếu chờ đã sẵn sàng.',
+      stats: stats || '',
+      progress: 100,
+      note: 'Đang mở danh sách phiếu chờ...'
+    });
+    const elapsed = Date.now() - importProcessStartedAt;
+    const waitMs = Math.max(320, 620 - elapsed);
+    await new Promise(resolve => setTimeout(resolve, waitMs));
+    closeImportProcessModal();
+  }
+
+  function showImportProcessError(message, detail) {
+    const modal = document.getElementById('importProcessModal');
+    if (!modal) return;
+    clearImportProcessTimers();
+    modal.classList.add('is-error');
+    setImportProcessText('importProcessIcon', '⚠');
+    setImportProcessText('importProcessTitle', 'KHÔNG THỂ HOÀN TẤT');
+    setImportProcessText('importProcessStage', message || 'Không thể hoàn tất xử lý phiếu');
+    setImportProcessText('importProcessDetail', detail || 'Dữ liệu chưa được đưa vào danh sách. Bạn có thể thử lại mà không cần chọn lại file.');
+    setImportProcessText('importProcessNote', 'Không có phiếu nào được ghi lên máy chủ ở bước này.');
+    const actions = document.getElementById('importProcessActions');
+    if (actions) actions.style.display = 'flex';
+    const retry = document.getElementById('btnRetryImportProcess');
+    if (retry) retry.style.display = (importProcessRetryAction === 'commit' || lastImportFilesForRetry.length) ? 'inline-block' : 'none';
+  }
+
+  async function retryLastImportProcessing() {
+    if (importProcessRetryAction === 'commit') {
+      closeImportProcessModal();
+      await pushToWaitList();
+      return;
+    }
+    if (!lastImportFilesForRetry.length) return;
+    const retryFiles = lastImportFilesForRetry.slice();
+    isFolderAutoLoad = Boolean(lastImportWasFolderForRetry);
+    closeImportProcessModal();
+    await handleFiles(retryFiles);
+  }
+
+
   let appPopupResolver = null;
 
   /* ===== PRINT 1-UP / 2-UP CONSECUTIVE PAGES ===== */
@@ -8127,8 +8398,9 @@ function renderSingleWarehouseImportContext(resetForNewBatch = false) {
   }
 
 
-  function processVoucherString(rawStr, arr, datesArr) {
-    if (!rawStr) return;
+  function parseVoucherStringEntries(rawStr) {
+    const entries = [];
+    if (!rawStr) return entries;
     String(rawStr).split(/[;,]/).forEach(part => {
       const text = part.trim();
       if (!text) return;
@@ -8145,10 +8417,18 @@ function renderSingleWarehouseImportContext(resetForNewBatch = false) {
           dateText = trailingDate[2];
         }
       }
-      const combined = dateText ? (voucherText + '|' + dateText) : voucherText;
-      if (!arr.includes(combined)) arr.push(combined);
-      if (dateText && !datesArr.includes(dateText)) datesArr.push(dateText);
+      entries.push({ raw: dateText ? (voucherText + '|' + dateText) : voucherText, dateText: dateText });
     });
+    return entries;
+  }
+
+  function processVoucherString(rawStr, arr, datesArr) {
+    const entries = parseVoucherStringEntries(rawStr);
+    entries.forEach(entry => {
+      if (!arr.includes(entry.raw)) arr.push(entry.raw);
+      if (entry.dateText && !datesArr.includes(entry.dateText)) datesArr.push(entry.dateText);
+    });
+    return entries.map(entry => entry.raw);
   }
 
   function getVoucherStrings(vObj) {
@@ -8216,7 +8496,7 @@ function renderSingleWarehouseImportContext(resetForNewBatch = false) {
           matchedCount:0, tokenCount:0,
           duplicateWarehouseKeys:[], partialWarehouseKeys:[],
           newWarehouseKeys:Object.keys(parsedFileData[khoa].vouchers || {}),
-          suppressed:false, suppressedWarehouseKeys:[], suppressionNotices:[]
+          suppressed:false, suppressedWarehouseKeys:[], suppressionNotices:[], overlapDetails:[]
         };
       }
       skipped.push(khoa);
@@ -8266,17 +8546,20 @@ function renderSingleWarehouseImportContext(resetForNewBatch = false) {
     return keys.map(khoa => buildDuplicateCandidate(parsedFileData,khoa,khoa)).filter(Boolean);
   }
 
-  async function requestDuplicateCheckCandidates(candidates, sessionState=null){
+  async function requestDuplicateCheckCandidates(candidates, sessionState=null, options={}){
     if(!Array.isArray(candidates)||!candidates.length)return {};
     const useSession=Boolean(sessionState&&typeof sessionState==='object');
-    const payload=useSession
-      ? {candidates:candidates,sessionFingerprints:Array.isArray(sessionState.fingerprints)?sessionState.fingerprints:[]}
-      : candidates;
+    const includeOverlapDetails = options.includeOverlapDetails !== undefined ? Boolean(options.includeOverlapDetails) : !isFolderAutoLoad;
+    const payload={
+      candidates:candidates,
+      sessionFingerprints:useSession&&Array.isArray(sessionState.fingerprints)?sessionState.fingerprints:[],
+      includeOverlapDetails:includeOverlapDetails
+    };
     const response=await gasCall('checkVoucherDuplicatesServer',[JSON.stringify(payload)]);
     if(useSession&&response&&Array.isArray(response.sessionFingerprints)){
       sessionState.fingerprints=response.sessionFingerprints;
     }
-    if(response&&response.serverMs!==undefined)console.info('[IMPORT] Duplicate check',{candidates:candidates.length,serverMs:response.serverMs,sessionFingerprints:useSession&&sessionState?sessionState.fingerprints.length:0});
+    if(response&&response.serverMs!==undefined)console.info('[IMPORT] Duplicate check',{candidates:candidates.length,serverMs:response.serverMs,overlapDetails:includeOverlapDetails,sessionFingerprints:useSession&&sessionState?sessionState.fingerprints.length:0});
     return response&&response.results?response.results:{};
   }
 
@@ -8284,6 +8567,130 @@ function renderSingleWarehouseImportContext(resetForNewBatch = false) {
     const candidates=buildDuplicateCheckCandidates(khoaKeys);if(!candidates.length){if(!khoaKeys)parsedDuplicateStatus={};return {};}
     const results=await requestDuplicateCheckCandidates(candidates);if(!khoaKeys)parsedDuplicateStatus={};
     candidates.forEach(candidate=>{parsedDuplicateStatus[candidate.key]=Object.assign(defaultDuplicateStatus(false),results[candidate.key]||{},{checking:false,checkError:false});});return results;
+  }
+
+
+  function getOverlapDetailsForKhoa(khoa) {
+    const status = parsedDuplicateStatus[String(khoa || '')] || {};
+    return Array.isArray(status.overlapDetails) ? status.overlapDetails : [];
+  }
+
+  function formatExistingVoucherStateLabel(value) {
+    const state = String(value || '').toLowerCase();
+    if (state === 'waiting') return 'Chưa phát';
+    if (state === 'progress') return 'Đang phát';
+    if (state === 'done') return 'Đã phát';
+    if (state === 'checking') return 'Đã phát · Đang đối chiếu';
+    if (state === 'checked') return 'Đã phát · Đã đối chiếu';
+    return value ? String(value) : 'Không rõ trạng thái';
+  }
+
+  function buildOverlapDetailsHtml(khoa, status) {
+    if (isFolderAutoLoad) return '';
+    const details = Array.isArray(status && status.overlapDetails) ? status.overlapDetails : [];
+    if (!details.length) return '';
+    const rows = details.map(detail => {
+      const childName = String(detail.childVoucherName || detail.incomingRaw || 'Phiếu con');
+      const voucherNumber = String(detail.voucherNumber || '').trim();
+      const matches = Array.isArray(detail.existingMatches) ? detail.existingMatches : [];
+      const matchHtml = matches.length ? matches.map(match => {
+        const voucherId = String(match.existingVoucherId || '');
+        const warehouseKey = String(match.warehouseKey || detail.warehouseKey || '');
+        const rawEncoded = encodeURIComponent(String(detail.incomingRaw || ''));
+        const typeEncoded = encodeURIComponent(String(detail.type || ''));
+        const canView = Boolean(voucherId && match.canView !== false);
+        const stateLabel = escapeHtmlText(match.statusLabel || formatExistingVoucherStateLabel(match.state));
+        const outerDate = escapeHtmlText(match.voucherDate || 'Không rõ ngày');
+        const dispatchNo = Number(match.dispatchNo || 0);
+        const whereText = dispatchNo > 0
+          ? ('Phiếu ngày ' + outerDate + ' · Lần phát số ' + dispatchNo)
+          : ('Phiếu ngày ' + outerDate);
+        return `<div class="duplicate-child-existing">
+          <div><b>Trạng thái:</b> ${stateLabel}${match.archived ? ' · Lịch sử' : ''}</div>
+          <div><b>Nằm trong:</b> ${escapeHtmlText(whereText)}</div>
+          <div>${escapeHtmlText(match.department || '')}${match.warehouseName ? ' · ' + escapeHtmlText(match.warehouseName) : ''}</div>
+          <div class="duplicate-child-actions" style="margin-top:7px;">
+            ${canView ? `<button type="button" class="duplicate-child-view-btn" onclick="openDuplicateContainingVoucher('${escapeHtmlValue(voucherId)}','${escapeHtmlValue(warehouseKey)}','${rawEncoded}','${typeEncoded}')">👁 Xem phiếu chứa</button>` : '<span style="font-size:13px;color:#777;">Chi tiết phiếu cũ không còn để mở.</span>'}
+          </div>
+        </div>`;
+      }).join('') : `<div class="duplicate-child-existing"><span style="font-size:13px;color:#777;">Phiếu con này đã tồn tại trước đây nhưng chi tiết phiếu chứa hiện không còn trong dữ liệu đang lưu.</span></div>`;
+      return `<div class="duplicate-child-row">
+        <div class="duplicate-child-name">${escapeHtmlText(childName)}</div>
+        <div class="duplicate-child-meta"><b>Số phiếu:</b> ${voucherNumber ? escapeHtmlText(voucherNumber) : 'Không tách được số phiếu'}${detail.childVoucherDate ? ' · <b>Ngày phiếu con:</b> ' + escapeHtmlText(detail.childVoucherDate) : ''}</div>
+        ${matchHtml}
+      </div>`;
+    }).join('');
+    return `<div class="duplicate-overlap-panel">
+      <div class="duplicate-overlap-title">⚠ Phiếu con đã tồn tại – kiểm tra trước khi nạp</div>
+      ${rows}
+      <div class="duplicate-overlap-note">
+        <b>Ứng dụng không tự loại phiếu con chồng lấp.</b> File nguồn không cho phép xác định chính xác số lượng thuốc thuộc riêng từng phiếu con. Bạn có thể lấy lại file không chứa phiếu con đã tồn tại, hoặc tích chọn phiếu này và nạp <b>nguyên toàn bộ dữ liệu</b> sau khi xác nhận.
+      </div>
+    </div>`;
+  }
+
+  function closeDuplicateContainingVoucherModal() {
+    const modal = document.getElementById('duplicateContainingVoucherModal');
+    if (modal) modal.style.display = 'none';
+  }
+
+  function renderDuplicateContainingVoucherModal(result, focusRaw, focusType) {
+    const body = document.getElementById('duplicateContainingVoucherBody');
+    if (!body) return;
+    if (!result || result.success === false || !result.voucher) {
+      body.innerHTML = '<div class="empty-state">Không tải được phiếu đang chứa dữ liệu chồng lấp.</div>';
+      return;
+    }
+    const voucher = result.voucher;
+    const meta = result.meta || {};
+    const warehouseKey = String(meta.warehouseKey || '');
+    const packet = (voucher.vouchers && voucher.vouchers[warehouseKey]) || {};
+    const focusDecoded = String(focusRaw || '');
+    const focusTypeDecoded = String(focusType || '');
+    const voucherLines = [];
+    ['TQ','BT','HT'].forEach(type => {
+      (packet[type] || []).forEach(raw => {
+        const isFocus = type === focusTypeDecoded && String(raw || '') === focusDecoded;
+        const text = String(raw || '').replace('|', ' · ');
+        voucherLines.push(`<div class="duplicate-view-voucher-line${isFocus ? ' is-focus' : ''}">${escapeHtmlText(text)}</div>`);
+      });
+    });
+    const items = Array.isArray(voucher.items) ? voucher.items : [];
+    const itemRows = items.map((item, index) => `<tr>
+      <td>${index + 1}</td>
+      <td>${escapeHtmlText(item.ma || '')}</td>
+      <td>${escapeHtmlText(item.ten || '')}</td>
+      <td>${escapeHtmlText(item.dvt || '')}</td>
+      <td>${escapeHtmlText(item.sl)}</td>
+      <td>${escapeHtmlText(item.status || 'Chưa phát')}</td>
+      <td>${escapeHtmlText(item.dispenser || item.dispenserName || '')}</td>
+      <td>${escapeHtmlText(item.checker || '')}</td>
+    </tr>`).join('');
+    const dispatchNo = Number(meta.dispatchNo || 0);
+    body.innerHTML = `<div class="duplicate-view-head">
+      <div><b>${escapeHtmlText(voucher.khoa || '')}</b></div>
+      <div>Phiếu ngày <b>${escapeHtmlText(meta.voucherDate || formatDateDDMMYYYY(voucher.time) || '')}</b>${dispatchNo > 0 ? ' · Lần phát số <b>' + dispatchNo + '</b>' : ''}</div>
+      <div>Kho: <b>${escapeHtmlText(meta.warehouseName || warehouseKey)}</b></div>
+      <div>Trạng thái: <b>${escapeHtmlText(meta.statusLabel || formatExistingVoucherStateLabel(voucher.state))}</b>${meta.archived ? ' · Lịch sử' : ''}</div>
+    </div>
+    <div class="duplicate-view-vouchers"><b>Các phiếu con trong kho này:</b>${voucherLines.length ? voucherLines.join('') : '<div style="margin-top:8px;color:#777;">Không có dữ liệu số phiếu con.</div>'}</div>
+    <div class="duplicate-view-table-wrap"><table class="duplicate-view-table"><thead><tr><th>STT</th><th>Mã</th><th>Tên thuốc</th><th>ĐVT</th><th>SL</th><th>Trạng thái</th><th>Người phát</th><th>Đối chiếu</th></tr></thead><tbody>${itemRows || '<tr><td colspan="8">Không có khoản thuốc trong kho này.</td></tr>'}</tbody></table></div>`;
+  }
+
+  async function openDuplicateContainingVoucher(voucherId, warehouseKey, encodedRaw, encodedType) {
+    const modal = document.getElementById('duplicateContainingVoucherModal');
+    const body = document.getElementById('duplicateContainingVoucherBody');
+    if (!modal || !body) return;
+    const focusRaw = decodeURIComponent(String(encodedRaw || ''));
+    const focusType = decodeURIComponent(String(encodedType || ''));
+    body.innerHTML = '<div class="empty-state">⏳ Đang tải phiếu chứa dữ liệu chồng lấp...</div>';
+    modal.style.display = 'flex';
+    try {
+      const result = await gasCall('getDuplicateContainingVoucherServer', [String(voucherId || ''), String(warehouseKey || '')], 20000);
+      renderDuplicateContainingVoucherModal(result, focusRaw, focusType);
+    } catch (error) {
+      body.innerHTML = '<div class="empty-state">⚠ Không tải được phiếu: ' + escapeHtmlText(error && error.message ? error.message : String(error)) + '</div>';
+    }
   }
 
   function handleSingleFileDragOver(
@@ -8649,7 +9056,7 @@ async function parseImportFile(
 
 
   function defaultDuplicateStatus(checking) {
-    return {duplicate:false,partial:false,hasOverlap:false,matchedCount:0,tokenCount:0,duplicateWarehouseKeys:[],partialWarehouseKeys:[],newWarehouseKeys:[],suppressed:false,suppressedWarehouseKeys:[],suppressionNotices:[],checking:Boolean(checking),checkError:false,mergeConflict:false};
+    return {duplicate:false,partial:false,hasOverlap:false,matchedCount:0,tokenCount:0,duplicateWarehouseKeys:[],partialWarehouseKeys:[],newWarehouseKeys:[],suppressed:false,suppressedWarehouseKeys:[],suppressionNotices:[],overlapDetails:[],checking:Boolean(checking),checkError:false,mergeConflict:false};
   }
 
   function updateUploadCommitButton() {
@@ -8689,7 +9096,8 @@ async function parseImportFile(
     else if(isDup){borderCard='border:2px solid var(--danger);';bgHeader='#ffebee';colorHeader='var(--danger)';bgBody='#fff9f9';statusTag=' <span style="font-size:14px;font-style:italic;">(trùng hoàn toàn)</span>';}
     else if(isPartial){borderCard='border:2px solid #ef6c00;';bgHeader='#fff3e0';colorHeader='#e65100';bgBody='#fffaf2';statusTag=' <span style="font-size:14px;font-style:italic;">(chồng lấp một phần – cần kiểm tra)</span>';}
     const checked=(!checking&&!checkError&&!mergeConflict&&!isDup&&!isPartial&&!isSuppressed)?'checked':'',disabled=(checking||checkError||mergeConflict)?'disabled':'',safeKhoaJs=String(khoa).replace(/\\/g,'\\\\').replace(/'/g,"\\'");
-    return `<div style="${borderCard} margin-bottom:15px;border-radius:8px;overflow:hidden;"><div style="background:${bgHeader};padding:15px;font-weight:bold;font-size:20px;color:${colorHeader};display:flex;justify-content:space-between;align-items:center;gap:10px;"><label style="display:flex;align-items:center;flex-wrap:wrap;min-width:0;"><input type="checkbox" class="v-chk" value="${escapeHtmlValue(khoa)}" ${checked} ${disabled} style="width:20px;height:20px;margin:0 10px 0 0;">${escapeHtmlText(khoa)}${statusTag}</label><div style="display:flex;align-items:center;gap:15px;"><span style="color:var(--danger);font-size:18px;white-space:nowrap;">${total} khoản</span><button onclick="removeUploadItem('${safeKhoaJs}')" style="background:transparent;border:none;color:var(--danger);font-size:22px;padding:0;cursor:pointer;line-height:1;" title="Xóa khoa này">✖</button></div></div><div style="padding:15px;background:${bgBody};font-size:16px;"><div style="margin-bottom:8px;font-size:18px;"><b>📅 Ngày:</b> <span style="color:var(--danger);font-weight:bold;">${escapeHtmlText(Array.from(allDates).join(', '))}</span></div><div><b>🧾 Các phiếu:</b><br>${formatVoucherColors(Array.from(allVouchers))}</div></div></div>`;
+    const overlapHtml = (!checking && !checkError && !mergeConflict && (isDup || isPartial)) ? buildOverlapDetailsHtml(khoa, status) : '';
+    return `<div style="${borderCard} margin-bottom:15px;border-radius:8px;overflow:hidden;"><div style="background:${bgHeader};padding:15px;font-weight:bold;font-size:20px;color:${colorHeader};display:flex;justify-content:space-between;align-items:center;gap:10px;"><label style="display:flex;align-items:center;flex-wrap:wrap;min-width:0;"><input type="checkbox" class="v-chk" value="${escapeHtmlValue(khoa)}" ${checked} ${disabled} style="width:20px;height:20px;margin:0 10px 0 0;">${escapeHtmlText(khoa)}${statusTag}</label><div style="display:flex;align-items:center;gap:15px;"><span style="color:var(--danger);font-size:18px;white-space:nowrap;">${total} khoản</span><button onclick="removeUploadItem('${safeKhoaJs}')" style="background:transparent;border:none;color:var(--danger);font-size:22px;padding:0;cursor:pointer;line-height:1;" title="Xóa khoa này">✖</button></div></div><div style="padding:15px;background:${bgBody};font-size:16px;"><div style="margin-bottom:8px;font-size:18px;"><b>📅 Ngày:</b> <span style="color:var(--danger);font-weight:bold;">${escapeHtmlText(Array.from(allDates).join(', '))}</span></div><div><b>🧾 Các phiếu:</b><br>${formatVoucherColors(Array.from(allVouchers))}</div>${overlapHtml}</div></div>`;
   }
 
   function renderFolderImportSummary(){
@@ -8706,88 +9114,222 @@ async function parseImportFile(
     element.innerText=parts.join(' ');element.style.display='block';
   }
 
-  async function handleFiles(files){
-  if(!files||files.length===0)return;
-  const perfStarted=performance.now();
-  setUploadDuplicateCheckState(false,false);
-  scheduleDuplicateIndexWarmup(false);
-  showLoading(true,'Đang đọc và phân tích file...');
-  parsedFileData={};parsedDuplicateStatus={};folderImportSummary=null;renderFolderImportSummary();renderUploadList();
-  const fileList=Array.from(files);
-  const selectedImportWarehouseKey=await requireSingleWarehouseImportSelection();
-  if(!selectedImportWarehouseKey){showLoading(false);return;}
-  const allowedKhoKeys=[selectedImportWarehouseKey];
-  let nextIndex=0,failedCount=0,completedCount=0;
-  const parsedUnits=new Array(fileList.length);
-  const parseStarted=performance.now();
-  const worker=async()=>{while(nextIndex<fileList.length){const index=nextIndex++;try{parsedUnits[index]=await parseImportFile(fileList[index],allowedKhoKeys);}catch(error){failedCount++;console.error('Lỗi đọc file:',fileList[index]?fileList[index].name:'',error);}finally{completedCount++;showLoading(true,(isFolderAutoLoad?'Đang đọc thư mục... ':'Đang đọc file... ')+completedCount+'/'+fileList.length+' file');}}};
-  const workerCount=Math.min(FILE_PARSE_CONCURRENCY,fileList.length);
-  await Promise.all(Array.from({length:workerCount},()=>worker()));
-  const parseMs=Math.round(performance.now()-parseStarted);
 
-  const skippedOtherWarehouseRows=parsedUnits.filter(Boolean).reduce((sum,unit)=>sum+Number(unit&&unit.stats&&unit.stats.skippedOtherWarehouseRows||0),0);
-  const acceptedWarehouseRows=parsedUnits.filter(Boolean).reduce((sum,unit)=>sum+Number(unit&&unit.stats&&unit.stats.acceptedRows||0),0);
-  const unknownWarehouseRows=parsedUnits.filter(Boolean).reduce((sum,unit)=>sum+Number(unit&&unit.stats&&unit.stats.unknownWarehouseRows||0),0);
-  const unknownWarehouseSamples=Array.from(new Set(parsedUnits.filter(Boolean).reduce((acc,unit)=>acc.concat(unit&&unit.stats&&Array.isArray(unit.stats.unknownWarehouseSamples)?unit.stats.unknownWarehouseSamples:[]),[]))).slice(0,5);
-  const warehouseHint=document.getElementById('uploadWarehouseHint');
-  if(warehouseHint){const selectedWarehouseLabel=getSelectedSingleWarehouseImportLabel();warehouseHint.textContent='Đã lấy '+acceptedWarehouseRows+' dòng thuộc '+selectedWarehouseLabel+'.'+(skippedOtherWarehouseRows>0?' Đã tự bỏ qua '+skippedOtherWarehouseRows+' dòng thuộc kho khác trong file.':' Không có dòng kho khác cần bỏ qua.')+(unknownWarehouseRows>0?' Có '+unknownWarehouseRows+' dòng chưa nhận diện được tên kho'+(unknownWarehouseSamples.length?' ('+unknownWarehouseSamples.join(', ')+')':'')+'.':'')+' Dữ liệu được nhóm thành phiếu độc lập theo từng khoa.';}
-  const validUnits=parsedUnits.filter(unit=>unit&&unit.data&&Object.keys(unit.data).length);
-  if(!validUnits.length){showLoading(false);setSingleWarehouseImportLocked(false);await showMsg('Không tìm thấy dữ liệu thuộc kho “'+getSelectedSingleWarehouseImportLabel()+'” trong file đã chọn.'+(skippedOtherWarehouseRows>0?' Hệ thống đã bỏ qua '+skippedOtherWarehouseRows+' dòng thuộc kho khác.':'')+(unknownWarehouseRows>0?' Có '+unknownWarehouseRows+' dòng chưa nhận diện được tên kho'+(unknownWarehouseSamples.length?': '+unknownWarehouseSamples.join(', '):'')+'.':'')+' Hãy kiểm tra lại kho và file Excel.','Không có dữ liệu đúng kho','warning');return;}
-  setSingleWarehouseImportLocked(true);
-  const duplicateStarted=performance.now();
+  async function handleFiles(files) {
+    if (!files || files.length === 0) return;
+    const fileList = Array.from(files);
+    const selectedImportWarehouseKey = await requireSingleWarehouseImportSelection();
+    if (!selectedImportWarehouseKey) return;
 
-  if(isFolderAutoLoad){
-    const candidates=[],candidateMeta={};
-    validUnits.forEach((unit,unitIndex)=>{Object.keys(unit.data).forEach(khoa=>{const candidateKey='F'+unitIndex+'::'+khoa;const candidate=buildDuplicateCandidate(unit.data,khoa,candidateKey);if(candidate){candidates.push(candidate);candidateMeta[candidateKey]={unit,khoa};}});});
-    folderImportSummary={totalFiles:fileList.length,filesRead:parsedUnits.filter(Boolean).length,totalGroups:candidates.length,checkedGroups:0,newUnits:0,duplicateWarehouses:0,partialWarehouses:0,suppressedWarehouses:0,failedFiles:failedCount,checking:true,checkError:false};
-    showLoading(false);setUploadDuplicateCheckState(true,false);renderFolderImportSummary();renderUploadList();await yieldUploadPaint();
-    let cursor=0;
-    const duplicateSession={fingerprints:[]};
-    try{
-      while(cursor<candidates.length){
-        const size=cursor===0?FOLDER_DUPLICATE_FIRST_BATCH_SIZE:FOLDER_DUPLICATE_BATCH_SIZE;
-        const batch=candidates.slice(cursor,cursor+size);
-        const results=await requestDuplicateCheckCandidates(batch,duplicateSession);
-        batch.forEach(candidate=>{
-          const meta=candidateMeta[candidate.key],result=results[candidate.key]||defaultDuplicateStatus(false);
-          const exactKeys=Array.isArray(result.duplicateWarehouseKeys)?result.duplicateWarehouseKeys:[];
-          const partialKeys=Array.isArray(result.partialWarehouseKeys)?result.partialWarehouseKeys:[];
-          const suppressedKeys=Array.isArray(result.suppressedWarehouseKeys)?result.suppressedWarehouseKeys:[];
-          folderImportSummary.duplicateWarehouses+=exactKeys.length;folderImportSummary.partialWarehouses+=partialKeys.length;folderImportSummary.suppressedWarehouses+=suppressedKeys.length;
-          if(currentUser&&currentUser.role==='admin'&&result.suppressed){mergeParsedImportData(parsedFileData,{[meta.khoa]:meta.unit.data[meta.khoa]});parsedDuplicateStatus[meta.khoa]=Object.assign(defaultDuplicateStatus(false),result,{checking:false});return;}
-          removeWarehouseKeysFromImportData(meta.unit.data[meta.khoa],exactKeys.concat(partialKeys).concat(currentUser&&currentUser.role==='phat'?suppressedKeys:[]));
-          const remaining=meta.unit.data[meta.khoa];if(!hasImportData(remaining))return;
-          mergeParsedImportData(parsedFileData,{[meta.khoa]:remaining});
-          parsedDuplicateStatus[meta.khoa]=Object.assign(defaultDuplicateStatus(false),{newWarehouseKeys:Object.keys(remaining.vouchers||{})});
-        });
-        cursor+=batch.length;folderImportSummary.checkedGroups=cursor;folderImportSummary.newUnits=Object.keys(parsedFileData).length;renderFolderImportSummary();renderUploadList();await yieldUploadPaint();
+    lastImportFilesForRetry = fileList.slice();
+    lastImportWasFolderForRetry = Boolean(isFolderAutoLoad);
+    const perfStarted = performance.now();
+    setUploadDuplicateCheckState(false, false);
+    scheduleDuplicateIndexWarmup(false);
+    importProcessRetryAction = 'preprocess';
+    openImportProcessModal({
+      stage: isFolderAutoLoad ? 'Đang chuẩn bị đọc thư mục...' : 'Đang chuẩn bị đọc file...',
+      detail: isFolderAutoLoad ? ('Đã chọn ' + fileList.length + ' file. Vui lòng chờ trong giây lát.') : 'Vui lòng chờ trong giây lát.',
+      progress: 4
+    });
+
+    parsedFileData = {};
+    parsedDuplicateStatus = {};
+    folderImportSummary = null;
+    renderFolderImportSummary();
+    renderUploadList();
+
+    const allowedKhoKeys = [selectedImportWarehouseKey];
+    let nextIndex = 0;
+    let failedCount = 0;
+    let completedCount = 0;
+    const parsedUnits = new Array(fileList.length);
+    const parseStarted = performance.now();
+    const worker = async () => {
+      while (nextIndex < fileList.length) {
+        const index = nextIndex++;
+        try {
+          parsedUnits[index] = await parseImportFile(fileList[index], allowedKhoKeys);
+        } catch (error) {
+          failedCount++;
+          console.error('Lỗi đọc file:', fileList[index] ? fileList[index].name : '', error);
+        } finally {
+          completedCount++;
+          updateImportProcessModal({
+            stage: isFolderAutoLoad ? 'Đang đọc dữ liệu trong thư mục...' : 'Đang đọc dữ liệu Excel...',
+            detail: 'Đã đọc ' + completedCount + '/' + fileList.length + ' file.',
+            progress: 8 + (completedCount / Math.max(1, fileList.length)) * 34,
+            stats: failedCount ? ['File đọc được: ' + (completedCount - failedCount), 'File lỗi: ' + failedCount] : ['File đã đọc: ' + completedCount + '/' + fileList.length]
+          });
+        }
       }
-    }catch(error){console.error('Không kiểm tra được phiếu trùng từ thư mục:',error&&error.message?error.message:String(error));folderImportSummary.checking=false;folderImportSummary.checkError=true;setUploadDuplicateCheckState(false,true);renderFolderImportSummary();renderUploadList();await showMsg('Không hoàn tất được bước kiểm tra phiếu trùng. Hệ thống không cho đưa các phiếu chưa kiểm tra vào danh sách. Vui lòng chọn lại thư mục để thử lại.','Kiểm tra trùng chưa hoàn tất','warning');return;}
-    folderImportSummary.checking=false;folderImportSummary.newUnits=Object.keys(parsedFileData).length;setUploadDuplicateCheckState(false,false);renderFolderImportSummary();renderUploadList();
-    if(currentUser&&currentUser.role==='admin'){const folderSuppressed=Object.keys(parsedFileData).filter(isSuppressedDeletedVoucher);if(folderSuppressed.length)await showMsg('Trong thư mục có phiếu đã bị xóa không phát nữa:\n\n'+folderSuppressed.map(formatSuppressionNoticeForImport).join('\n\n')+'\n\nHệ thống không tự tích chọn các phiếu này. Admin có thể tích chọn và xác nhận nếu thực sự muốn nạp lại.','Cảnh báo phiếu không phát nữa','warning');}
-    if(!Object.keys(parsedFileData).length)await showMsg('Đã kiểm tra xong thư mục nhưng không còn phiếu mới hợp lệ để đưa vào danh sách.','Không có phiếu mới','info');
-  }else{
-    validUnits.forEach(unit=>mergeParsedImportData(parsedFileData,unit.data));
-    const mergeConflictKhoas=Object.keys(parsedFileData).filter(khoa=>Array.isArray(parsedFileData[khoa].__importMergeConflicts)&&parsedFileData[khoa].__importMergeConflicts.length>0);
-    if(mergeConflictKhoas.length){
-      mergeConflictKhoas.forEach(khoa=>{parsedDuplicateStatus[khoa]=Object.assign(defaultDuplicateStatus(false),{mergeConflict:true});});
-      showLoading(false);setUploadDuplicateCheckState(false,true);renderUploadList();
-      await showMsg('Có cùng số phiếu nhưng nội dung thuốc khác nhau giữa các file tại: '+mergeConflictKhoas.join(', ')+'. Hệ thống đã chặn việc gộp để tránh cộng sai số lượng. Hãy nạp từng file riêng để kiểm tra đúng phiếu.','Phát hiện file chồng lấp nội bộ','warning');
+    };
+    const workerCount = Math.min(FILE_PARSE_CONCURRENCY, fileList.length);
+    await Promise.all(Array.from({ length: workerCount }, () => worker()));
+    const parseMs = Math.round(performance.now() - parseStarted);
+
+    updateImportProcessModal({ stage: 'Đang phân loại khoa và kho...', detail: 'Hệ thống đang chuẩn hóa dữ liệu phiếu.', progress: 46 });
+    const skippedOtherWarehouseRows = parsedUnits.filter(Boolean).reduce((sum, unit) => sum + Number(unit && unit.stats && unit.stats.skippedOtherWarehouseRows || 0), 0);
+    const acceptedWarehouseRows = parsedUnits.filter(Boolean).reduce((sum, unit) => sum + Number(unit && unit.stats && unit.stats.acceptedRows || 0), 0);
+    const unknownWarehouseRows = parsedUnits.filter(Boolean).reduce((sum, unit) => sum + Number(unit && unit.stats && unit.stats.unknownWarehouseRows || 0), 0);
+    const unknownWarehouseSamples = Array.from(new Set(parsedUnits.filter(Boolean).reduce((acc, unit) => acc.concat(unit && unit.stats && Array.isArray(unit.stats.unknownWarehouseSamples) ? unit.stats.unknownWarehouseSamples : []), []))).slice(0, 5);
+    const warehouseHint = document.getElementById('uploadWarehouseHint');
+    if (warehouseHint) {
+      const selectedWarehouseLabel = getSelectedSingleWarehouseImportLabel();
+      warehouseHint.textContent = 'Đã lấy ' + acceptedWarehouseRows + ' dòng thuộc ' + selectedWarehouseLabel + '.' + (skippedOtherWarehouseRows > 0 ? ' Đã tự bỏ qua ' + skippedOtherWarehouseRows + ' dòng thuộc kho khác trong file.' : ' Không có dòng kho khác cần bỏ qua.') + (unknownWarehouseRows > 0 ? ' Có ' + unknownWarehouseRows + ' dòng chưa nhận diện được tên kho' + (unknownWarehouseSamples.length ? ' (' + unknownWarehouseSamples.join(', ') + ')' : '') + '.' : '') + ' Dữ liệu được nhóm thành phiếu độc lập theo từng khoa.';
+    }
+    const validUnits = parsedUnits.filter(unit => unit && unit.data && Object.keys(unit.data).length);
+    if (!validUnits.length) {
+      setSingleWarehouseImportLocked(false);
+      showImportProcessError('Không có dữ liệu đúng kho', 'Không tìm thấy dữ liệu thuộc kho “' + getSelectedSingleWarehouseImportLabel() + '”.' + (skippedOtherWarehouseRows > 0 ? ' Đã bỏ qua ' + skippedOtherWarehouseRows + ' dòng thuộc kho khác.' : '') + ' Hãy kiểm tra lại kho và file Excel.');
       return;
     }
-    markParsedDuplicateStatusesChecking();showLoading(false);setUploadDuplicateCheckState(true,false);renderUploadList();await yieldUploadPaint();
-    try{await refreshParsedDuplicateStatus();}
-    catch(error){Object.keys(parsedFileData).forEach(khoa=>{parsedDuplicateStatus[khoa]=Object.assign(defaultDuplicateStatus(false),{checkError:true});});setUploadDuplicateCheckState(false,true);renderUploadList();await showMsg('Không kiểm tra được phiếu trùng. Hệ thống đã giữ preview nhưng không cho đưa vào danh sách để tránh nạp sai. Vui lòng chọn lại file để thử lại.','Không kiểm tra được phiếu trùng','warning');return;}
-    setUploadDuplicateCheckState(false,false);renderUploadList();
-    const suppressedKhoas=Object.keys(parsedFileData).filter(isSuppressedDeletedVoucher);
-    if(currentUser&&currentUser.role==='phat'&&suppressedKhoas.length)await showMsg('Phát hiện phiếu từng bị Admin xóa với lựa chọn “Không phát nữa”:\n\n'+suppressedKhoas.map(formatSuppressionNoticeForImport).join('\n\n')+'\n\nVì bạn đang nạp bằng FILE riêng lẻ, phiếu được bỏ tích mặc định nhưng Người phát có thể tích chọn và xác nhận “Vẫn nạp lại”. Nếu nạp bằng THƯ MỤC thì hệ thống sẽ tự bỏ qua như phiếu trùng.','Phiếu đã xóa không phát nữa','warning');
-    if(currentUser&&currentUser.role==='admin'&&suppressedKhoas.length)await showMsg('Phát hiện phiếu từng bị xóa không phát nữa:\n\n'+suppressedKhoas.map(formatSuppressionNoticeForImport).join('\n\n')+'\n\nCác phiếu này được bỏ tích mặc định. Admin vẫn có thể tích chọn và nạp lại sau khi xác nhận.','Phiếu đã xóa không phát nữa','warning');
-    const duplicateKhoas=Object.keys(parsedFileData).filter(isDuplicateVoucher),partialKhoas=Object.keys(parsedFileData).filter(isPartialDuplicateVoucher);
-    if(duplicateKhoas.length||partialKhoas.length){const parts=[];if(duplicateKhoas.length)parts.push('trùng hoàn toàn: '+duplicateKhoas.join(', '));if(partialKhoas.length)parts.push('chồng lấp một phần: '+partialKhoas.join(', '));await showMsg('Phát hiện phiếu '+parts.join('; ')+'.\n\nCác phiếu được bỏ tích mặc định. Phiếu chồng lấp có một số số phiếu cũ nhưng nội dung kho không giống hoàn toàn; chỉ tiếp tục khi bạn đã kiểm tra file.','Kiểm tra phiếu trùng','warning');}
+    setSingleWarehouseImportLocked(true);
+    const duplicateStarted = performance.now();
+
+    if (isFolderAutoLoad) {
+      const candidates = [];
+      const candidateMeta = {};
+      validUnits.forEach((unit, unitIndex) => {
+        Object.keys(unit.data).forEach(khoa => {
+          const candidateKey = 'F' + unitIndex + '::' + khoa;
+          const candidate = buildDuplicateCandidate(unit.data, khoa, candidateKey);
+          if (candidate) {
+            candidates.push(candidate);
+            candidateMeta[candidateKey] = { unit, khoa };
+          }
+        });
+      });
+      folderImportSummary = { totalFiles: fileList.length, filesRead: parsedUnits.filter(Boolean).length, totalGroups: candidates.length, checkedGroups: 0, newUnits: 0, duplicateWarehouses: 0, partialWarehouses: 0, suppressedWarehouses: 0, failedFiles: failedCount, checking: true, checkError: false };
+      setUploadDuplicateCheckState(true, false);
+      updateImportProcessModal({
+        stage: 'Đang kiểm tra phiếu trùng...',
+        detail: 'Đang đối chiếu ' + candidates.length + ' nhóm phiếu với dữ liệu hiện có.',
+        progress: 54,
+        stats: ['Đã kiểm tra: 0/' + candidates.length, 'Phiếu mới: 0']
+      });
+      await yieldUploadPaint();
+      let cursor = 0;
+      const duplicateSession = { fingerprints: [] };
+      try {
+        while (cursor < candidates.length) {
+          const size = cursor === 0 ? FOLDER_DUPLICATE_FIRST_BATCH_SIZE : FOLDER_DUPLICATE_BATCH_SIZE;
+          const batch = candidates.slice(cursor, cursor + size);
+          const results = await requestDuplicateCheckCandidates(batch, duplicateSession);
+          batch.forEach(candidate => {
+            const meta = candidateMeta[candidate.key];
+            const result = results[candidate.key] || defaultDuplicateStatus(false);
+            const exactKeys = Array.isArray(result.duplicateWarehouseKeys) ? result.duplicateWarehouseKeys : [];
+            const partialKeys = Array.isArray(result.partialWarehouseKeys) ? result.partialWarehouseKeys : [];
+            const suppressedKeys = Array.isArray(result.suppressedWarehouseKeys) ? result.suppressedWarehouseKeys : [];
+            folderImportSummary.duplicateWarehouses += exactKeys.length;
+            folderImportSummary.partialWarehouses += partialKeys.length;
+            folderImportSummary.suppressedWarehouses += suppressedKeys.length;
+            if (currentUser && currentUser.role === 'admin' && result.suppressed) {
+              mergeParsedImportData(parsedFileData, { [meta.khoa]: meta.unit.data[meta.khoa] });
+              parsedDuplicateStatus[meta.khoa] = Object.assign(defaultDuplicateStatus(false), result, { checking: false });
+              return;
+            }
+            removeWarehouseKeysFromImportData(meta.unit.data[meta.khoa], exactKeys.concat(partialKeys).concat(currentUser && currentUser.role === 'phat' ? suppressedKeys : []));
+            const remaining = meta.unit.data[meta.khoa];
+            if (!hasImportData(remaining)) return;
+            mergeParsedImportData(parsedFileData, { [meta.khoa]: remaining });
+            parsedDuplicateStatus[meta.khoa] = Object.assign(defaultDuplicateStatus(false), { newWarehouseKeys: Object.keys(remaining.vouchers || {}) });
+          });
+          cursor += batch.length;
+          folderImportSummary.checkedGroups = cursor;
+          folderImportSummary.newUnits = Object.keys(parsedFileData).length;
+          const progress = 54 + (cursor / Math.max(1, candidates.length)) * 38;
+          updateImportProcessModal({
+            stage: 'Đang kiểm tra phiếu trùng...',
+            detail: 'Đã kiểm tra ' + cursor + '/' + candidates.length + ' nhóm phiếu.',
+            progress,
+            stats: [
+              'Phiếu mới: ' + folderImportSummary.newUnits,
+              'Tự bỏ trùng: ' + folderImportSummary.duplicateWarehouses,
+              folderImportSummary.partialWarehouses ? ('Chồng lấp đã bỏ: ' + folderImportSummary.partialWarehouses) : '',
+              folderImportSummary.suppressedWarehouses ? ('Không phát nữa: ' + folderImportSummary.suppressedWarehouses) : ''
+            ]
+          });
+          await yieldUploadPaint();
+        }
+      } catch (error) {
+        console.error('Không kiểm tra được phiếu trùng từ thư mục:', error && error.message ? error.message : String(error));
+        folderImportSummary.checking = false;
+        folderImportSummary.checkError = true;
+        setUploadDuplicateCheckState(false, true);
+        renderFolderImportSummary();
+        renderUploadList();
+        showImportProcessError('Không hoàn tất được bước kiểm tra phiếu trùng', 'Dữ liệu chưa được đưa vào danh sách. Bạn có thể bấm “Thử lại” mà không cần chọn lại thư mục.');
+        return;
+      }
+      folderImportSummary.checking = false;
+      folderImportSummary.newUnits = Object.keys(parsedFileData).length;
+      setUploadDuplicateCheckState(false, false);
+      renderFolderImportSummary();
+      renderUploadList();
+      await completeImportProcessModal(
+        'Đã kiểm tra xong thư mục',
+        Object.keys(parsedFileData).length ? 'Danh sách phiếu hợp lệ đã sẵn sàng.' : 'Không còn phiếu mới hợp lệ để đưa vào danh sách.',
+        [
+          'Phiếu mới: ' + folderImportSummary.newUnits,
+          'Tự bỏ trùng: ' + folderImportSummary.duplicateWarehouses,
+          failedCount ? ('File lỗi: ' + failedCount) : ''
+        ]
+      );
+      if (currentUser && currentUser.role === 'admin') {
+        const folderSuppressed = Object.keys(parsedFileData).filter(isSuppressedDeletedVoucher);
+        if (folderSuppressed.length) await showMsg('Trong thư mục có phiếu đã bị xóa không phát nữa:\n\n' + folderSuppressed.map(formatSuppressionNoticeForImport).join('\n\n') + '\n\nHệ thống không tự tích chọn các phiếu này. Admin có thể tích chọn và xác nhận nếu thực sự muốn nạp lại.', 'Cảnh báo phiếu không phát nữa', 'warning');
+      }
+      if (!Object.keys(parsedFileData).length) await showMsg('Đã kiểm tra xong thư mục nhưng không còn phiếu mới hợp lệ để đưa vào danh sách.', 'Không có phiếu mới', 'info');
+    } else {
+      validUnits.forEach(unit => mergeParsedImportData(parsedFileData, unit.data));
+      const mergeConflictKhoas = Object.keys(parsedFileData).filter(khoa => Array.isArray(parsedFileData[khoa].__importMergeConflicts) && parsedFileData[khoa].__importMergeConflicts.length > 0);
+      if (mergeConflictKhoas.length) {
+        mergeConflictKhoas.forEach(khoa => { parsedDuplicateStatus[khoa] = Object.assign(defaultDuplicateStatus(false), { mergeConflict: true }); });
+        setUploadDuplicateCheckState(false, true);
+        renderUploadList();
+        await completeImportProcessModal('Cần kiểm tra dữ liệu', 'Danh sách đã được dựng nhưng có file chồng lấp nội bộ cần kiểm tra.', ['Khoa cần kiểm tra: ' + mergeConflictKhoas.length]);
+        await showMsg('Có cùng số phiếu nhưng nội dung thuốc khác nhau giữa các file tại: ' + mergeConflictKhoas.join(', ') + '. Hệ thống đã chặn việc gộp để tránh cộng sai số lượng. Hãy nạp từng file riêng để kiểm tra đúng phiếu.', 'Phát hiện file chồng lấp nội bộ', 'warning');
+        return;
+      }
+      markParsedDuplicateStatusesChecking();
+      setUploadDuplicateCheckState(true, false);
+      updateImportProcessModal({ stage: 'Đang kiểm tra phiếu trùng...', detail: 'Đang đối chiếu các phiếu với dữ liệu hiện có.', progress: 62, stats: ['Nhóm phiếu: ' + Object.keys(parsedFileData).length] });
+      await yieldUploadPaint();
+      try {
+        await refreshParsedDuplicateStatus();
+      } catch (error) {
+        Object.keys(parsedFileData).forEach(khoa => { parsedDuplicateStatus[khoa] = Object.assign(defaultDuplicateStatus(false), { checkError: true }); });
+        setUploadDuplicateCheckState(false, true);
+        renderUploadList();
+        showImportProcessError('Không kiểm tra được phiếu trùng', 'Preview đã được giữ lại nhưng nút đưa phiếu bị khóa để tránh nạp sai. Bạn có thể bấm “Thử lại” mà không cần chọn lại file.');
+        return;
+      }
+      setUploadDuplicateCheckState(false, false);
+      renderUploadList();
+      const suppressedKhoas = Object.keys(parsedFileData).filter(isSuppressedDeletedVoucher);
+      const duplicateKhoas = Object.keys(parsedFileData).filter(isDuplicateVoucher);
+      const partialKhoas = Object.keys(parsedFileData).filter(isPartialDuplicateVoucher);
+      await completeImportProcessModal('Đã kiểm tra xong phiếu', 'Danh sách phiếu chờ đã sẵn sàng để bạn kiểm tra trước khi đưa vào danh sách phát.', [
+        'Tổng nhóm: ' + Object.keys(parsedFileData).length,
+        duplicateKhoas.length ? ('Trùng: ' + duplicateKhoas.length) : '',
+        partialKhoas.length ? ('Chồng lấp: ' + partialKhoas.length) : '',
+        suppressedKhoas.length ? ('Không phát nữa: ' + suppressedKhoas.length) : ''
+      ]);
+      if (currentUser && currentUser.role === 'phat' && suppressedKhoas.length) await showMsg('Phát hiện phiếu từng bị Admin xóa với lựa chọn “Không phát nữa”:\n\n' + suppressedKhoas.map(formatSuppressionNoticeForImport).join('\n\n') + '\n\nVì bạn đang nạp bằng FILE riêng lẻ, phiếu được bỏ tích mặc định nhưng Người phát có thể tích chọn và xác nhận “Vẫn nạp lại”. Nếu nạp bằng THƯ MỤC thì hệ thống sẽ tự bỏ qua như phiếu trùng.', 'Phiếu đã xóa không phát nữa', 'warning');
+      if (currentUser && currentUser.role === 'admin' && suppressedKhoas.length) await showMsg('Phát hiện phiếu từng bị xóa không phát nữa:\n\n' + suppressedKhoas.map(formatSuppressionNoticeForImport).join('\n\n') + '\n\nCác phiếu này được bỏ tích mặc định. Admin vẫn có thể tích chọn và nạp lại sau khi xác nhận.', 'Phiếu đã xóa không phát nữa', 'warning');
+      if (duplicateKhoas.length || partialKhoas.length) {
+        const parts = [];
+        if (duplicateKhoas.length) parts.push('trùng hoàn toàn: ' + duplicateKhoas.join(', '));
+        if (partialKhoas.length) parts.push('chồng lấp một phần: ' + partialKhoas.join(', '));
+        await showMsg('Phát hiện phiếu ' + parts.join('; ') + '.\n\nCác phiếu được bỏ tích mặc định. Hãy xem chi tiết phiếu con trên card và bấm “Xem phiếu chứa” nếu cần đối chiếu. Ứng dụng không tự loại phiếu con chồng lấp vì file nguồn không cho phép xác định chính xác số lượng thuốc của riêng phiếu con đó.\n\nBạn có thể lấy lại file không chứa phiếu con đã tồn tại, hoặc chủ động tích chọn để nạp nguyên toàn bộ dữ liệu sau khi xác nhận.', 'Kiểm tra phiếu trùng', 'warning');
+      }
+    }
+    console.info('[IMPORT PERF]', { mode: isFolderAutoLoad ? 'folder' : 'manual', files: fileList.length, parseMs, duplicateMs: Math.round(performance.now() - duplicateStarted), totalMs: Math.round(performance.now() - perfStarted), waitingCards: Object.keys(parsedFileData || {}).length });
+    if (!isFolderAutoLoad && failedCount > 0) await showMsg('Có ' + failedCount + ' file không đọc được. Các file còn lại đã được xử lý.', 'Một số file bị lỗi', 'warning');
   }
-  console.info('[IMPORT PERF]',{mode:isFolderAutoLoad?'folder':'manual',files:fileList.length,parseMs,duplicateMs:Math.round(performance.now()-duplicateStarted),totalMs:Math.round(performance.now()-perfStarted),waitingCards:Object.keys(parsedFileData||{}).length});
-  if(!isFolderAutoLoad&&failedCount>0)await showMsg('Có '+failedCount+' file không đọc được. Các file còn lại đã được xử lý.','Một số file bị lỗi','warning');
-}
+
 
 function parseRows(
     rows,
@@ -9000,7 +9542,7 @@ async function removeUploadItem(khoa) {
     }
 
     if (duplicateKhoas.length > 0) {
-        const acceptDuplicate = await showConfirm("Bạn vẫn muốn đưa các phiếu trùng hoặc chồng lấp (" + duplicateKhoas.join(", ") + ") vào danh sách?\n\nPhiếu chồng lấp có một số số phiếu cũ nhưng nội dung kho không giống hoàn toàn. Hệ thống sẽ thêm chữ '(phiếu trùng)' để dễ nhận biết.", "Xác nhận nạp phiếu cần kiểm tra", { type: 'warning', confirmText: 'Vẫn đưa vào' });
+        const acceptDuplicate = await showConfirm("Bạn vẫn muốn NẠP NGUYÊN TOÀN BỘ các phiếu trùng hoặc chồng lấp (" + duplicateKhoas.join(", ") + ") vào danh sách?\n\nHệ thống sẽ giữ nguyên 100% dữ liệu file: không loại phiếu con, không tự trừ số lượng và không thay đổi danh sách thuốc. Phiếu được thêm chữ '(phiếu trùng)' để dễ nhận biết.", "Xác nhận nạp toàn bộ phiếu", { type: 'warning', confirmText: 'Vẫn nạp toàn bộ' });
         if (!acceptDuplicate) {
             renderUploadList();
             return;
@@ -9057,15 +9599,14 @@ async function removeUploadItem(khoa) {
       };
     });
     
-    beginFastImportCommitUI();
+    beginFastImportCommitUI(checks.length);
     google.script.run
       .withSuccessHandler(async r => {
-        finishFastImportCommitUI();
         if (!r || r.success === false) {
-          switchView('upload');
-          showMsg((r && r.msg) || 'Không thể đưa phiếu vào danh sách.', 'Nạp phiếu thất bại', 'warning');
+          showImportProcessError('Không thể đưa phiếu vào danh sách', (r && r.msg) || 'Máy chủ chưa xác nhận ghi dữ liệu. Bạn có thể đóng thông báo và thử lại từ danh sách phiếu chờ.');
           return;
         }
+        updateImportProcessModal({ stage: 'Máy chủ đã ghi dữ liệu', detail: 'Đang cập nhật Danh sách phát trên thiết bị...', progress: 78, stats: ['Đã ghi: ' + Number(r.inserted || 0) + ' phiếu'] });
 
         const insertedNow = Number(r.inserted || 0) > 0;
         if (insertedNow) {
@@ -9095,6 +9636,8 @@ async function removeUploadItem(khoa) {
           blockedSuppressed
             .map(item => String((item && item.sourceKey) || ''))
             .filter(Boolean);
+        const hadServerBlocks = blockedSuppressed.length > 0 || blockedDuplicates.length > 0;
+        if (hadServerBlocks) finishFastImportCommitUI();
 
         const blockedSet =
           new Set(
@@ -9167,15 +9710,19 @@ async function removeUploadItem(khoa) {
         const uploadWarehouseSelect = document.getElementById('uploadWarehouseSelect');
         if (uploadWarehouseSelect && getSingleWarehouseImportOptions().length > 1) uploadWarehouseSelect.value = '';
         if (insertedNow) {
-          // insertedCards đã được merge + render phía trên; chuyển sang Danh sách chỉ sau khi phiếu đã xuất hiện trong model UI.
+          // Chỉ đóng modal sau khi insertedCards đã tồn tại trong model và Danh sách phát đã được render.
+          if (!hadServerBlocks) {
+            updateImportProcessModal({ stage: 'Đã cập nhật Danh sách phát', detail: 'Phiếu mới đã sẵn sàng.', progress: 100, stats: ['Đã thêm: ' + Number(r.inserted || 0) + ' phiếu'] });
+            await completeImportProcessModal('Đưa phiếu thành công', 'Phiếu mới đã có trong Danh sách phát.', ['Đã thêm: ' + Number(r.inserted || 0) + ' phiếu']);
+          }
           skipNextListReload = true;
           switchView('list');
+        } else if (!hadServerBlocks) {
+          finishFastImportCommitUI();
         }
       })
       .withFailureHandler(error => {
-        finishFastImportCommitUI();
-        switchView('upload');
-        showMsg(error.message || String(error), 'Lỗi nạp phiếu', 'danger');
+        showImportProcessError('Lỗi khi đưa phiếu vào danh sách', (error && error.message) ? error.message : String(error));
       })
       .pushVouchersServer(
         JSON.stringify(payload),
