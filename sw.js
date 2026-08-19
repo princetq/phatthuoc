@@ -1,4 +1,4 @@
-const CACHE_NAME = 'phatthuoc-fix17-14-clean-smooth-import-admin-scope-single';
+const CACHE_NAME = 'phatthuoc-fix17-17-max-speed-visible-import-single';
 
 const APP_SHELL = [
   '/',
